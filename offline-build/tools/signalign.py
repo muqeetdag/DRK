@@ -84,14 +84,18 @@ def main():
         sf_parts.append(b"\r\n")
     cert_sf = b"".join(sf_parts)
 
-    # ---- PKCS#7 signature block (contents + signing attributes included) ----
+    # ---- PKCS#7 signature block (contents embedded, no signing attributes) ----
+    # -noattr is REQUIRED for Android: apksig only supports a small whitelist of
+    # PKCS#9 attributes (contentType, signingTime, messageDigest, ...) and rejects
+    # the SMIMECapabilities attribute that OpenSSL >= 3 adds by default with
+    # "PKCS9 SMIMECapability attribute not supported" / NO_CERTIFICATES.
     tmpdir = tempfile.mkdtemp(prefix="signalign-")
     sf_path = os.path.join(tmpdir, "CERT.SF")
     rsa_path = os.path.join(tmpdir, "CERT.RSA")
     with open(sf_path, "wb") as f:
         f.write(cert_sf)
     subprocess.run([
-        "openssl", "cms", "-sign", "-binary",
+        "openssl", "cms", "-sign", "-binary", "-noattr",
         "-in", sf_path, "-signer", cert_pem, "-inkey", key_pem,
         "-outform", "DER", "-out", rsa_path, "-md", "sha256",
     ], check=True)
