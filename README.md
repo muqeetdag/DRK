@@ -48,13 +48,30 @@ gradle :app:assembleDebug        # or ./gradlew if you add a wrapper jar
 # → app/build/outputs/apk/debug/app-debug.apk
 ```
 
-CI (`.github/workflows/android.yml`) does the same on every push and uploads
-`app-debug.apk` as a workflow artifact.
+Two ready-made workflows live in `ci/` (`android.yml`, `telegram-deliver.yml`).
+To activate them, copy both files into `.github/workflows/` with the GitHub web
+UI (*Add file → Create new file*, one file each) — repo-owner commits carry the
+`workflows` scope that bots lack. `android.yml` builds `app-debug.apk` on every
+push and uploads it as a workflow artifact; `telegram-deliver.yml` delivers the
+committed offline APK to your bot on demand (see below).
 
 ## Telegram delivery to your bot
 
 A Telegram bot can never message a user first — **send any message (e.g.
 `/start`) to your bot once**, then pick one of:
+
+**0. Zero-setup, works anywhere right now**
+
+Any machine with open internet can deliver the APK in one line:
+
+```bash
+curl -F "chat_id=<your chat id>" \
+     -F "document=@drk-exif-offline.apk" \
+     "https://api.telegram.org/bot<TOKEN>/sendDocument"
+```
+
+Find your chat id by messaging the bot and opening
+`https://api.telegram.org/bot<TOKEN>/getUpdates`.
 
 **A. Repo secret (set once, then automatic on every push)**
 

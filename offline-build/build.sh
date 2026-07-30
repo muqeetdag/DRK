@@ -14,7 +14,7 @@
 set -euo pipefail
 
 TOOLS=${TOOLS:-/tmp/sdkx}
-AAPT2=${AAPT2:-$TOOLS/package/bin/x64/linux/aapt2}
+AAPT2=${AAPT2:-$TOOLS/aapt2-bin/aapt2}
 ANDROID_JAR=${ANDROID_JAR:-$TOOLS/aosp-plat/android-34/android.jar}
 KOTLINC=${KOTLINC:-$TOOLS/kotlinc/bin/kotlinc}
 KOTLIN_STDLIB=${KOTLIN_STDLIB:-$TOOLS/kotlinc/lib/kotlin-stdlib.jar}
