@@ -1,0 +1,3 @@
+const $=s=>document.querySelector(s);const endpoint=a=>`/cgi-bin/control?action=${a}`;
+async function stats(){try{const s=await fetch(endpoint('stats'),{cache:'no-store'}).then(r=>r.json());$('#profile').textContent=s.profile||'balanced';$('#battery').textContent=s.battery??'—';$('#thermal').textContent=s.temperature??'—';$('#uptime').textContent=s.uptime??'—'}catch(e){$('#profile').textContent='Dashboard unavailable'}}
+document.querySelectorAll('button').forEach(b=>b.onclick=async()=>{b.disabled=true;try{await fetch(endpoint(b.dataset.action));await stats()}finally{b.disabled=false}});stats();setInterval(stats,5000);

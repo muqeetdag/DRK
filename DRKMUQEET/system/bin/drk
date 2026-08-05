@@ -1,0 +1,34 @@
+#!/system/bin/sh
+# DRKMUQEET: deliberately conservative, device-safe tuning interface.
+MODDIR=${0%/*/*/*}
+STATE=/data/adb/drkmuqeet; PROFILE=$STATE/profile; PORT=8080
+mkdir -p "$STATE"
+write() { [ -e "$1" ] && [ -w "$1" ] && echo "$2" > "$1"; }
+setting() { settings put "$1" "$2" "$3" 2>/dev/null; }
+apply_balanced() {
+  # Android framework animation settings; harmless and reversible.
+  setting global window_animation_scale 0.5; setting global transition_animation_scale 0.5; setting global animator_duration_scale 0.5
+  for q in /sys/block/*/queue/read_ahead_kb; do write "$q" 512; done
+  echo balanced > "$PROFILE"
+}
+apply_performance() {
+  # Never disables thermal protection or exceeds kernel-exposed frequency limits.
+  for p in /sys/devices/system/cpu/cpufreq/policy*/scaling_governor; do [ -f "$p" ] && grep -qw performance "${p%/*}/scaling_available_governors" && write "$p" performance; done
+  for q in /sys/block/*/queue/read_ahead_kb; do write "$q" 1024; done
+  setting global window_animation_scale 0.5; setting global transition_animation_scale 0.5; setting global animator_duration_scale 0.5
+  echo performance > "$PROFILE"
+}
+reset() {
+  for p in /sys/devices/system/cpu/cpufreq/policy*/scaling_governor; do [ -f "$p" ] && grep -qw schedutil "${p%/*}/scaling_available_governors" && write "$p" schedutil; done
+  for q in /sys/block/*/queue/read_ahead_kb; do write "$q" 128; done
+  setting global window_animation_scale 1; setting global transition_animation_scale 1; setting global animator_duration_scale 1
+  echo balanced > "$PROFILE"
+}
+stats() { echo "{\"profile\":\"$(cat "$PROFILE" 2>/dev/null || echo balanced)\",\"battery\":\"$(cat /sys/class/power_supply/battery/capacity 2>/dev/null || echo '?')\",\"temperature\":\"$(cat /sys/class/thermal/thermal_zone0/temp 2>/dev/null || echo '?')\",\"uptime\":\"$(cut -d. -f1 /proc/uptime)\"}"; }
+serve() {
+  # Magisk BusyBox httpd runs CGI, bound strictly to loopback so no LAN access.
+  PID=$STATE/httpd.pid; [ -s "$PID" ] && kill -0 "$(cat "$PID")" 2>/dev/null && exit 0
+  mkdir -p "$STATE/www/cgi-bin"; cp "$MODDIR/webroot/"* "$STATE/www/" 2>/dev/null; cp "$MODDIR/system/bin/drk-web" "$STATE/www/cgi-bin/control"; chmod 755 "$STATE/www/cgi-bin/control"
+  busybox httpd -f -p 127.0.0.1:$PORT -h "$STATE/www" >/dev/null 2>&1 & echo $! > "$PID"
+}
+case "$1" in balanced) apply_balanced;; performance) apply_performance;; reset) reset;; toggle) [ "$(cat "$PROFILE" 2>/dev/null)" = performance ] && apply_balanced || apply_performance;; stats) stats;; boot) [ "$(cat "$PROFILE" 2>/dev/null)" = performance ] && apply_performance;; serve) serve;; *) echo 'Usage: drk {balanced|performance|reset|toggle|stats|serve}' >&2; exit 64;; esac
