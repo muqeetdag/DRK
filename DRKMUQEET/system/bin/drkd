@@ -1,0 +1,90 @@
+#!/system/bin/sh
+# ============================================================
+#  DRKMUQEET — monitor daemon
+#   • battery sampling (voltage/current/temp/capacity → CSV)
+#   • over-temperature alerts
+#   • scheduled fstrim (cadence from drk.conf: AUTO_TRIM_DAYS)
+#   • scheduled cache cleanup
+#  Started by service.sh; single-instance guarded by pidfile.
+# ============================================================
+
+. /system/bin/drk.d/lib.sh 2>/dev/null || exit 1
+
+DRK_CONF=${DRK_CONF:-/data/adb/drk/drk.conf}
+[ -f "$DRK_CONF" ] && . "$DRK_CONF" 2>/dev/null
+
+mkdir -p "$DRK_LOGS" "$DRK_STATE" 2>/dev/null
+
+# single instance
+if [ -f "$DRK_STATE/drkd.pid" ]; then
+  kill -0 "$(cat "$DRK_STATE/drkd.pid" 2>/dev/null)" 2>/dev/null && exit 0
+fi
+echo $$ > "$DRK_STATE/drkd.pid"
+
+BATT=/sys/class/power_supply/battery
+MAIN=/sys/class/power_supply/main
+USB=/sys/class/power_supply/usb
+CSV=$DRK_LOGS/battery.csv
+EVENTS=$DRK_LOGS/events.log
+
+# CSV header once
+[ -f "$CSV" ] || echo "timestamp,level,voltage_uV,current_uA,temp_c,status" > "$CSV"
+
+INTERVAL=300
+TEMP_ALERT_C=${TEMP_ALERT_C:-45}
+AUTO_TRIM_DAYS=${AUTO_TRIM_DAYS:-7}
+BATT_MONITOR=${BATT_MONITOR:-1}
+
+rd() { # rd <path> [default]
+  [ -r "$1" ] && cat "$1" 2>/dev/null || echo "${2:-}"
+}
+
+last_trim=0
+last_clean=0
+alerted=""
+
+while :; do
+  now=$(date +%s)
+
+  # --- battery sampling ---
+  if [ "$BATT_MONITOR" = "1" ] && [ -d "$BATT" ]; then
+    lvl=$(rd "$BATT/capacity" -1)
+    volt=$(rd "$BATT/voltage_now" 0)
+    curr=$(rd "$BATT/current_now" 0)
+    temp=$(rd "$BATT/temp" 0)
+    st=$(rd "$BATT/status" unknown)
+    echo "$(date '+%F %T'),$lvl,$volt,$curr,$temp,$st" >> "$CSV"
+  fi
+
+  # --- temperature alert ---
+  tmax=0
+  for z in /sys/class/thermal/thermal_zone*; do
+    [ -r "$z/temp" ] || continue
+    t=$(cat "$z/temp" 2>/dev/null)
+    case "$t" in *[!0-9]*) continue;; esac
+    [ -n "$t" ] && [ "$t" -gt "$tmax" ] && tmax=$t
+  done
+  # thermal zones are usually milli-Celsius; normalize to °C
+  [ "$tmax" -gt 1000 ] && tmax=$((tmax / 1000))
+  if [ "$tmax" -gt "$TEMP_ALERT_C" ] && [ "$alerted" != "$(date +%d)" ]; then
+    logx "ALERT: max temperature ${tmax}C exceeded ${TEMP_ALERT_C}C threshold"
+    alerted=$(date +%d)
+  fi
+
+  # --- weekly fstrim ---
+  days=$(( (now - last_trim) / 86400 ))
+  if [ "$days" -ge "${AUTO_TRIM_DAYS:-7}" ] && has fstrim; then
+    logx "running fstrim"
+    fstrim -v /data /cache /system 2>>"$EVENTS" | while read -r l; do logx "$l"; done
+    last_trim=$now
+  fi
+
+  # --- monthly cache cleanup ---
+  if [ "$(( (now - last_clean) / 86400 ))" -ge 30 ]; then
+    logx "dropping caches"
+    echo 3 > /proc/sys/vm/drop_caches 2>/dev/null
+    last_clean=$now
+  fi
+
+  sleep "$INTERVAL"
+done

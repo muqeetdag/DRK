@@ -1,0 +1,129 @@
+#!/system/bin/sh
+# ============================================================
+#  DRKMUQEET — control center for Redmi Note 8 Pro (begonia)
+#  Usage:  drk <category> <action> [args]
+#  Every action writes → reads back → reports ✓/✗. Nothing is
+#  claimed to work without verification.
+# ============================================================
+
+DRK_LIB=${DRK_LIB:-/system/bin/drk.d}
+. "$DRK_LIB/lib.sh" 2>/dev/null || {
+  echo "DRKMUQEET: library not found at $DRK_LIB (module not installed?)"
+  exit 1
+}
+
+# source all category modules
+for _m in boot cpu gpu mem fs net priv hw sens audio cam disp batt proc log dev acc game perf maint; do
+  . "$DRK_LIB/$_m.sh" 2>/dev/null
+done
+
+usage() {
+  cat <<'EOF'
+DRKMUQEET 💀👻🗿  —  system optimizer & privacy toolkit (Redmi Note 8 Pro / begonia)
+
+USAGE:  drk <category> <action> [args]     (run in a root shell)
+
+  drk help | version | doctor | status | reset | config [get|set|edit|show]
+
+  PERFORMANCE
+    drk perf <performance|balanced|battery|default>   presets
+    drk cpu governor <gov> | freq <min|max> <khz> | cores <n> | cores on|off <cpu>
+    drk cpu boost <0|1> | hotplug status | sched boost <0|1>
+    drk gpu governor <gov> | freq <min|max> <hz> | renderer <gl|skia|skiavk>
+    drk gpu vulkan <0|1> | profile <0|1|2> | msaa <0|1> | overlay <0|1> | info
+    drk mem clean | compact | swappiness <n> | dirty <n> [bg] | vfs <n> | minfree <kb>
+    drk mem overcommit <0|1|2> [ratio] | oom <task|panic> | zram <mb> [algo] | zram off
+    drk mem zswap <0|1> | ksm <0|1> | thp <always|madvise|never> | hugepages <n> | info
+    drk fs readahead <kb> | sched <algo> | trim | mount <noatime|atime>
+    drk fs journal status | f2fs <key> <val> | ext4 <key> <val> | encrypt status | info
+
+  NETWORK
+    drk net tcp <bbr|cubic|reno> | fastopen <0-3> | sack <0|1> | ecn <0|1>
+    drk net timestamps <0|1> | window <0|1> | mtuprobe <0|1> | keepalive <s> <s> <n>
+    drk net syn <n> [backlog] | fin <s> | tw <0|1> | orphan <n> | mem <p> <p> <p>
+    drk net buf <rmem> <wmem> | udp <p> <p> <p> | forward <0|1> | redirect <0|1>
+    drk net srcroute <0|1> | rpfilter <0|1|2> | ipv6 <0|1> | v6priv <0|1|2> | v6ra <0|1>
+    drk net v6dad <n> | v6hop <n> | v6mtu <n> | dns dot <host>|off | dns set <ip>
+    drk net vpnks <0|1> | fw <block|allow> <pkg|uid> | info
+
+  SECURITY & PRIVACY
+    drk priv deny <pkg>... | deny remove <pkg> | deny list | deny enable|disable
+    drk priv hide status | integrity | spoof <0|1> [fp] | androidid <id> | adid reset
+    drk priv mac <0|1> | wmac <addr> | wmac restore | bmac <addr> | bmac restore
+    drk priv mock <0|1> | loc <grant|deny> <pkg>
+    drk priv killswitch <cam|mic|body|usb|bt|nfc|wifi|data> <on|off>
+    drk priv appops <pkg> <op> <allow|deny|ignore> | appops list <pkg>
+    drk priv batch <deny|allow> <op> | audit | report | clip clear | notif <0|1>
+
+  HARDWARE / BATTERY / DISPLAY
+    drk hw temp <all|cpu|gpu|batt> | throttle status | volt <cpu|gpu> | brightness <0-255>
+    drk hw night <0|1> [temp] | color <mode> | dpi <n>|reset | res <WxH>|reset
+    drk hw refresh <hz> | devfreq list | devfreq <name> <min|max> <hz>
+    drk hw haptic <0|1> | haptic intensity <0-100>
+    drk batt info | limit <0-100> | speed <fast|slow|default> | eta | cycles | health
+    drk batt drain <start|stop|show> | calib
+    drk disp mode <standard|vivid|natural|cinema> | dark <0|1|2> | autobright <0|1>
+    drk disp blue <0|1> | rotate <auto|0|90|180|270> | gesture <0|1|2> | saver <0|1>
+    drk disp touch <sensitive|glove|normal> | hdr status | ambient <0|1>
+
+  SENSORS / AUDIO / CAMERA
+    drk sens info | reset <accel|gyro|mag|prox|light|all>
+    drk audio info | mono <0|1> | volume <stream> <0-15> | dnd <0|1> | fluence <opt> <true|false> | eq
+    drk cam info | hal3 <0|1> | eis <0|1> | disable | enable
+
+  PROCESS / LOGGING / DEVELOPER
+    drk proc list | nice <pid> <delta> | boost <pkg> <0-100> | affinity <pid> <mask>
+    drk proc kill <pid|pkg> | killall | restrict <pkg> <on|off> | standby <pkg> <bucket>
+    drk proc alarms <pkg> <deny|allow> | whitelist <pkg> <add|remove>
+    drk log cat [filter] | cat -f <filter> | kmsg [lines] | kmsg -f | sys [svc] | sys -f <svc>
+    drk log crash | anr | trace <cat> <sec> <file> | dumpstate | bugreport | clear | size
+    drk dev usb <0|1> | adbnet <0|1> [port] | oem status | devopts <0|1> | anim <scale>
+    drk dev keep <0|1> | bglimit <n> | rtl <0|1> | simdisp <on|off> [WxH/dpi] | simcolor <0-3>
+    drk dev anr <0|1> | strict <0|1> | overdraw <0-3> | hwerr <0|1> | stayon <0|1> | cliprect <0|1>
+
+  ACCESSIBILITY / GAME
+    drk acc font <scale> | size <scale> | bold <0|1> | contrast <0|1> | invert <0|1>
+    drk acc dalton <0|1> [mode] | gray <0|1> | magnify <0|1> | pointer <0|1>
+    drk acc powercall <0|1> | speakpw <0|1> | captions <0|1> [size] | talkback <0|1>
+    drk acc service <component> <0|1> | rotate <0|1>
+    drk game <on|off> | game status
+
+  MAINTENANCE
+    drk --boot          apply /data/adb/drk/drk.conf (run by service.sh at boot)
+    drk doctor          verify every interface & setting, print ✓/✗ report
+    drk status          print current values of everything
+    drk reset           restore kernel/safe defaults
+
+Full documentation: README.md · Feature matrix: docs/COMPATIBILITY.md
+EOF
+}
+
+case "${1:-help}" in
+  help|-h|--help) usage ;;
+  version|-v) say "DRKMUQEET v$DRK_VER ($DRK_VERCODE) — for Redmi Note 8 Pro (begonia)" ;;
+  doctor) doctor ;;
+  status) status_all ;;
+  reset) need_root || exit 1; preset_default ;;
+  config) shift; config_main "$@" ;;
+  perf) shift; perf_main "$@" ;;
+  cpu) shift; cpu_main "$@" ;;
+  gpu) shift; gpu_main "$@" ;;
+  mem) shift; mem_main "$@" ;;
+  fs|storage) shift; fs_main "$@" ;;
+  net) shift; net_main "$@" ;;
+  priv|privacy) shift; priv_main "$@" ;;
+  hw) shift; hw_main "$@" ;;
+  sens|sensor) shift; sens_main "$@" ;;
+  audio) shift; audio_main "$@" ;;
+  cam|camera) shift; cam_main "$@" ;;
+  disp|display) shift; disp_main "$@" ;;
+  batt|battery) shift; batt_main "$@" ;;
+  proc) shift; proc_main "$@" ;;
+  log) shift; log_main "$@" ;;
+  dev|developer) shift; dev_main "$@" ;;
+  acc|access) shift; acc_main "$@" ;;
+  game) shift; game_main "$@" ;;
+  --boot) boot_main ;;
+  *) usage; exit 1 ;;
+esac
+exit 0

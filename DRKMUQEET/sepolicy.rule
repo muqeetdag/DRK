@@ -1,0 +1,8 @@
+# DRKMUQEET — SELinux policy additions (injected by Magisk at boot)
+# Allows the su domain to tune sysfs interfaces (CPU/GPU/thermal/battery).
+allow su sysfs file write
+allow su sysfs file read
+allow su sysfs dir write
+allow su sysfs dir read
+allow su proc_net file write
+allow su proc_net file read

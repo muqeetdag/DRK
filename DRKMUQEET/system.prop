@@ -1,0 +1,21 @@
+# DRKMUQEET — boot-time system properties (applied via resetprop by Magisk)
+# Values are conservative, safe on begonia (6 GB RAM, Android 10/11).
+
+# --- Dalvik heap (matches 6 GB class devices) ---
+dalvik.vm.heapgrowthlimit=256m
+dalvik.vm.heapsize=512m
+dalvik.vm.heaptargetutilization=0.75
+dalvik.vm.heapminfree=8m
+dalvik.vm.heapmaxfree=16m
+
+# --- Wi-Fi scan interval (battery) ---
+wifi.supplicant_scan_interval=180
+
+# --- HWUI cache sizes (smooth UI) ---
+ro.hwui.texture_cache_size=72.0
+ro.hwui.layer_cache_size=48.0
+ro.hwui.r_buffer_cache_size=8.0
+ro.hwui.path_cache_size=32.0
+ro.hwui.gradient_cache_size=1.0
+ro.hwui.drop_shadow_cache_size=6.0
+ro.hwui.texture_cache_flushrate=0.4
