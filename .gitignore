@@ -1,1 +1,11 @@
 DRKMUQEET-v*.zip
+apk_builder/private.key
+apk_builder/cert.pem
+apk_builder/*.RSA
+apk_builder/*.SF
+apk_builder/*.MF
+apk_builder/*.apk
+apk_builder/AndroidManifest.xml
+apk_builder/classes.dex
+DRK-Device-Tuning.apk
+
