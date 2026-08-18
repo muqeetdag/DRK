@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">DRKMUQEET</string>
+    <string name="dashboard_url">http://127.0.0.1:8080/</string>
+</resources>

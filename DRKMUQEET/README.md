@@ -34,7 +34,7 @@ drk stats
 
 ## Compatibility and scope
 
-This package is a shell-based Magisk module and does not bundle a Zygisk native injector, an APK, or a KernelSU-specific privileged UI bridge. Claiming these work without compiling, signing, testing on the target ROM, and obtaining the required user permissions would be misleading. It is suitable for modern Magisk-compatible environments where `busybox httpd` is available. Kernel governor availability varies by ROM/kernel.
+This package is a shell-based Magisk module and does not bundle a Zygisk native injector or a KernelSU-specific privileged UI bridge. The repository also contains an optional Android launcher under `app/`; that APK opens the module's loopback dashboard and does not replace the root module. Claiming privileged controls work without compiling, signing, testing on the target ROM, and obtaining the required user permissions would be misleading. It is suitable for modern Magisk-compatible environments where `busybox httpd` is available. Kernel governor availability varies by ROM/kernel.
 
 ## Uninstall
 
