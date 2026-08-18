@@ -13,4 +13,4 @@ Build the APK with Gradle 8.7 and Android SDK platform 35:
 ./build-apk.sh
 ```
 
-A GitHub Actions workflow is also available under `.github/workflows/build-apk.yml`. The release variant uses the local debug signing key for direct installation and is not a Play Store signing key.
+The release variant uses the local debug signing key for direct installation and is not a Play Store signing key. `send-to-telegram.sh` uploads a built APK using `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` environment variables; credentials are never stored in the repository.
