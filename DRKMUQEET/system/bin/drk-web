@@ -4,9 +4,10 @@ echo 'Content-Type: application/json'; echo 'Cache-Control: no-store'; echo
 MODDIR=/data/adb/modules/drkmuqeet
 DRK="$MODDIR/system/bin/drk"
 case "$QUERY_STRING" in
-  action=performance) "$DRK" performance; echo '{"ok":true,"message":"Performance profile applied"}' ;;
-  action=balanced) "$DRK" balanced; echo '{"ok":true,"message":"Balanced profile applied"}' ;;
-  action=reset) "$DRK" reset; echo '{"ok":true,"message":"Defaults restored"}' ;;
+  action=performance) "$DRK" performance >/dev/null 2>&1; echo '{"ok":true,"message":"Performance profile applied"}' ;;
+  action=balanced) "$DRK" balanced >/dev/null 2>&1; echo '{"ok":true,"message":"Balanced profile applied"}' ;;
+  action=reset) "$DRK" reset >/dev/null 2>&1; echo '{"ok":true,"message":"Defaults restored"}' ;;
+  action=audit) "$DRK" audit --json ;;
   action=stats|'') "$DRK" stats ;;
   *) echo '{"ok":false,"message":"Unsupported action"}' ;;
 esac

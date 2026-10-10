@@ -1,6 +1,6 @@
 id=drkmuqeet
 name=DRKMUQEET • Device Tuning Console
-version=1.0.0
-versionCode=100
+version=1.1.0
+versionCode=110
 Author=DRKMUQEET
-description=Begonia-aware, reversible performance and battery tuning console. No root hiding, cheats, or thermal safety bypass.
+description=Begonia-aware, reversible performance and battery tuning console with an applied-state audit. No root hiding, cheats, or thermal safety bypass.

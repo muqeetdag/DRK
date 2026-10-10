@@ -1,34 +1,162 @@
 #!/system/bin/sh
 # DRKMUQEET: deliberately conservative, device-safe tuning interface.
 MODDIR=${0%/*/*/*}
-STATE=/data/adb/drkmuqeet; PROFILE=$STATE/profile; PORT=8080
+# DRK_STATE / DRK_SYSROOT are QA hooks: they let the audit run off-device
+# against a stub tree. On a phone both fall back to the real paths.
+STATE=${DRK_STATE:-/data/adb/drkmuqeet}; PROFILE=$STATE/profile; PORT=8080
+# DRK_SYSROOT points every kernel-node access at a stub tree for off-device QA.
+# A bogus value falls back to the real tree, so the module can never no-op itself.
+SYS=${DRK_SYSROOT:-/sys}
+[ -d "$SYS/devices/system/cpu" ] || SYS=/sys
 mkdir -p "$STATE"
 write() { [ -e "$1" ] && [ -w "$1" ] && echo "$2" > "$1"; }
 setting() { settings put "$1" "$2" "$3" 2>/dev/null; }
-apply_balanced() {
-  # Android framework animation settings; harmless and reversible.
-  setting global window_animation_scale 0.5; setting global transition_animation_scale 0.5; setting global animator_duration_scale 0.5
-  for q in /sys/block/*/queue/read_ahead_kb; do write "$q" 512; done
-  echo balanced > "$PROFILE"
+gov() {
+  # Only where the installed kernel actually advertises the target.
+  for p in "$SYS"/devices/system/cpu/cpufreq/policy*/scaling_governor; do
+    [ -f "$p" ] || continue
+    grep -qw "$1" "${p%/*}/scaling_available_governors" 2>/dev/null && write "$p" "$1"
+  done
 }
+readahead() { for q in "$SYS"/block/*/queue/read_ahead_kb; do write "$q" "$1"; done; }
+anims() {
+  setting global window_animation_scale "$1"
+  setting global transition_animation_scale "$1"
+  setting global animator_duration_scale "$1"
+}
+# Every profile states its full intent. Leaving a knob at the previous
+# profile's value is how "balanced" ends up still pinned at performance.
+apply_balanced() { gov schedutil; readahead 512; anims 0.5; echo balanced > "$PROFILE"; }
 apply_performance() {
   # Never disables thermal protection or exceeds kernel-exposed frequency limits.
-  for p in /sys/devices/system/cpu/cpufreq/policy*/scaling_governor; do [ -f "$p" ] && grep -qw performance "${p%/*}/scaling_available_governors" && write "$p" performance; done
-  for q in /sys/block/*/queue/read_ahead_kb; do write "$q" 1024; done
-  setting global window_animation_scale 0.5; setting global transition_animation_scale 0.5; setting global animator_duration_scale 0.5
-  echo performance > "$PROFILE"
+  gov performance; readahead 1024; anims 0.5; echo performance > "$PROFILE"
 }
-reset() {
-  for p in /sys/devices/system/cpu/cpufreq/policy*/scaling_governor; do [ -f "$p" ] && grep -qw schedutil "${p%/*}/scaling_available_governors" && write "$p" schedutil; done
-  for q in /sys/block/*/queue/read_ahead_kb; do write "$q" 128; done
-  setting global window_animation_scale 1; setting global transition_animation_scale 1; setting global animator_duration_scale 1
-  echo balanced > "$PROFILE"
+reset() { gov schedutil; readahead 128; anims 1; echo default > "$PROFILE"; }
+boot() {
+  # post-fs-data: restore whatever was selected. No profile file means the
+  # user has not chosen yet, so the kernel is left exactly as it booted.
+  case $(cat "$PROFILE" 2>/dev/null || echo default) in
+    performance) apply_performance ;;
+    balanced)    apply_balanced ;;
+    *)           : ;;
+  esac
 }
-stats() { echo "{\"profile\":\"$(cat "$PROFILE" 2>/dev/null || echo balanced)\",\"battery\":\"$(cat /sys/class/power_supply/battery/capacity 2>/dev/null || echo '?')\",\"temperature\":\"$(cat /sys/class/thermal/thermal_zone0/temp 2>/dev/null || echo '?')\",\"uptime\":\"$(cut -d. -f1 /proc/uptime)\"}"; }
+stats() { echo "{\"profile\":\"$(cat "$PROFILE" 2>/dev/null || echo default)\",\"battery\":\"$(cat "$SYS"/class/power_supply/battery/capacity 2>/dev/null || echo '?')\",\"temperature\":\"$(cat "$SYS"/class/thermal/thermal_zone0/temp 2>/dev/null || echo '?')\",\"uptime\":\"$(cut -d. -f1 /proc/uptime)\"}"; }
 serve() {
   # Magisk BusyBox httpd runs CGI, bound strictly to loopback so no LAN access.
   PID=$STATE/httpd.pid; [ -s "$PID" ] && kill -0 "$(cat "$PID")" 2>/dev/null && exit 0
   mkdir -p "$STATE/www/cgi-bin"; cp "$MODDIR/webroot/"* "$STATE/www/" 2>/dev/null; cp "$MODDIR/system/bin/drk-web" "$STATE/www/cgi-bin/control"; chmod 755 "$STATE/www/cgi-bin/control"
   busybox httpd -f -p 127.0.0.1:$PORT -h "$STATE/www" >/dev/null 2>&1 & echo $! > "$PID"
 }
-case "$1" in balanced) apply_balanced;; performance) apply_performance;; reset) reset;; toggle) [ "$(cat "$PROFILE" 2>/dev/null)" = performance ] && apply_balanced || apply_performance;; stats) stats;; boot) [ "$(cat "$PROFILE" 2>/dev/null)" = performance ] && apply_performance;; serve) serve;; *) echo 'Usage: drk {balanced|performance|reset|toggle|stats|serve}' >&2; exit 64;; esac
+# --- audit ---------------------------------------------------------------
+# Read-only. Reports what the active profile actually achieved, so a silently
+# refused write is visible instead of hiding behind write()'s guard.
+
+json_str() { printf '%s' "$1" | tr -d '"\\\n\r\t'; }
+read_node() { if [ -r "$1" ]; then tr -d '\n\r' < "$1" 2>/dev/null; fi; }
+node_state() {
+  [ -e "$1" ] || { printf 'missing'; return; }
+  [ -r "$1" ] || { printf 'unreadable'; return; }
+  [ -w "$1" ] || { printf 'readonly'; return; }
+  printf 'ok'
+}
+
+audit() {
+  R=$STATE/audit.json; T=$STATE/audit.txt
+  prof=$(cat "$PROFILE" 2>/dev/null || echo default)
+  # What the recorded profile is supposed to have left behind.
+  case $prof in
+    performance) want_gov=performance; want_ra=1024; want_anim=0.5 ;;
+    balanced)    want_gov=schedutil;   want_ra=512;  want_anim=0.5 ;;
+    *)           want_gov=schedutil;   want_ra=128;  want_anim=1   ;;
+  esac
+  exp_gov=$want_gov
+
+  : > "$R"; : > "$T"
+  nodes=0; bnodes=0; blocked=0; missed=0; temps=''; sep=''
+
+  printf '{\n' >> "$R"
+  printf '  "generated": "%s",\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date +%s)" >> "$R"
+  printf '  "device": "%s",\n' "$(json_str "$(getprop ro.product.device 2>/dev/null || uname -n)")" >> "$R"
+  printf '  "kernel": "%s",\n' "$(json_str "$(read_node /proc/version)")" >> "$R"
+  printf '  "profile": "%s",\n' "$prof" >> "$R"
+
+  printf '  "cpufreq": [' >> "$R"
+  for p in "$SYS"/devices/system/cpu/cpufreq/policy*/scaling_governor; do
+    [ -e "$p" ] || continue
+    d=${p%/*}; pol=${d##*/}
+    cur=$(read_node "$p"); st=$(node_state "$p"); avail=$(read_node "$d/scaling_available_governors")
+    nodes=$((nodes+1))
+    [ "$st" = ok ] || blocked=$((blocked+1))
+    offered=no; case " $avail " in *" $want_gov "*) offered=yes;; esac
+    if [ "$cur" = "$want_gov" ]; then matches=yes
+    else matches=no; if [ "$st" = ok ] && [ "$offered" = yes ]; then missed=$((missed+1)); fi; fi
+    printf '%s\n    {"policy":"%s","state":"%s","current":"%s","expected":"%s","offered":"%s","matches":"%s"}' \
+      "$sep" "$pol" "$st" "$(json_str "$cur")" "$exp_gov" "$offered" "$matches" >> "$R"
+    printf '%-9s governor %-12s -> %-12s [%s]\n' "$pol" "${cur:-?}" "$exp_gov" "$st" >> "$T"
+    sep=','
+  done
+  printf '\n  ],\n' >> "$R"
+
+  printf '  "blockio": [' >> "$R"; sep=''
+  pre=$SYS/block/
+  for q in "$SYS"/block/*/queue/read_ahead_kb; do
+    [ -e "$q" ] || continue
+    dev=${q#$pre}; dev=${dev%%/*}
+    cur=$(read_node "$q"); st=$(node_state "$q")
+    bnodes=$((bnodes+1))
+    [ "$st" = ok ] || blocked=$((blocked+1))
+    if [ "$cur" = "$want_ra" ]; then matches=yes
+    else matches=no; [ "$st" = ok ] && missed=$((missed+1)); fi
+    printf '%s\n    {"device":"%s","state":"%s","current":"%s","expected":"%s","matches":"%s"}' \
+      "$sep" "$(json_str "$dev")" "$st" "$(json_str "$cur")" "$want_ra" "$matches" >> "$R"
+    printf '%-9s read_ahead %-6s -> %-6s [%s]\n' "$dev" "${cur:-?}" "$want_ra" "$st" >> "$T"
+    sep=','
+  done
+  printf '\n  ],\n' >> "$R"
+
+  aw=$(settings get global window_animation_scale 2>/dev/null)
+  at=$(settings get global transition_animation_scale 2>/dev/null)
+  aa=$(settings get global animator_duration_scale 2>/dev/null)
+  printf '  "animations": {"window":"%s","transition":"%s","animator":"%s","expected":"%s"},\n' \
+    "$(json_str "${aw:-unavailable}")" "$(json_str "${at:-unavailable}")" "$(json_str "${aa:-unavailable}")" "$want_anim" >> "$R"
+  printf '%-9s animations %s/%s/%s -> %s\n' 'settings' "${aw:-?}" "${at:-?}" "${aa:-?}" "$want_anim" >> "$T"
+
+  printf '  "thermal": [' >> "$R"; sep=''
+  for z in "$SYS"/class/thermal/thermal_zone*/temp; do
+    [ -e "$z" ] || continue
+    zd=${z%/*}; zn=${zd##*/}
+    raw=$(read_node "$z"); typ=$(read_node "$zd/type")
+    c=$(printf '%s' "$raw" | awk '{printf "%.1f", $1/1000}' 2>/dev/null)
+    [ -n "$c" ] || c='?'
+    printf '%s\n    {"zone":"%s","type":"%s","temp_c":"%s"}' "$sep" "$zn" "$(json_str "$typ")" "$c" >> "$R"
+    printf '%-9s %-18s %s C\n' "$zn" "${typ:-?}" "$c" >> "$T"
+    temps="$temps $c"; sep=','
+  done
+  printf '\n  ],\n' >> "$R"
+
+  maxtemp=$(printf '%s\n' "$temps" | awk '{m=""; for(i=1;i<=NF;i++) if($i!="?" && (m=="" || $i+0>m+0)) m=$i; print (m==""?"?":m)}')
+
+  # clean    -> everything the profile targets is where it should be
+  # partial  -> some node is unwritable, but nothing writable was missed
+  # degraded -> a writable node refused the value or drifted back
+  # blocked  -> no tunable nodes were found at all
+  status=clean
+  [ "$blocked" -gt 0 ] && status=partial
+  [ "$missed" -gt 0 ] && status=degraded
+  if [ "$nodes" -eq 0 ] && [ "$bnodes" -eq 0 ]; then status=blocked; fi
+
+  printf '  "verdict": {"cpufreq_nodes":%d,"blockio_nodes":%d,"write_blocked":%d,"not_applied":%d,"max_temp_c":"%s","status":"%s"}\n' \
+    "$nodes" "$bnodes" "$blocked" "$missed" "$maxtemp" "$status" >> "$R"
+  printf '}\n' >> "$R"
+
+  if [ "$AUDIT_JSON" = yes ]; then cat "$R"; return; fi
+  printf 'DRKMUQEET audit -- profile: %s\n\n' "$prof"
+  cat "$T"
+  printf '\ncpufreq nodes: %d   block nodes: %d\n' "$nodes" "$bnodes"
+  printf 'write blocked: %d   not applied: %d   max temp: %s C\n' "$blocked" "$missed" "$maxtemp"
+  printf 'status: %s\njson: %s\n' "$status" "$R"
+}
+
+AUDIT_JSON=no
+case "$1" in balanced) apply_balanced;; performance) apply_performance;; reset) reset;; toggle) [ "$(cat "$PROFILE" 2>/dev/null)" = performance ] && apply_balanced || apply_performance;; stats) stats;; boot) boot;; serve) serve;; audit) [ "$2" = --json ] && AUDIT_JSON=yes; audit;; *) echo 'Usage: drk {balanced|performance|reset|toggle|stats|serve|audit [--json]}' >&2; exit 64;; esac
