@@ -1,16 +1,32 @@
 #!/system/bin/sh
 # DRKMUQEET: deliberately conservative, device-safe tuning interface.
 MODDIR=${0%/*/*/*}
-# DRK_STATE / DRK_SYSROOT are QA hooks: they let the audit run off-device
-# against a stub tree. On a phone both fall back to the real paths.
+# DRK_STATE / DRK_SYSROOT are QA hooks: they let the audit and the guard run
+# off-device against a stub tree. On a phone both fall back to the real paths.
 STATE=${DRK_STATE:-/data/adb/drkmuqeet}; PROFILE=$STATE/profile; PORT=8080
 # DRK_SYSROOT points every kernel-node access at a stub tree for off-device QA.
 # A bogus value falls back to the real tree, so the module can never no-op itself.
 SYS=${DRK_SYSROOT:-/sys}
 [ -d "$SYS/devices/system/cpu" ] || SYS=/sys
 mkdir -p "$STATE"
+
+# --- thermal guard thresholds (millidegrees) -----------------------------
+# The guard never disables thermal protection. It backs this module's own
+# tuning off *before* the kernel's thermal engine has to intervene hard, then
+# hands it back once the device has genuinely cooled. Hysteresis is mandatory:
+# a single threshold makes the governor flap between two states forever.
+GUARD_SOFT=${DRK_GUARD_SOFT:-43000}
+GUARD_HARD=${DRK_GUARD_HARD:-47000}
+GUARD_COOL=${DRK_GUARD_COOL:-40000}
+GUARD_INTERVAL=${DRK_GUARD_INTERVAL:-5}
+GUARD_STATE=$STATE/guard; GUARD_PID=$STATE/guard.pid; GUARD_LOG=$STATE/guard.log
+
 write() { [ -e "$1" ] && [ -w "$1" ] && echo "$2" > "$1"; }
 setting() { settings put "$1" "$2" "$3" 2>/dev/null; }
+read_node() { [ -r "$1" ] || return 1; tr -d '\n\r' < "$1" 2>/dev/null; }
+is_num() { case $1 in ''|*[!0-9]*) return 1;; esac; return 0; }
+json_str() { printf '%s' "$1" | tr -d '"\\\n\r\t'; }
+
 gov() {
   # Only where the installed kernel actually advertises the target.
   for p in "$SYS"/devices/system/cpu/cpufreq/policy*/scaling_governor; do
@@ -29,31 +45,156 @@ anims() {
 apply_balanced() { gov schedutil; readahead 512; anims 0.5; echo balanced > "$PROFILE"; }
 apply_performance() {
   # Never disables thermal protection or exceeds kernel-exposed frequency limits.
+  # `drk audit` verifies both claims against the running kernel.
   gov performance; readahead 1024; anims 0.5; echo performance > "$PROFILE"
 }
-reset() { gov schedutil; readahead 128; anims 1; echo default > "$PROFILE"; }
+reset() { unguard; gov schedutil; readahead 128; anims 1; echo default > "$PROFILE"; }
 boot() {
   # post-fs-data: restore whatever was selected. No profile file means the
   # user has not chosen yet, so the kernel is left exactly as it booted.
-  case $(cat "$PROFILE" 2>/dev/null || echo default) in
+  case $(read_node "$PROFILE" || echo default) in
     performance) apply_performance ;;
     balanced)    apply_balanced ;;
     *)           : ;;
   esac
 }
-stats() { echo "{\"profile\":\"$(cat "$PROFILE" 2>/dev/null || echo default)\",\"battery\":\"$(cat "$SYS"/class/power_supply/battery/capacity 2>/dev/null || echo '?')\",\"temperature\":\"$(cat "$SYS"/class/thermal/thermal_zone0/temp 2>/dev/null || echo '?')\",\"uptime\":\"$(cut -d. -f1 /proc/uptime)\"}"; }
+
+max_temp() {
+  t=0
+  for z in "$SYS"/class/thermal/thermal_zone*/temp; do
+    [ -r "$z" ] || continue
+    v=$(read_node "$z")
+    is_num "$v" || continue
+    [ "$v" -gt "$t" ] && t=$v
+  done
+  printf '%s' "$t"
+}
+
+log_guard() {
+  if [ -f "$GUARD_LOG" ]; then
+    sz=$(wc -c < "$GUARD_LOG" 2>/dev/null || echo 0)
+    is_num "$sz" && [ "$sz" -gt 65536 ] && : > "$GUARD_LOG"
+  fi
+  printf '%s %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date +%s)" "$1" >> "$GUARD_LOG"
+}
+
+engage() {
+  # Back off clocks first; at hard, back off I/O prefetch too. The selected
+  # profile in $PROFILE is left untouched -- this is a temporary override and
+  # the guard restores it, so the user's choice is never silently rewritten.
+  lvl=$1; t=$2
+  gov schedutil
+  msg="engage $lvl at ${t}mC: governor -> schedutil"
+  if [ "$lvl" = hard ]; then readahead 128; msg="$msg, read_ahead -> 128"; fi
+  echo "$lvl" > "$GUARD_STATE"
+  log_guard "$msg"
+}
+
+release_guard() {
+  reason=${1:-cooled}
+  rm -f "$GUARD_STATE"
+  if [ "$(read_node "$PROFILE")" = performance ]; then
+    gov performance; readahead 1024
+    log_guard "release ($reason): governor -> performance, read_ahead -> 1024"
+  else
+    log_guard "release ($reason): profile is no longer performance, clocks left alone"
+  fi
+  return 0
+}
+
+guard_once() {
+  prof=$(read_node "$PROFILE" || echo default)
+  lvl=$(read_node "$GUARD_STATE")
+  if [ "$prof" != performance ]; then
+    [ -n "$lvl" ] && release_guard "profile changed to $prof"
+    return 0
+  fi
+  t=$(max_temp)
+  is_num "$t" && [ "$t" -gt 0 ] || return 0
+  case ${lvl:-none} in
+    hard)
+      [ "$t" -lt "$GUARD_COOL" ] && release_guard "cooled to ${t}mC" ;;
+    soft)
+      if [ "$t" -ge "$GUARD_HARD" ]; then engage hard "$t"
+      elif [ "$t" -lt "$GUARD_COOL" ]; then release_guard "cooled to ${t}mC"; fi ;;
+    *)
+      if [ "$t" -ge "$GUARD_HARD" ]; then engage hard "$t"
+      elif [ "$t" -ge "$GUARD_SOFT" ]; then engage soft "$t"; fi ;;
+  esac
+  return 0
+}
+
+guard() {
+  if [ -s "$GUARD_PID" ] && kill -0 "$(cat "$GUARD_PID")" 2>/dev/null; then
+    echo "guard already running (pid $(cat "$GUARD_PID"))"; return 0
+  fi
+  ( while :; do guard_once; sleep "$GUARD_INTERVAL"; done ) >/dev/null 2>&1 &
+  echo $! > "$GUARD_PID"
+  log_guard "guard started: soft=${GUARD_SOFT}mC hard=${GUARD_HARD}mC cool=${GUARD_COOL}mC interval=${GUARD_INTERVAL}s"
+  echo "guard started (pid $(cat "$GUARD_PID"))"
+}
+
+unguard() {
+  if [ -s "$GUARD_PID" ]; then
+    kill "$(cat "$GUARD_PID")" 2>/dev/null
+    rm -f "$GUARD_PID"
+  fi
+  [ -n "$(read_node "$GUARD_STATE")" ] && release_guard "guard stopped"
+  return 0
+}
+
+guard_status() {
+  lvl=$(read_node "$GUARD_STATE"); t=$(max_temp)
+  if [ -s "$GUARD_PID" ] && kill -0 "$(cat "$GUARD_PID")" 2>/dev/null; then
+    running=yes; pid=$(cat "$GUARD_PID")
+  else
+    running=no; pid=stopped
+  fi
+  echo "{\"running\":\"$running\",\"pid\":\"$pid\",\"level\":\"${lvl:-none}\",\"max_temp\":\"$t\",\"soft\":\"$GUARD_SOFT\",\"hard\":\"$GUARD_HARD\",\"cool\":\"$GUARD_COOL\",\"interval\":\"$GUARD_INTERVAL\"}"
+}
+
+guard_log() {
+  # Tail the guard journal as JSON so the dashboard can show why the clocks
+  # moved without needing filesystem access from the browser.
+  n=${1:-25}
+  is_num "$n" || n=25
+  [ -f "$GUARD_LOG" ] || { echo '{"lines":[]}'; return 0; }
+  tmp=$STATE/.guardlog.$$
+  tail -n "$n" "$GUARD_LOG" > "$tmp" 2>/dev/null
+  printf '{"lines":['
+  sep=''
+  while IFS= read -r line; do
+    printf '%s"%s"' "$sep" "$(json_str "$line")"
+    sep=','
+  done < "$tmp"
+  printf ']}\n'
+  rm -f "$tmp"
+  return 0
+}
+
+stats() {
+  t=$(max_temp)
+  c=$(printf '%s' "$t" | awk '{printf "%.1f", $1/1000}' 2>/dev/null); [ -n "$c" ] || c='?'
+  echo "{\"profile\":\"$(read_node "$PROFILE" || echo default)\",\"guard\":\"$(read_node "$GUARD_STATE" || echo none)\",\"battery\":\"$(read_node "$SYS"/class/power_supply/battery/capacity || echo '?')\",\"temperature\":\"$(read_node "$SYS"/class/thermal/thermal_zone0/temp || echo '?')\",\"max_temp_c\":\"$c\",\"uptime\":\"$(cut -d. -f1 /proc/uptime)\"}"
+}
+
 serve() {
   # Magisk BusyBox httpd runs CGI, bound strictly to loopback so no LAN access.
-  PID=$STATE/httpd.pid; [ -s "$PID" ] && kill -0 "$(cat "$PID")" 2>/dev/null && exit 0
-  mkdir -p "$STATE/www/cgi-bin"; cp "$MODDIR/webroot/"* "$STATE/www/" 2>/dev/null; cp "$MODDIR/system/bin/drk-web" "$STATE/www/cgi-bin/control"; chmod 755 "$STATE/www/cgi-bin/control"
-  busybox httpd -f -p 127.0.0.1:$PORT -h "$STATE/www" >/dev/null 2>&1 & echo $! > "$PID"
+  PID=$STATE/httpd.pid
+  if [ -s "$PID" ] && kill -0 "$(cat "$PID")" 2>/dev/null; then return 0; fi
+  mkdir -p "$STATE/www/cgi-bin"
+  cp "$MODDIR/webroot/"* "$STATE/www/" 2>/dev/null
+  cp "$MODDIR/system/bin/drk-web" "$STATE/www/cgi-bin/control"
+  chmod 755 "$STATE/www/cgi-bin/control"
+  busybox httpd -f -p 127.0.0.1:$PORT -h "$STATE/www" >/dev/null 2>&1 &
+  echo $! > "$PID"
 }
+
 # --- audit ---------------------------------------------------------------
 # Read-only. Reports what the active profile actually achieved, so a silently
-# refused write is visible instead of hiding behind write()'s guard.
-
-json_str() { printf '%s' "$1" | tr -d '"\\\n\r\t'; }
-read_node() { if [ -r "$1" ]; then tr -d '\n\r' < "$1" 2>/dev/null; fi; }
+# refused write is visible instead of hiding behind write()'s guard. It also
+# proves the two claims the README makes: that no governor is set unless the
+# kernel advertises it, and that no policy is driven past its hardware ceiling.
 node_state() {
   [ -e "$1" ] || { printf 'missing'; return; }
   [ -r "$1" ] || { printf 'unreadable'; return; }
@@ -63,37 +204,59 @@ node_state() {
 
 audit() {
   R=$STATE/audit.json; T=$STATE/audit.txt
-  prof=$(cat "$PROFILE" 2>/dev/null || echo default)
-  # What the recorded profile is supposed to have left behind.
+  prof=$(read_node "$PROFILE" || echo default)
+  # What the recorded profile is supposed to have left behind. If the thermal
+  # guard is holding the device back, that override is the real expectation.
+  glvl=$(read_node "$GUARD_STATE")
   case $prof in
     performance) want_gov=performance; want_ra=1024; want_anim=0.5 ;;
     balanced)    want_gov=schedutil;   want_ra=512;  want_anim=0.5 ;;
     *)           want_gov=schedutil;   want_ra=128;  want_anim=1   ;;
   esac
+  if [ -n "$glvl" ]; then
+    want_gov=schedutil
+    [ "$glvl" = hard ] && want_ra=128
+  fi
   exp_gov=$want_gov
 
   : > "$R"; : > "$T"
-  nodes=0; bnodes=0; blocked=0; missed=0; temps=''; sep=''
+  nodes=0; bnodes=0; blocked=0; missed=0; over=0; temps=''; sep=''
 
   printf '{\n' >> "$R"
   printf '  "generated": "%s",\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date +%s)" >> "$R"
   printf '  "device": "%s",\n' "$(json_str "$(getprop ro.product.device 2>/dev/null || uname -n)")" >> "$R"
   printf '  "kernel": "%s",\n' "$(json_str "$(read_node /proc/version)")" >> "$R"
   printf '  "profile": "%s",\n' "$prof" >> "$R"
+  printf '  "guard": "%s",\n' "${glvl:-none}" >> "$R"
 
   printf '  "cpufreq": [' >> "$R"
   for p in "$SYS"/devices/system/cpu/cpufreq/policy*/scaling_governor; do
     [ -e "$p" ] || continue
     d=${p%/*}; pol=${d##*/}
     cur=$(read_node "$p"); st=$(node_state "$p"); avail=$(read_node "$d/scaling_available_governors")
+    fmin=$(read_node "$d/scaling_min_freq"); fmax=$(read_node "$d/scaling_max_freq")
+    hmin=$(read_node "$d/cpuinfo_min_freq"); hmax=$(read_node "$d/cpuinfo_max_freq")
+    cpus=$(read_node "$d/affected_cpus"); ea=$(read_node "$d/energy_aware")
     nodes=$((nodes+1))
     [ "$st" = ok ] || blocked=$((blocked+1))
     offered=no; case " $avail " in *" $want_gov "*) offered=yes;; esac
     if [ "$cur" = "$want_gov" ]; then matches=yes
     else matches=no; if [ "$st" = ok ] && [ "$offered" = yes ]; then missed=$((missed+1)); fi; fi
-    printf '%s\n    {"policy":"%s","state":"%s","current":"%s","expected":"%s","offered":"%s","matches":"%s"}' \
-      "$sep" "$pol" "$st" "$(json_str "$cur")" "$exp_gov" "$offered" "$matches" >> "$R"
+
+    # Proof, not promise: the cap the kernel is running under must not exceed
+    # the hardware ceiling it reported. Catches this module and any other one.
+    limits=unknown
+    if is_num "$fmax" && is_num "$hmax"; then
+      if [ "$fmax" -gt "$hmax" ]; then limits=exceeded; over=$((over+1)); else limits=within; fi
+    fi
+
+    printf '%s\n    {"policy":"%s","state":"%s","current":"%s","expected":"%s","offered":"%s","matches":"%s","affected_cpus":"%s","energy_aware":"%s","scaling_min_freq":"%s","scaling_max_freq":"%s","cpuinfo_min_freq":"%s","cpuinfo_max_freq":"%s","freq_limits":"%s"}' \
+      "$sep" "$pol" "$st" "$(json_str "$cur")" "$exp_gov" "$offered" "$matches" \
+      "$(json_str "$cpus")" "$(json_str "${ea:-n/a}")" \
+      "$(json_str "${fmin:-?}")" "$(json_str "${fmax:-?}")" \
+      "$(json_str "${hmin:-?}")" "$(json_str "${hmax:-?}")" "$limits" >> "$R"
     printf '%-9s governor %-12s -> %-12s [%s]\n' "$pol" "${cur:-?}" "$exp_gov" "$st" >> "$T"
+    printf '%-9s freq     %s..%s / hw %s..%s [%s]\n' "$pol" "${fmin:-?}" "${fmax:-?}" "${hmin:-?}" "${hmax:-?}" "$limits" >> "$T"
     sep=','
   done
   printf '\n  ],\n' >> "$R"
@@ -140,23 +303,45 @@ audit() {
   # clean    -> everything the profile targets is where it should be
   # partial  -> some node is unwritable, but nothing writable was missed
   # degraded -> a writable node refused the value or drifted back
+  # unsafe   -> a policy is capped above its own hardware ceiling
   # blocked  -> no tunable nodes were found at all
   status=clean
   [ "$blocked" -gt 0 ] && status=partial
   [ "$missed" -gt 0 ] && status=degraded
+  [ "$over" -gt 0 ] && status=unsafe
   if [ "$nodes" -eq 0 ] && [ "$bnodes" -eq 0 ]; then status=blocked; fi
 
-  printf '  "verdict": {"cpufreq_nodes":%d,"blockio_nodes":%d,"write_blocked":%d,"not_applied":%d,"max_temp_c":"%s","status":"%s"}\n' \
-    "$nodes" "$bnodes" "$blocked" "$missed" "$maxtemp" "$status" >> "$R"
+  printf '  "verdict": {"cpufreq_nodes":%d,"blockio_nodes":%d,"write_blocked":%d,"not_applied":%d,"freq_limit_violations":%d,"max_temp_c":"%s","guard":"%s","guard_thresholds":{"soft_c":"%s","hard_c":"%s","cool_c":"%s"},"status":"%s"}\n' \
+    "$nodes" "$bnodes" "$blocked" "$missed" "$over" "$maxtemp" "${glvl:-none}" \
+    "$(printf '%s' "$GUARD_SOFT" | awk '{printf "%.1f", $1/1000}')" \
+    "$(printf '%s' "$GUARD_HARD" | awk '{printf "%.1f", $1/1000}')" \
+    "$(printf '%s' "$GUARD_COOL" | awk '{printf "%.1f", $1/1000}')" \
+    "$status" >> "$R"
   printf '}\n' >> "$R"
 
-  if [ "$AUDIT_JSON" = yes ]; then cat "$R"; return; fi
-  printf 'DRKMUQEET audit -- profile: %s\n\n' "$prof"
+  if [ "$AUDIT_JSON" = yes ]; then cat "$R"; return 0; fi
+  printf 'DRKMUQEET audit -- profile: %s   thermal guard: %s\n\n' "$prof" "${glvl:-none}"
   cat "$T"
   printf '\ncpufreq nodes: %d   block nodes: %d\n' "$nodes" "$bnodes"
-  printf 'write blocked: %d   not applied: %d   max temp: %s C\n' "$blocked" "$missed" "$maxtemp"
+  printf 'write blocked: %d   not applied: %d   freq violations: %d   max temp: %s C\n' \
+    "$blocked" "$missed" "$over" "$maxtemp"
   printf 'status: %s\njson: %s\n' "$status" "$R"
+  return 0
 }
 
 AUDIT_JSON=no
-case "$1" in balanced) apply_balanced;; performance) apply_performance;; reset) reset;; toggle) [ "$(cat "$PROFILE" 2>/dev/null)" = performance ] && apply_balanced || apply_performance;; stats) stats;; boot) boot;; serve) serve;; audit) [ "$2" = --json ] && AUDIT_JSON=yes; audit;; *) echo 'Usage: drk {balanced|performance|reset|toggle|stats|serve|audit [--json]}' >&2; exit 64;; esac
+case "$1" in
+  balanced)    apply_balanced ;;
+  performance) apply_performance ;;
+  reset)       reset ;;
+  toggle)      if [ "$(read_node "$PROFILE")" = performance ]; then apply_balanced; else apply_performance; fi ;;
+  stats)       stats ;;
+  boot)        boot ;;
+  serve)       serve ;;
+  guard)       guard ;;
+  unguard)     unguard ;;
+  guard-status) guard_status ;;
+  guard-log)   guard_log "$2" ;;
+  audit)       [ "$2" = --json ] && AUDIT_JSON=yes; audit ;;
+  *) echo 'Usage: drk {balanced|performance|reset|toggle|stats|serve|guard|unguard|guard-status|guard-log [n]|audit [--json]}' >&2; exit 64 ;;
+esac

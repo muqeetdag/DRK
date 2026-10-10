@@ -1,12 +1,20 @@
 #!/system/bin/sh
-# CGI bridge: accepts only explicit profile commands; no arbitrary shell input.
+# CGI bridge: accepts only explicit, enumerated commands. Nothing reaches a
+# shell here -- the case statement matches literal strings, so a query like
+# action=audit%20--json%3Brm%20-rf%20/ falls through to the reject branch.
+# Every mutating branch discards drk's stdout, because `settings put` prints
+# "Success" and that must not land ahead of the JSON payload.
 echo 'Content-Type: application/json'; echo 'Cache-Control: no-store'; echo
 MODDIR=/data/adb/modules/drkmuqeet
 DRK="$MODDIR/system/bin/drk"
 case "$QUERY_STRING" in
   action=performance) "$DRK" performance >/dev/null 2>&1; echo '{"ok":true,"message":"Performance profile applied"}' ;;
   action=balanced) "$DRK" balanced >/dev/null 2>&1; echo '{"ok":true,"message":"Balanced profile applied"}' ;;
-  action=reset) "$DRK" reset >/dev/null 2>&1; echo '{"ok":true,"message":"Defaults restored"}' ;;
+  action=reset) "$DRK" reset >/dev/null 2>&1; echo '{"ok":true,"message":"Defaults restored, thermal guard stopped"}' ;;
+  action=guard) "$DRK" guard >/dev/null 2>&1; echo '{"ok":true,"message":"Thermal guard started"}' ;;
+  action=unguard) "$DRK" unguard >/dev/null 2>&1; echo '{"ok":true,"message":"Thermal guard stopped, clocks handed back"}' ;;
+  action=guard-status) "$DRK" guard-status ;;
+  action=guard-log) "$DRK" guard-log ;;
   action=audit) "$DRK" audit --json ;;
   action=stats|'') "$DRK" stats ;;
   *) echo '{"ok":false,"message":"Unsupported action"}' ;;
