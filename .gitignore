@@ -1,1 +1,9 @@
 DRKMUQEET-v*.zip
+# Android build output and CI signing material — never committed
+DRKWiFi/.gradle/
+DRKWiFi/app/build/
+DRKWiFi/build/
+.keys/
+*.jks
+*.keystore
+DRKWiFi-*.apk

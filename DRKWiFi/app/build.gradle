@@ -1,0 +1,59 @@
+plugins {
+    id 'com.android.application'
+}
+
+// Release signing comes from the CI keystore when the workflow provides one. Without it
+// the release build falls back to the debug key so a local build never fails outright.
+def ciStore = System.getenv('DRK_STORE_FILE')
+
+android {
+    namespace 'com.drkmuqeet.wifi'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId 'com.drkmuqeet.wifi'
+        minSdk 26
+        targetSdk 34
+        versionCode 110
+        versionName '1.1.0'
+    }
+
+    signingConfigs {
+        if (ciStore) {
+            release {
+                storeFile file(ciStore)
+                storePassword System.getenv('DRK_STORE_PASSWORD')
+                keyAlias System.getenv('DRK_KEY_ALIAS') ?: 'drk'
+                keyPassword System.getenv('DRK_KEY_PASSWORD')
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig = ciStore ? signingConfigs.release : signingConfigs.debug
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    // The UI is checked by hand on device; lintVital is not the gate for this build.
+    lint {
+        checkReleaseBuilds false
+        abortOnError false
+    }
+}
+
+dependencies {
+    implementation 'androidx.appcompat:appcompat:1.7.0'
+    implementation 'com.google.android.material:material:1.12.0'
+    implementation 'androidx.recyclerview:recyclerview:1.3.2'
+    implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.1.0'
+    implementation 'androidx.core:core:1.13.1'
+
+    testImplementation 'junit:junit:4.13.2'
+}
