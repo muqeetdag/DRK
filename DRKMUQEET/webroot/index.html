@@ -1,1 +1,84 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>DRKMUQEET</title><link rel="stylesheet" href="style.css"></head><body><main><header><img src="mark.svg" alt="DRK skull mark"><div><p class="eyebrow">BEGONIA / LOCAL CONSOLE</p><h1>DRKMUQEET</h1><p class="sub">Reversible device tuning. Thermal and security safeguards stay enabled.</p></div><a class="contact" href="https://t.me/DRKMUQEETT" target="_blank" rel="noopener">Contact developer ↗</a></header><section class="metrics"><article><span>BATTERY</span><strong id="battery">—</strong><small>% charge</small></article><article><span>THERMAL</span><strong id="thermal">—</strong><small>raw sensor value</small></article><article><span>UPTIME</span><strong id="uptime">—</strong><small>seconds</small></article></section><section class="panel"><div><p class="eyebrow">ACTIVE PROFILE</p><h2 id="profile">Loading…</h2><p>Performance selects only governors exposed by your installed kernel and uses modest I/O read-ahead. Balanced retains fast UI animation without pushing clocks.</p></div><div class="actions"><button data-action="performance" class="primary">Apply performance</button><button data-action="balanced">Apply balanced</button><button data-action="reset" class="danger">Restore defaults</button></div></section><section class="notice"><b>What this module will not do</b><p>It does not bypass banking protections, falsify integrity, defeat ads or paid features, modify games, or disable thermal protection. Those requests are unsafe, unreliable, or violate other software’s rules.</p></section><footer>💀 👻 🗿 &nbsp; Local-only dashboard · <code>127.0.0.1:8080</code></footer></main><script src="script.js"></script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DRKMUQEET</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+  <header>
+    <img src="mark.svg" alt="DRK skull mark">
+    <div>
+      <p class="eyebrow">BEGONIA / LOCAL CONSOLE</p>
+      <h1>DRKMUQEET</h1>
+      <p class="sub">Reversible device tuning. Thermal and security safeguards stay enabled.</p>
+    </div>
+    <a class="contact" href="https://t.me/DRKMUQEETT" target="_blank" rel="noopener">Contact developer ↗</a>
+  </header>
+
+  <section class="metrics">
+    <article><span>BATTERY</span><strong id="battery">—</strong><small>% charge</small></article>
+    <article><span>THERMAL</span><strong id="thermal">—</strong><small>raw sensor value</small></article>
+    <article><span>UPTIME</span><strong id="uptime">—</strong><small>seconds</small></article>
+  </section>
+
+  <section class="panel">
+    <div>
+      <p class="eyebrow">ACTIVE PROFILE</p>
+      <h2 id="profile">Loading…</h2>
+      <p>Performance selects only governors exposed by your installed kernel and uses modest I/O read-ahead. Balanced retains fast UI animation without pushing clocks.</p>
+    </div>
+    <div class="actions">
+      <button data-action="performance" class="primary">Apply performance</button>
+      <button data-action="balanced">Apply balanced</button>
+      <button data-action="reset" class="danger">Restore defaults</button>
+    </div>
+  </section>
+
+  <section class="panel wifi">
+    <div class="wifi-main">
+      <p class="eyebrow">WIFI CONTROL</p>
+      <h2 id="wifi-ssid">Loading…</h2>
+      <p class="wifi-state"><b id="wifi-radio" data-state="unknown">Unknown</b> radio · <span id="wifi-state">—</span></p>
+      <div class="sig big" id="wifi-bars" data-level="0" aria-label="signal strength"><i></i><i></i><i></i><i></i></div>
+      <dl class="kv">
+        <div><dt>IP</dt><dd id="wifi-ip">—</dd></div>
+        <div><dt>Gateway</dt><dd id="wifi-gateway">—</dd></div>
+        <div><dt>DNS</dt><dd id="wifi-dns">—</dd></div>
+        <div><dt>Band</dt><dd id="wifi-band">—</dd></div>
+        <div><dt>Link</dt><dd id="wifi-link">—</dd></div>
+        <div><dt>Signal</dt><dd id="wifi-rssi">—</dd></div>
+        <div><dt>Quality</dt><dd id="wifi-quality">—</dd></div>
+        <div><dt>Security</dt><dd id="wifi-security">—</dd></div>
+        <div><dt>MAC</dt><dd id="wifi-mac">—</dd></div>
+      </dl>
+    </div>
+    <div class="actions">
+      <button id="wifi-toggle" data-action="wifi-toggle" class="primary">Toggle Wi-Fi</button>
+      <button data-action="wifi-scan">Scan networks</button>
+      <button data-action="wifi-saved">Saved networks</button>
+      <button data-action="wifi-on">Force on</button>
+      <button data-action="wifi-off" class="danger">Force off</button>
+    </div>
+  </section>
+
+  <section class="panel list-panel" id="wifi-list" hidden>
+    <div class="list-inner">
+      <p class="eyebrow" id="wifi-list-title">Nearby networks</p>
+      <ul class="nets" id="wifi-results"></ul>
+    </div>
+  </section>
+
+  <section class="notice">
+    <b>What this module will not do</b>
+    <p>It does not bypass banking protections, falsify integrity, defeat ads or paid features, modify games, or disable thermal protection. Those requests are unsafe, unreliable, or violate other software’s rules.</p>
+    <p>The Wi-Fi panel reads and switches <em>this phone’s own radio</em>. It never injects into, captures from, or modifies any other network.</p>
+  </section>
+
+  <footer>💀 👻 🗿 &nbsp; Local-only dashboard · <code>127.0.0.1:8080</code></footer>
+</main>
+<script src="script.js"></script>
+</body>
+</html>

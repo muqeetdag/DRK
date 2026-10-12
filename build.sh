@@ -1,5 +1,7 @@
 #!/usr/bin/env sh
 set -eu
-rm -f DRKMUQEET-v1.0.0.zip
-(cd DRKMUQEET && zip -qr ../DRKMUQEET-v1.0.0.zip . -x '*.DS_Store')
-echo 'Created DRKMUQEET-v1.0.0.zip'
+VERSION=$(sed -n 's/^version=//p' DRKMUQEET/module.prop)
+ZIP="DRKMUQEET-v${VERSION}.zip"
+rm -f "$ZIP"
+(cd DRKMUQEET && zip -qr "../$ZIP" . -x '*.DS_Store')
+echo "Created $ZIP"

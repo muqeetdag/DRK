@@ -25,10 +25,129 @@ reset() {
   echo balanced > "$PROFILE"
 }
 stats() { echo "{\"profile\":\"$(cat "$PROFILE" 2>/dev/null || echo balanced)\",\"battery\":\"$(cat /sys/class/power_supply/battery/capacity 2>/dev/null || echo '?')\",\"temperature\":\"$(cat /sys/class/thermal/thermal_zone0/temp 2>/dev/null || echo '?')\",\"uptime\":\"$(cut -d. -f1 /proc/uptime)\"}"; }
+
+# --- Wi-Fi control -----------------------------------------------------------
+# Read-only introspection of this device's own radio plus radio on/off.
+# Nothing here touches other access points: no injection, no capture, no cracking.
+jstr() { printf '%s' "$1" | tr -d '\r\n' | sed 's/\\/\\\\/g; s/"/\\"/g'; }
+jnum() { case "$1" in ''|*[!0-9-]*) printf 'null';; *) printf '%s' "$1";; esac; }
+digits() { printf '%s' "$1" | sed 's/[^0-9]//g'; }
+
+wifi_iface() { for i in /sys/class/net/wlan*; do [ -d "$i" ] && { printf '%s' "${i##*/}"; return; }; done; }
+# "BSSID: " contains "SSID: ", so an SSID is only read at line start or after a comma separator.
+wifi_pick_ssid() { printf '%s' "$1" | sed -n -e 's/^ *SSID: *"\?\([^",]*\)"\?.*/\1/p' -e 's/.*, *SSID: *"\?\([^",]*\)"\?.*/\1/p' | head -1; }
+wifi_enabled() { case "$(settings get global wifi_on 2>/dev/null)" in 1) printf 'on';; 0) printf 'off';; *) printf 'unknown';; esac; }
+wifi_line() { dumpsys wifi 2>/dev/null | grep -m1 'mWifiInfo SSID:' | sed 's/^.*mWifiInfo //'; }
+wifi_field() { printf '%s\n' "$1" | tr ',' '\n' | sed -n "s/^ *$2: *//p" | head -1; }
+wifi_ssid() { case "$1" in ''|'<unknown ssid>') printf 'unknown';; *) printf '%s' "$1" | sed 's/^"//; s/"$//';; esac; }
+wifi_band() { case "$1" in ''|*[!0-9]*) printf '?';; *) if [ "$1" -lt 2500 ]; then printf '2.4 GHz'; elif [ "$1" -lt 5925 ]; then printf '5 GHz'; else printf '6 GHz'; fi;; esac; }
+wifi_quality() { case "$1" in ''|*[!0-9-]*) printf '%s' -1;; *) q=$(( ($1 + 100) * 2 )); [ "$q" -lt 0 ] && q=0; [ "$q" -gt 100 ] && q=100; printf '%s' "$q";; esac; }
+wifi_sec_name() { case "$1" in
+  0) printf 'Open';; 1) printf 'WEP';; 2) printf 'WPA/WPA2-PSK';; 3) printf '802.1X/EAP';;
+  4) printf 'WPA3-SAE';; 5) printf 'OWE';; 8) printf 'OWE-Transition';; *) printf 'type %s' "${1:-?}";; esac; }
+wifi_caps() { case "$1" in *SAE*) printf 'WPA3';; *OWE*) printf 'OWE';; *WPA2*) printf 'WPA2';; *WPA*) printf 'WPA';; *WEP*) printf 'WEP';; *ESS*) printf 'Open';; *) printf '';; esac; }
+
+wifi_status() {
+  LINE=$(wifi_line); IFACE=$(wifi_iface)
+  IP=$(ip -4 addr show "$IFACE" 2>/dev/null | sed -n 's/.*inet \([0-9.]*\).*/\1/p' | head -1)
+  [ -n "$IP" ] || IP=$(wifi_field "$LINE" IP | sed 's|^/||')
+  case "$IP" in 0.0.0.0|"") IP=;; esac
+  # Gateway and DNS are only reported when Wi-Fi owns the default route, so a cellular
+  # route can never be printed inside a Wi-Fi readout.
+  GW=$(ip route 2>/dev/null | sed -n "s|^default via \([0-9.]*\) dev $IFACE .*|\1|p" | head -1)
+  DNS=""
+  [ -n "$GW" ] && DNS=$(dumpsys connectivity 2>/dev/null | sed -n 's/.*DnsAddresses: \[\([^]]*\)\].*/\1/p' | head -1 | tr -d ' ')
+  MAC=$(wifi_field "$LINE" MAC); [ -n "$MAC" ] || MAC=$(cat /sys/class/net/"$IFACE"/address 2>/dev/null)
+  RSSI=$(wifi_field "$LINE" RSSI)
+  FREQ=$(digits "$(wifi_field "$LINE" Frequency)")
+  LINK=$(digits "$(wifi_field "$LINE" 'Link speed')")
+  printf '{"ok":true,"enabled":"%s","iface":"%s","ssid":"%s","state":"%s","ip":"%s","gateway":"%s","dns":"%s","mac":"%s","security":"%s","rssi":%s,"quality":%s,"band":"%s","frequency":%s,"link_speed":%s}\n' \
+    "$(wifi_enabled)" "$(jstr "$IFACE")" "$(jstr "$(wifi_ssid "$(wifi_field "$LINE" SSID)")")" \
+    "$(jstr "$(wifi_field "$LINE" 'Supplicant state')")" "$(jstr "$IP")" "$(jstr "$GW")" "$(jstr "$DNS")" "$(jstr "$MAC")" \
+    "$(jstr "$(wifi_sec_name "$(wifi_field "$LINE" 'Security type')")")" \
+    "$(jnum "$RSSI")" "$(wifi_quality "$RSSI")" "$(wifi_band "$FREQ")" "$(jnum "$FREQ")" "$(jnum "$LINK")"
+}
+
+wifi_apply() {
+  case "$1" in on) svc wifi enable 2>/dev/null;; off) svc wifi disable 2>/dev/null;; esac
+  sleep 1
+  wifi_status
+}
+
+wifi_scan() {
+  TMP=$STATE/scan.$$; SORTED=$STATE/scan.sorted.$$; : > "$TMP"
+  cmd wifi start-scan >/dev/null 2>&1
+  sleep 1
+  RAW=$(cmd wifi list-scan-results 2>/dev/null)
+  [ -n "$RAW" ] || RAW=$(dumpsys wifi 2>/dev/null | grep -E 'SSID: .*(RSSI|level):')
+  printf '%s\n' "$RAW" | while IFS= read -r L; do
+    S=$(wifi_pick_ssid "$L")
+    [ -n "$S" ] || continue
+    [ "$S" = '<unknown ssid>' ] && continue
+    R=$(printf '%s' "$L" | sed -n 's/.*RSSI: *\(-\{0,1\}[0-9]\{1,3\}\).*/\1/p')
+    [ -n "$R" ] || R=$(printf '%s' "$L" | sed -n 's/.*[Ll]evel: *\(-\{0,1\}[0-9]\{1,3\}\).*/\1/p')
+    [ -n "$R" ] || continue
+    B=$(printf '%s' "$L" | sed -n 's/.*BSSID: *\([0-9a-fA-F:]\{1,17\}\).*/\1/p')
+    F=$(printf '%s' "$L" | sed -n 's/.*[Ff]requency: *\([0-9]\{4,5\}\).*/\1/p')
+    [ -n "$F" ] || F=$(printf '%s' "$L" | sed -n 's/.*freq: *\([0-9]\{4,5\}\).*/\1/p')
+    C=$(printf '%s' "$L" | sed -n 's/.*capabilities: *\[\([^]]*\)\].*/\1/p')
+    printf '%s|%s|%s|%s|%s\n' "$R" "$S" "$B" "$F" "$C" >> "$TMP"
+  done
+  # Strongest AP per SSID, twelve rows max — roaming duplicates collapse into one line.
+  sort -rn "$TMP" 2>/dev/null | awk -F'|' '!seen[$2]++' | head -12 > "$SORTED" 2>/dev/null
+  printf '{"ok":true,"count":%s,"networks":[' "$(wc -l < "$SORTED" | tr -d ' ')"
+  { while IFS='|' read -r R S B F C; do
+      printf ',{"ssid":"%s","bssid":"%s","rssi":%s,"quality":%s,"band":"%s","frequency":%s,"security":"%s"}' \
+        "$(jstr "$S")" "$(jstr "$B")" "$(jnum "$R")" "$(wifi_quality "$R")" "$(wifi_band "$F")" "$(jnum "$F")" "$(jstr "$(wifi_caps "$C")")"
+    done < "$SORTED"; } | sed 's/^,//'
+  printf ']}\n'
+  rm -f "$TMP" "$SORTED"
+}
+
+wifi_saved() {
+  RAW=$(cmd wifi list-networks 2>/dev/null)
+  [ -n "$RAW" ] || RAW=$(dumpsys wifi 2>/dev/null | grep -E '^ *Network Id: [0-9]+|^ *[0-9]+: ')
+  LIST=$(printf '%s\n' "$RAW" | while IFS= read -r L; do
+    ID=$(printf '%s' "$L" | sed -n 's/.*[Nn]etwork [Ii]d: *\([0-9]\{1,\}\).*/\1/p')
+    [ -n "$ID" ] || ID=$(printf '%s' "$L" | sed -n 's/^ *\([0-9]\{1,\}\):.*/\1/p')
+    [ -n "$ID" ] || continue
+    S=$(wifi_pick_ssid "$L")
+    [ -n "$S" ] || S=$(printf '%s' "$L" | sed 's/^ *[0-9]\{1,\}: *//')
+    [ -n "$S" ] && printf '%s|%s\n' "$ID" "$S"
+  done)
+  printf '{"ok":true,"count":%s,"networks":[' "$(printf '%s\n' "$LIST" | grep -c .)"
+  { printf '%s\n' "$LIST" | while IFS='|' read -r ID S; do
+      [ -n "$ID" ] || continue
+      printf ',{"id":%s,"ssid":"%s"}' "$(jnum "$ID")" "$(jstr "$S")"
+    done; } | sed 's/^,//'
+  printf ']}\n'
+}
+
+wifi_forget() {
+  case "$1" in ''|*[!0-9]*) printf '{"ok":false,"message":"Invalid network id"}\n'; return 64;; esac
+  if cmd wifi forget-network "$1" >/dev/null 2>&1; then
+    printf '{"ok":true,"message":"Forgot saved network %s"}\n' "$1"
+  else
+    printf '{"ok":false,"message":"forget-network failed on this ROM; id %s kept"}\n' "$1"
+  fi
+}
+
+wifi_cmd() {
+  case "$1" in
+    status|'') wifi_status;;
+    on|off) wifi_apply "$1";;
+    toggle) [ "$(wifi_enabled)" = on ] && wifi_apply off || wifi_apply on;;
+    scan) wifi_scan;;
+    saved) wifi_saved;;
+    forget) wifi_forget "$2";;
+    *) echo 'Usage: drk wifi {status|on|off|toggle|scan|saved|forget <id>}' >&2; exit 64;;
+  esac
+}
+
 serve() {
   # Magisk BusyBox httpd runs CGI, bound strictly to loopback so no LAN access.
   PID=$STATE/httpd.pid; [ -s "$PID" ] && kill -0 "$(cat "$PID")" 2>/dev/null && exit 0
   mkdir -p "$STATE/www/cgi-bin"; cp "$MODDIR/webroot/"* "$STATE/www/" 2>/dev/null; cp "$MODDIR/system/bin/drk-web" "$STATE/www/cgi-bin/control"; chmod 755 "$STATE/www/cgi-bin/control"
   busybox httpd -f -p 127.0.0.1:$PORT -h "$STATE/www" >/dev/null 2>&1 & echo $! > "$PID"
 }
-case "$1" in balanced) apply_balanced;; performance) apply_performance;; reset) reset;; toggle) [ "$(cat "$PROFILE" 2>/dev/null)" = performance ] && apply_balanced || apply_performance;; stats) stats;; boot) [ "$(cat "$PROFILE" 2>/dev/null)" = performance ] && apply_performance;; serve) serve;; *) echo 'Usage: drk {balanced|performance|reset|toggle|stats|serve}' >&2; exit 64;; esac
+case "$1" in balanced) apply_balanced;; performance) apply_performance;; reset) reset;; toggle) [ "$(cat "$PROFILE" 2>/dev/null)" = performance ] && apply_balanced || apply_performance;; stats) stats;; boot) [ "$(cat "$PROFILE" 2>/dev/null)" = performance ] && apply_performance;; serve) serve;; wifi) shift; wifi_cmd "$@";; *) echo 'Usage: drk {balanced|performance|reset|toggle|stats|serve|wifi}' >&2; exit 64;; esac

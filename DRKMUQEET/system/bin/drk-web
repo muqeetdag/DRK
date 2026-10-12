@@ -1,12 +1,25 @@
 #!/system/bin/sh
-# CGI bridge: accepts only explicit profile commands; no arbitrary shell input.
+# CGI bridge: accepts only explicit, whitelisted commands; no arbitrary shell input.
 echo 'Content-Type: application/json'; echo 'Cache-Control: no-store'; echo
 MODDIR=/data/adb/modules/drkmuqeet
 DRK="$MODDIR/system/bin/drk"
-case "$QUERY_STRING" in
+Q=$QUERY_STRING
+case "$Q" in
   action=performance) "$DRK" performance; echo '{"ok":true,"message":"Performance profile applied"}' ;;
   action=balanced) "$DRK" balanced; echo '{"ok":true,"message":"Balanced profile applied"}' ;;
   action=reset) "$DRK" reset; echo '{"ok":true,"message":"Defaults restored"}' ;;
   action=stats|'') "$DRK" stats ;;
+  action=wifi-status) "$DRK" wifi status ;;
+  action=wifi-on) "$DRK" wifi on ;;
+  action=wifi-off) "$DRK" wifi off ;;
+  action=wifi-toggle) "$DRK" wifi toggle ;;
+  action=wifi-scan) "$DRK" wifi scan ;;
+  action=wifi-saved) "$DRK" wifi saved ;;
+  action=wifi-forget\&id=*)
+    # Only a bare integer ever reaches the CLI; anything else is refused here.
+    ID=${Q##*id=}
+    case "$ID" in ''|*[!0-9]*|*????????????????*) echo '{"ok":false,"message":"Invalid network id"}' ;;
+    *) "$DRK" wifi forget "$ID" ;;
+    esac ;;
   *) echo '{"ok":false,"message":"Unsupported action"}' ;;
 esac
