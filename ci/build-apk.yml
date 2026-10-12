@@ -1,0 +1,116 @@
+# ---------------------------------------------------------------------------
+# THIS FILE MUST LIVE AT  .github/workflows/build-apk.yml  TO RUN.
+#
+# It sits here because the automation that pushed this branch is a GitHub App
+# without the `workflows` permission, so it cannot write into .github/workflows.
+#
+# To activate it, on GitHub:
+#   1. open  https://github.com/muqeetdag/DRK/new/arena/ca82a41b-drk?filename=.github/workflows/build-apk.yml
+#   2. copy the body of this file (everything after this comment block)
+#   3. paste, commit to arena/ca82a41b-drk
+#
+# The push triggers the build immediately and the APK shows up under
+# Actions -> the run -> Artifacts, named drk-wifi-apk.
+# ---------------------------------------------------------------------------
+
+name: Build APK
+
+on:
+  push:
+    branches: ['**']
+    paths-ignore: ['**.md']
+  workflow_dispatch:
+
+concurrency:
+  group: apk-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  apk:
+    name: Assemble signed release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.7'
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Install Android platform
+        run: sdkmanager --install 'platforms;android-34' 'build-tools;34.0.0'
+
+      # A release APK needs a key. If the repository carries DRK_KEYSTORE_BASE64 as a
+      # secret it is used and the build stays upgradeable in place; otherwise a keystore
+      # is generated for this run and uploaded so it can be saved as that secret.
+      - name: Provide a signing keystore
+        id: keystore
+        env:
+          KEYSTORE_B64: ${{ secrets.DRK_KEYSTORE_BASE64 }}
+          STORE_PASS: ${{ secrets.DRK_STORE_PASSWORD || 'drkmuqeet' }}
+          KEY_PASS: ${{ secrets.DRK_KEY_PASSWORD || 'drkmuqeet' }}
+          ALIAS: ${{ secrets.DRK_KEY_ALIAS || 'drk' }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$GITHUB_WORKSPACE/.keys"
+          KS="$GITHUB_WORKSPACE/.keys/drk-release.jks"
+          if [ -n "${KEYSTORE_B64:-}" ]; then
+            printf '%s' "$KEYSTORE_B64" | base64 -d > "$KS"
+            echo "generated=false" >> "$GITHUB_OUTPUT"
+            echo "Using the keystore supplied by repository secrets."
+          else
+            keytool -genkeypair -keystore "$KS" -storepass "$STORE_PASS" -keypass "$KEY_PASS" \
+              -alias "$ALIAS" -keyalg RSA -keysize 2048 -validity 10000 \
+              -dname "CN=DRKMUQEET, OU=WiFi Control, O=DRK, C=IN"
+            echo "generated=true" >> "$GITHUB_OUTPUT"
+            echo "No DRK_KEYSTORE_BASE64 secret found; generated one for this run."
+          fi
+          {
+            echo "DRK_STORE_FILE=$KS"
+            echo "DRK_STORE_PASSWORD=$STORE_PASS"
+            echo "DRK_KEY_ALIAS=$ALIAS"
+            echo "DRK_KEY_PASSWORD=$KEY_PASS"
+          } >> "$GITHUB_ENV"
+
+      - name: Test and assemble release
+        working-directory: DRKWiFi
+        run: gradle test assembleRelease --no-daemon --stacktrace
+
+      - name: Name the artifact
+        id: apk
+        run: |
+          set -euo pipefail
+          VERSION=$(sed -n "s/.*versionName '\(.*\)'/\1/p" DRKWiFi/app/build.gradle | head -1)
+          OUT="DRKWiFi-${VERSION}-release.apk"
+          cp DRKWiFi/app/build/outputs/apk/release/app-release.apk "$OUT"
+          ls -l "$OUT"
+          echo "path=$OUT" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: drk-wifi-apk
+          path: ${{ steps.apk.outputs.path }}
+          if-no-files-found: error
+
+      - uses: actions/upload-artifact@v4
+        if: steps.keystore.outputs.generated == 'true'
+        with:
+          name: drk-release-keystore
+          path: .keys/drk-release.jks
+          if-no-files-found: error
+
+      - name: Publish release for a tag
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ steps.apk.outputs.path }}
+          generate_release_notes: true
