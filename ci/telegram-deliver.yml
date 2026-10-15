@@ -1,0 +1,57 @@
+name: telegram-deliver
+
+on:
+  workflow_dispatch:
+    inputs:
+      bot_token:
+        description: "Telegram bot token (used for this run only)"
+        required: true
+      chat_id:
+        description: "Chat ID (optional — auto-discovered from getUpdates if empty)"
+        required: false
+        default: ""
+
+jobs:
+  deliver:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Mask the token in logs
+        run: echo "::add-mask::${{ inputs.bot_token }}"
+
+      - name: Send offline APK to the bot's chat
+        env:
+          TG: ${{ inputs.bot_token }}
+          CHAT: ${{ inputs.chat_id }}
+        run: |
+          set -e
+          APK=offline-build/out/drk-exif-offline.apk
+          [ -f "$APK" ] || { echo "::error::APK not found at $APK"; exit 1; }
+
+          if [ -z "$CHAT" ]; then
+            CHAT=$(curl -s "https://api.telegram.org/bot${TG}/getUpdates" | python3 -c "
+          import json, sys
+          try:
+              d = json.load(sys.stdin)
+              ids = [u['message']['chat']['id'] for u in d.get('result', []) if 'message' in u]
+              print(ids[-1] if ids else '')
+          except Exception:
+              print('')")
+          fi
+          if [ -z "$CHAT" ]; then
+            echo "::error::No chat found — message your bot first (e.g. /start), or pass chat_id."
+            exit 1
+          fi
+          echo "delivering to chat ${CHAT}"
+          curl -s \
+            -F "chat_id=${CHAT}" \
+            -F "caption=DRK EXIF Viewer — offline APK (delivery via telegram-deliver workflow)" \
+            -F "document=@${APK}" \
+            "https://api.telegram.org/bot${TG}/sendDocument" | python3 -c "
+          import json, sys
+          d = json.load(sys.stdin)
+          print('telegram ok:', d.get('ok'))
+          if not d.get('ok'):
+              print(d)
+          __import__('sys').exit(0 if d.get('ok') else 1)"

@@ -1,0 +1,76 @@
+name: android-build
+
+on:
+  push:
+    branches: [main, 'arena/*']
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      - name: Build debug APK
+        run: gradle --no-daemon --stacktrace :app:assembleDebug
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: drk-exifviewer-debug-apk
+          path: app/build/outputs/apk/debug/app-debug.apk
+
+      # Telegram delivery runs only when the repo secret TELEGRAM_BOT_TOKEN
+      # exists. A bot can never message a user first — someone must send any
+      # message (e.g. /start) to the bot; the step polls getUpdates for up to
+      # 4 minutes, then sends the APK to the most recent chat.
+      - name: Send APK to Telegram bot
+        if: ${{ !cancelled() }}
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+        run: |
+          set -e
+          APK=app/build/outputs/apk/debug/app-debug.apk
+          if [ -z "${TELEGRAM_BOT_TOKEN}" ]; then
+            echo "::notice::TELEGRAM_BOT_TOKEN secret not set — skipping Telegram delivery"
+            echo "Telegram delivery skipped (set the TELEGRAM_BOT_TOKEN repo secret to enable it)." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          CHAT_ID=""
+          for i in $(seq 1 24); do
+            CHAT_ID=$(curl -s "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getUpdates" | python3 -c "
+          import json, sys
+          try:
+              d = json.load(sys.stdin)
+              ids = [u['message']['chat']['id'] for u in d.get('result', []) if 'message' in u]
+              print(ids[-1] if ids else '')
+          except Exception:
+              print('')")
+            if [ -n "$CHAT_ID" ]; then break; fi
+            echo "waiting for someone to message the bot… ($i/24)"
+            sleep 10
+          done
+          if [ -z "$CHAT_ID" ]; then
+            echo "::warning::Nobody messaged the bot — APK is available as a workflow artifact instead."
+            echo "Telegram delivery skipped: message your bot first (e.g. /start), then re-run this workflow." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          echo "sending to chat $CHAT_ID"
+          curl -s \
+            -F "chat_id=${CHAT_ID}" \
+            -F "caption=DRK EXIF Viewer — debug APK (commit ${GITHUB_SHA:0:7})" \
+            -F "document=@${APK}" \
+            "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendDocument" | python3 -c "
+          import json, sys
+          d = json.load(sys.stdin)
+          print('telegram ok:', d.get('ok'))
+          sys.exit(0 if d.get('ok') else 1)"

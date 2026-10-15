@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">DRK EXIF Viewer</string>
+    <string name="title">DRK · EXIF Viewer</string>
+    <string name="subtitle">offline metadata extractor · evidence reader</string>
+    <string name="upload">📷  Upload image</string>
+    <string name="pick_image">Select an image</string>
+    <string name="open_in_google_maps">Open in Google Maps ↗</string>
+    <string name="copy_link">Copy link</string>
+    <string name="link_copied">Google Maps link copied</string>
+    <string name="show_raw">Show raw EXIF</string>
+    <string name="hide_raw">Hide raw EXIF</string>
+    <string name="parsing">⏳ Parsing metadata…</string>
+    <string name="exif_found">✔ EXIF parsed — %d tags captured</string>
+    <string name="no_exif">✖ No EXIF data found in this image</string>
+    <string name="no_location">not embedded in file</string>
+    <string name="unknown">unknown</string>
+    <string name="fmt_location">📍 Location: %s</string>
+    <string name="fmt_device">📱 Device: %s</string>
+    <string name="fmt_taken">🕐 Taken: %s</string>
+    <string name="fmt_camera">📷 Camera: %s</string>
+    <string name="preview_desc">Selected image preview</string>
+    <string name="footer">All processing happens on-device. Nothing is uploaded.</string>
+</resources>

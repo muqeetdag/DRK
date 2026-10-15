@@ -1,0 +1,17 @@
+# Gradle / Android Studio
+.gradle/
+**/build/
+local.properties
+*.iml
+.idea/
+.cxx/
+
+# OS
+.DS_Store
+
+# Offline build intermediates (the final APK is deliberately tracked)
+offline-build/out/build/
+
+# Python
+__pycache__/
+*.pyc
