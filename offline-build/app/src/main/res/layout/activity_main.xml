@@ -80,15 +80,44 @@
                 android:textIsSelectable="true"
                 android:textSize="14sp" />
 
-            <Button
-                android:id="@+id/mapButton"
+            <!-- Direct Google Maps link (tappable via autoLink) -->
+            <TextView
+                android:id="@+id/mapsLinkText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="@color/accent"
+                android:textColorLink="@color/accent"
+                android:textSize="13sp"
+                android:autoLink="web"
+                android:linksClickable="true"
+                android:layout_marginTop="6dp"
+                android:visibility="gone" />
+
+            <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:minHeight="36dp"
-                android:text="@string/open_in_maps"
-                android:textColor="@color/accent"
-                style="?android:attr/borderlessButtonStyle"
-                android:visibility="gone" />
+                android:orientation="horizontal">
+
+                <Button
+                    android:id="@+id/mapButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:minHeight="36dp"
+                    android:text="@string/open_in_google_maps"
+                    android:textColor="@color/accent"
+                    style="?android:attr/borderlessButtonStyle"
+                    android:visibility="gone" />
+
+                <Button
+                    android:id="@+id/copyMapLinkButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:minHeight="36dp"
+                    android:text="@string/copy_link"
+                    android:textColor="@color/accent2"
+                    style="?android:attr/borderlessButtonStyle"
+                    android:visibility="gone" />
+            </LinearLayout>
 
             <View
                 android:layout_width="match_parent"

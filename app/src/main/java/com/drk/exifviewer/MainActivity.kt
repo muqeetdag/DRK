@@ -22,15 +22,18 @@ class MainActivity : AppCompatActivity() {
     private lateinit var resultCard: View
     private lateinit var statusText: TextView
     private lateinit var locationText: TextView
+    private lateinit var mapsLinkText: TextView
     private lateinit var deviceText: TextView
     private lateinit var timeText: TextView
     private lateinit var settingsText: TextView
     private lateinit var fileText: TextView
     private lateinit var mapButton: Button
+    private lateinit var copyMapLinkButton: Button
     private lateinit var rawToggle: Button
     private lateinit var rawText: TextView
 
     private var current: ExifData? = null
+    private var currentMapsUrl: String? = null
     private var rawVisible = false
 
     /** ACTION_GET_CONTENT via the Storage Access Framework — no permissions needed. */
@@ -47,11 +50,13 @@ class MainActivity : AppCompatActivity() {
         resultCard = findViewById(R.id.resultCard)
         statusText = findViewById(R.id.statusText)
         locationText = findViewById(R.id.locationText)
+        mapsLinkText = findViewById(R.id.mapsLinkText)
         deviceText = findViewById(R.id.deviceText)
         timeText = findViewById(R.id.timeText)
         settingsText = findViewById(R.id.settingsText)
         fileText = findViewById(R.id.fileText)
         mapButton = findViewById(R.id.mapButton)
+        copyMapLinkButton = findViewById(R.id.copyMapLinkButton)
         rawToggle = findViewById(R.id.rawToggle)
         rawText = findViewById(R.id.rawText)
 
@@ -59,14 +64,22 @@ class MainActivity : AppCompatActivity() {
             pickImage.launch("image/*")
         }
 
+        // Direct Google Maps: exact pin in the Maps app, with fallbacks
         mapButton.setOnClickListener {
             current?.let { d ->
                 if (d.hasGps && d.gpsLatitude != null && d.gpsLongitude != null) {
-                    LocationHelper.openInMaps(
+                    LocationHelper.openInGoogleMaps(
                         this, d.gpsLatitude, d.gpsLongitude,
                         d.model ?: "photo location"
                     )
                 }
+            }
+        }
+
+        copyMapLinkButton.setOnClickListener {
+            currentMapsUrl?.let { url ->
+                LocationHelper.copyToClipboard(this, "Google Maps location", url)
+                Toast.makeText(this, R.string.link_copied, Toast.LENGTH_SHORT).show()
             }
         }
 
@@ -90,6 +103,8 @@ class MainActivity : AppCompatActivity() {
         resultCard.visibility = View.VISIBLE
         statusText.text = getString(R.string.parsing)
         mapButton.visibility = View.GONE
+        copyMapLinkButton.visibility = View.GONE
+        mapsLinkText.visibility = View.GONE
         rawText.visibility = View.GONE
         rawVisible = false
         rawToggle.text = getString(R.string.show_raw)
@@ -133,6 +148,7 @@ class MainActivity : AppCompatActivity() {
             settingsText.text = getString(R.string.fmt_camera, "—")
             fileText.text = if (d.error.isNullOrBlank()) "" else "⚠ ${d.error}"
             rawToggle.isEnabled = false
+            currentMapsUrl = null
             return
         }
 
@@ -147,9 +163,16 @@ class MainActivity : AppCompatActivity() {
             sb.append(LocationHelper.formatCoordinate(d.gpsLongitude, false))
             d.altitudeMeters?.let { sb.append("  ·  alt %.0f m".format(it)) }
             locationText.text = getString(R.string.fmt_location, sb.toString())
+
+            val url = LocationHelper.googleMapsUrl(d.gpsLatitude, d.gpsLongitude)
+            currentMapsUrl = url
+            mapsLinkText.text = url
+            mapsLinkText.visibility = View.VISIBLE
             mapButton.visibility = View.VISIBLE
+            copyMapLinkButton.visibility = View.VISIBLE
         } else {
             locationText.text = getString(R.string.fmt_location, getString(R.string.no_location))
+            currentMapsUrl = null
         }
 
         val device = listOfNotNull(d.make, d.model)

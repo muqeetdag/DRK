@@ -44,8 +44,8 @@ echo "==> 3/7  aapt2 link (unsigned APK + symbol table)"
     --manifest "$APP_SRC/AndroidManifest.xml" \
     --min-sdk-version 24 \
     --target-sdk-version 29 \
-    --version-code 1 \
-    --version-name "1.0-offline" \
+    --version-code 2 \
+    --version-name "1.1-offline" \
     --output-text-symbols "$BUILD/symbols.txt" \
     "$BUILD/compiled.flata"
 

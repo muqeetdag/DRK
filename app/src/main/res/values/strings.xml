@@ -4,7 +4,9 @@
     <string name="title">DRK · EXIF Viewer</string>
     <string name="subtitle">offline metadata extractor · evidence reader</string>
     <string name="upload">📷  Upload image</string>
-    <string name="open_in_maps">Open in Maps ↗</string>
+    <string name="open_in_google_maps">Open in Google Maps ↗</string>
+    <string name="copy_link">Copy link</string>
+    <string name="link_copied">Google Maps link copied</string>
     <string name="show_raw">Show raw EXIF</string>
     <string name="hide_raw">Hide raw EXIF</string>
     <string name="parsing">⏳ Parsing metadata…</string>

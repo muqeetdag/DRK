@@ -84,14 +84,42 @@
                     android:textIsSelectable="true"
                     android:textSize="14sp" />
 
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/mapButton"
-                    style="@style/Widget.Material3.Button.OutlinedButton"
+                <!-- Direct Google Maps link (tappable via autoLink) -->
+                <TextView
+                    android:id="@+id/mapsLinkText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="?attr/colorPrimary"
+                    android:textSize="13sp"
+                    android:autoLink="web"
+                    android:linksClickable="true"
+                    android:layout_marginTop="6dp"
+                    android:visibility="gone" />
+
+                <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:minHeight="36dp"
-                    android:text="@string/open_in_maps"
-                    android:visibility="gone" />
+                    android:orientation="horizontal">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/mapButton"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:minHeight="36dp"
+                        android:text="@string/open_in_google_maps"
+                        android:visibility="gone" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/copyMapLinkButton"
+                        style="@style/Widget.Material3.Button.TextButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:minHeight="36dp"
+                        android:text="@string/copy_link"
+                        android:textColor="@color/accent2"
+                        android:visibility="gone" />
+                </LinearLayout>
 
                 <View
                     android:layout_width="match_parent"
