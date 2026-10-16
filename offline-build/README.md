@@ -18,6 +18,9 @@ Differences vs the canonical lane (intentional):
   Scheme v2** block (`tools/sign_v2.py`, hand-rolled to match AOSP apksig
   byte-for-byte) signed with the committed **release key** (`keystore/`) —
   stable signer identity across builds means upgrades install cleanly.
+  Since v1.2.2 the v2 signer carries **two genuinely-signed algorithm records**
+  (RSASSA-PSS/SHA-256 0x0103 + RSASSA-PKCS#1-v1.5/SHA-256 0x0101), so every
+  apksig variant/fork finds a best-algorithm signature that really verifies.
 
 ## Pipeline (`build.sh`)
 

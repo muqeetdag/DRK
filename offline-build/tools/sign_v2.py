@@ -30,7 +30,12 @@ import tempfile
 
 V2_ID = 0x7109871A            # APK Signature Scheme v2 block id
 MAGIC = b"APK Sig Block 42"
-SHA256_WITH_RSA = 0x0101      # signature algorithm id
+
+# Signature algorithms (AOSP SignatureAlgorithm ids). We sign with BOTH so any
+# verifier's "best algorithm" selection finds a genuinely-valid signature:
+# strict apksig ranks PSS above PKCS#1; some platform forks insist on PSS.
+ALGO_RSA_PKCS1_SHA256 = 0x0101   # SHA256withRSA  (RSASSA-PKCS1-v1_5)
+ALGO_RSA_PSS_SHA256 = 0x0103     # SHA256withRSA/PSS (MGF1-SHA256, salt=32)
 
 
 def u32(n):
@@ -113,22 +118,43 @@ def build_v2_value(data, key_pem, cert_pem):
     der_cert = run(["openssl", "x509", "-in", cert_pem, "-outform", "DER"])
     spki = run(["openssl", "pkey", "-in", key_pem, "-pubout", "-outform", "DER"])
 
-    signed_data = (lp(encode_pairs([(SHA256_WITH_RSA, digest)]))
+    # Digest records carry one entry per signature algorithm (order must match
+    # the signatures records exactly — apksig compares the lists).
+    algo_order = [ALGO_RSA_PSS_SHA256, ALGO_RSA_PKCS1_SHA256]
+    digests_field = encode_pairs([(a, digest) for a in algo_order])
+    signed_data = (lp(digests_field)
                    + lp(lp(der_cert))
                    + lp(b"")            # additional attributes: none
                    + lp(b""))           # trailing empty element (AOSP emits this)
 
-    # signature = SHA256withRSA (PKCS#1 v1.5) over signed_data
+    # Sign signed_data with BOTH RSA algos:
+    #   0x0103  RSASSA-PSS  (SHA-256, MGF1-SHA256, salt = 32 = digest len)
+    #   0x0101  RSASSA-PKCS1-v1_5 with SHA-256
     tmp = tempfile.mkdtemp(prefix="signv2-")
     sd_path = os.path.join(tmp, "sd.bin")
-    sig_path = os.path.join(tmp, "sig.bin")
     with open(sd_path, "wb") as f:
         f.write(signed_data)
-    run(["openssl", "dgst", "-sha256", "-sign", key_pem, "-out", sig_path, sd_path])
-    sig = open(sig_path, "rb").read()
 
+    sig_pss_path = os.path.join(tmp, "sig-pss.bin")
+    run(["openssl", "dgst", "-sha256", "-sign", key_pem,
+         "-sigopt", "rsa_padding_mode:pss",
+         "-sigopt", "rsa_mgf1_md:sha256",
+         "-sigopt", "rsa_pss_saltlen:digest",
+         "-out", sig_pss_path, sd_path])
+    sig_pss = open(sig_pss_path, "rb").read()
+
+    sig_pkcs1_path = os.path.join(tmp, "sig-pkcs1.bin")
+    run(["openssl", "dgst", "-sha256", "-sign", key_pem,
+         "-sigopt", "rsa_padding_mode:pkcs1",
+         "-out", sig_pkcs1_path, sd_path])
+    sig_pkcs1 = open(sig_pkcs1_path, "rb").read()
+
+    sigs_field = encode_pairs([
+        (ALGO_RSA_PSS_SHA256, sig_pss),
+        (ALGO_RSA_PKCS1_SHA256, sig_pkcs1),
+    ])
     signer = (lp(signed_data)
-              + lp(encode_pairs([(SHA256_WITH_RSA, sig)]))
+              + lp(sigs_field)
               + lp(spki))
     # value = lp( SEQ-of-signers ), each signer itself length-prefixed
     return lp(lp(signer))
@@ -195,48 +221,68 @@ def verify(apk, expect_cert_pem=None):
     digests_field, off = _rd(signed_data, 0)
     certs_field, _ = _rd(signed_data, off)
 
-    # digest record = lp( [algoID][len][digest] )
-    drec, _ = _rd(digests_field, 0)
-    algo = struct.unpack_from("<I", drec, 0)[0]
-    assert algo == SHA256_WITH_RSA, "v2: unexpected digest algo 0x%04x" % algo
-    assert struct.unpack_from("<I", drec, 4)[0] == len(drec) - 8, "v2: bad digest length"
-    digest_stored = drec[8:]
+    def read_records(field):
+        """AOSP record format: repeated lp( [algoID u32][valueLen u32][value] )."""
+        recs = []
+        off = 0
+        while off < len(field):
+            rec, off = _rd(field, off)
+            assert len(rec) >= 8, "v2: short record"
+            algo = struct.unpack_from("<I", rec, 0)[0]
+            assert struct.unpack_from("<I", rec, 4)[0] == len(rec) - 8, "v2: bad record len"
+            recs.append((algo, rec[8:]))
+        return recs
 
-    # signature record = lp( [algoID][len][signature] )
-    srec, _ = _rd(signatures_field, 0)
-    salgo = struct.unpack_from("<I", srec, 0)[0]
-    assert salgo == SHA256_WITH_RSA, "v2: unexpected signature algo"
-    assert struct.unpack_from("<I", srec, 4)[0] == len(srec) - 8, "v2: bad signature length"
-    sig = srec[8:]
+    digest_records = read_records(digests_field)
+    sig_records = read_records(signatures_field)
 
     # cert record = lp(X.509 DER)
     cert_der, _ = _rd(certs_field, 0)
 
-    # 1) recompute the whole-APK digest from scratch
+    # apksig compares the algo id lists (in order) between the two records
+    assert [a for a, _ in digest_records] == [a for a, _ in sig_records], \
+        "v2: SIG_ALG list mismatch between digests and signatures records"
+
+    # 1) recompute the whole-APK digest from scratch; every digest record must match
     s1 = data[:block_start]
     s2 = data[cd_off:cd_off + cd_size]
     s3 = bytearray(data[eocd:])
     struct.pack_into("<I", s3, 16, block_start)
     calc = content_digest([s1, s2, bytes(s3)])
-    assert calc == digest_stored, "v2: CONTENT DIGEST MISMATCH"
+    for algo, stored in digest_records:
+        assert calc == stored, "v2: CONTENT DIGEST MISMATCH (algo 0x%04x)" % algo
 
-    # 2) verify the RSA signature over signed_data with the embedded key
+    # 2) verify EVERY RSA signature record over signed_data with its own scheme
     tmp = tempfile.mkdtemp(prefix="signv2-verify-")
     sd_p = os.path.join(tmp, "sd")
-    sig_p = os.path.join(tmp, "sig")
     pk_p = os.path.join(tmp, "pk.pem")
     cd_p = os.path.join(tmp, "cert.der")
     open(sd_p, "wb").write(signed_data)
-    open(sig_p, "wb").write(sig)
     open(cd_p, "wb").write(cert_der)
     open(pk_p, "wb").write(
         b"-----BEGIN PUBLIC KEY-----\n"
         + base64.encodebytes(spki).replace(b"\n", b"")
         + b"\n-----END PUBLIC KEY-----\n"
     )
-    r = subprocess.run(["openssl", "dgst", "-sha256", "-verify", pk_p,
-                        "-signature", sig_p, sd_p], capture_output=True)
-    assert r.returncode == 0 and b"Verified OK" in r.stdout, "v2: RSA SIGNATURE INVALID"
+    scheme_opts = {
+        ALGO_RSA_PKCS1_SHA256: ["-sigopt", "rsa_padding_mode:pkcs1"],
+        ALGO_RSA_PSS_SHA256: ["-sigopt", "rsa_padding_mode:pss",
+                              "-sigopt", "rsa_mgf1_md:sha256",
+                              "-sigopt", "rsa_pss_saltlen:digest"],
+    }
+    for algo, sig in sig_records:
+        opts = scheme_opts.get(algo)
+        assert opts is not None, "v2: unknown signature algo 0x%04x" % algo
+        sig_p = os.path.join(tmp, "sig-%04x" % algo)
+        open(sig_p, "wb").write(sig)
+        r = subprocess.run(["openssl", "dgst", "-sha256", "-verify", pk_p]
+                           + opts + ["-signature", sig_p, sd_p],
+                           capture_output=True)
+        assert r.returncode == 0 and b"Verified OK" in r.stdout, \
+            "v2: SIGNATURE INVALID (algo 0x%04x): %s" % (algo, r.stderr.decode())
+        print("  signature 0x%04x (%s): Verified OK" %
+              (algo, "RSASSA-PSS/SHA-256" if algo == ALGO_RSA_PSS_SHA256
+                     else "RSASSA-PKCS1-v1_5/SHA-256"))
 
     # 3) SPKI embedded as 'publicKey' must be the cert's own key
     cert_spki = subprocess.run(
