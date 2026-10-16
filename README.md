@@ -36,7 +36,9 @@ app/            Canonical Gradle build — Kotlin, minSdk 24, targetSdk 34
 
 offline-build/  Zero-maven, zero-Gradle variant of the same app (Kotlin against
                 framework android.media.ExifInterface), built with plain tools:
-                aapt2 → kotlinc → d8 → openssl v1-sign → 4-byte realign.
+                aapt2 → kotlinc → d8 → openssl v1-sign + v2 block → 4-byte realign.
+                Signed with the committed release key (offline-build/keystore/), so
+                every build upgrades the previous one cleanly.
                 See offline-build/README.md. Output: offline-build/out/drk-exif-offline.apk
 ```
 

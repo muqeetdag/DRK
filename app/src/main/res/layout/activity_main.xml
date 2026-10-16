@@ -85,7 +85,9 @@
                     android:textIsSelectable="true"
                     android:textSize="14sp" />
 
-                <!-- BUILT-IN Google Maps preview: the pin appears directly on upload -->
+                <!-- BUILT-IN Google Maps preview: the pin appears directly on upload.
+                     The WebView is created in code (fail-safe): on devices whose
+                     System WebView is broken, we fall back instead of crashing. -->
                 <TextView
                     android:id="@+id/mapTitle"
                     android:layout_width="match_parent"
@@ -97,8 +99,8 @@
                     android:layout_marginTop="10dp"
                     android:visibility="gone" />
 
-                <WebView
-                    android:id="@+id/mapWebView"
+                <FrameLayout
+                    android:id="@+id/mapContainer"
                     android:layout_width="match_parent"
                     android:layout_height="300dp"
                     android:layout_marginTop="6dp"

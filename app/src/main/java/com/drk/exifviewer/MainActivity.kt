@@ -31,7 +31,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var statusText: TextView
     private lateinit var locationText: TextView
     private lateinit var mapTitle: TextView
-    private lateinit var mapWebView: WebView
+    private lateinit var mapContainer: View
     private lateinit var mapOfflineText: TextView
     private lateinit var mapsLinkText: TextView
     private lateinit var deviceText: TextView
@@ -42,6 +42,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var copyMapLinkButton: Button
     private lateinit var rawToggle: Button
     private lateinit var rawText: TextView
+
+    /** Created lazily in code — a broken System WebView must never crash the app. */
+    private var mapWebView: WebView? = null
 
     private var current: ExifData? = null
     private var currentMapsUrl: String? = null
@@ -63,7 +66,7 @@ class MainActivity : AppCompatActivity() {
         statusText = findViewById(R.id.statusText)
         locationText = findViewById(R.id.locationText)
         mapTitle = findViewById(R.id.mapTitle)
-        mapWebView = findViewById(R.id.mapWebView)
+        mapContainer = findViewById(R.id.mapContainer)
         mapOfflineText = findViewById(R.id.mapOfflineText)
         mapsLinkText = findViewById(R.id.mapsLinkText)
         deviceText = findViewById(R.id.deviceText)
@@ -128,10 +131,19 @@ class MainActivity : AppCompatActivity() {
         rawToggle.text = getString(R.string.show_raw)
 
         lifecycleScope.launch {
+            // A malformed/edge-case file must never kill the app — report instead
             val data = withContext(Dispatchers.IO) {
-                ExifExtractor.extract(contentResolver, uri)
+                try {
+                    ExifExtractor.extract(contentResolver, uri)
+                } catch (t: Throwable) {
+                    ExifData(error = "Parse failed: ${t.javaClass.simpleName} — ${t.message}")
+                }
             }
-            render(data)
+            try {
+                render(data)
+            } catch (t: Throwable) {
+                statusText.text = "⚠ Render error: ${t.message}"
+            }
         }
     }
 
@@ -229,48 +241,74 @@ class MainActivity : AppCompatActivity() {
         if (rawVisible) rawText.text = buildRawDump(d)
     }
 
-    /** In-app Google Maps panel: the pin loads the instant a GPS photo is picked. */
+    /** In-app Google Maps panel: the pin loads the instant a GPS photo is picked.
+     *  The WebView is constructed in code; any failure (broken/missing System
+     *  WebView provider, ROM quirks) disables the map instead of crashing. */
     @SuppressLint("SetJavaScriptEnabled")
     private fun setupEmbeddedMap() {
-        val s = mapWebView.settings
-        s.javaScriptEnabled = true          // Google Maps is JS-driven
-        s.domStorageEnabled = true
-        s.loadWithOverviewMode = true
-        s.useWideViewPort = true
-        s.builtInZoomControls = true
-        s.displayZoomControls = false
-        mapWebView.webViewClient = object : WebViewClient() {
-            override fun onReceivedError(
-                view: WebView?, request: WebResourceRequest?, error: WebResourceError?
-            ) {
-                // No connectivity (or blocked): fall back to coordinates + links
-                if (request?.isForMainFrame == true) {
-                    mapTitle.visibility = View.GONE
-                    mapWebView.visibility = View.GONE
-                    mapOfflineText.visibility = View.VISIBLE
+        try {
+            val wv = WebView(this)
+            val s = wv.settings
+            s.javaScriptEnabled = true          // Google Maps is JS-driven
+            s.domStorageEnabled = true
+            s.loadWithOverviewMode = true
+            s.useWideViewPort = true
+            s.builtInZoomControls = true
+            s.displayZoomControls = false
+            wv.webViewClient = object : WebViewClient() {
+                override fun onReceivedError(
+                    view: WebView?, request: WebResourceRequest?, error: WebResourceError?
+                ) {
+                    // No connectivity (or blocked): fall back to coordinates + links
+                    if (request?.isForMainFrame == true) showMapFallback()
                 }
             }
-        }
-        // Let the user pan/zoom the map even though it sits inside the ScrollView
-        mapWebView.setOnTouchListener { v, _ ->
-            v.parent.requestDisallowInterceptTouchEvent(true)
-            false
+            // Let the user pan/zoom the map even though it sits inside the ScrollView
+            wv.setOnTouchListener { v, _ ->
+                v.parent?.requestDisallowInterceptTouchEvent(true)
+                false
+            }
+            (mapContainer as ViewGroup).addView(
+                wv,
+                ViewGroup.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT
+                )
+            )
+            mapWebView = wv
+        } catch (t: Throwable) {
+            android.util.Log.w("DRK", "embedded map disabled: ${t.message}")
+            mapWebView = null
         }
     }
 
-    private fun resetMap() {
-        mapWebView.stopLoading()
-        mapWebView.loadUrl("about:blank")
+    private fun showMapFallback() {
         mapTitle.visibility = View.GONE
-        mapWebView.visibility = View.GONE
+        mapContainer.visibility = View.GONE
+        mapOfflineText.visibility = View.VISIBLE
+    }
+
+    private fun resetMap() {
+        try {
+            mapWebView?.stopLoading()
+            mapWebView?.loadUrl("about:blank")
+        } catch (t: Throwable) { /* WebView already unhealthy — ignore */ }
+        mapTitle.visibility = View.GONE
+        mapContainer.visibility = View.GONE
         mapOfflineText.visibility = View.GONE
     }
 
     private fun showMap(lat: Double, lon: Double) {
+        val wv = mapWebView
+        if (wv == null) { showMapFallback(); return }
         mapOfflineText.visibility = View.GONE
         mapTitle.visibility = View.VISIBLE
-        mapWebView.visibility = View.VISIBLE
-        mapWebView.loadUrl(LocationHelper.googleMapsEmbedUrl(lat, lon))
+        mapContainer.visibility = View.VISIBLE
+        try {
+            wv.loadUrl(LocationHelper.googleMapsEmbedUrl(lat, lon))
+        } catch (t: Throwable) {
+            showMapFallback()
+        }
     }
 
     /** Bring the evidence card (map + location) on-screen right after parsing. */
@@ -284,8 +322,13 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
-        (mapWebView.parent as? ViewGroup)?.removeView(mapWebView)
-        mapWebView.destroy()
+        try {
+            mapWebView?.let { wv ->
+                (wv.parent as? ViewGroup)?.removeView(wv)
+                wv.destroy()
+            }
+        } catch (t: Throwable) { /* shutting down anyway */ }
+        mapWebView = null
         super.onDestroy()
     }
 

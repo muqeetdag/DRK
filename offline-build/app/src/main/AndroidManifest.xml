@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.drk.exifviewer"
-    android:versionCode="3"
-    android:versionName="1.2-offline">
+    android:versionCode="4"
+    android:versionName="1.2.1-offline">
 
     <!-- No storage permissions needed: ACTION_GET_CONTENT (SAF) grants a
          per-URI read grant. INTERNET is used ONLY by the built-in Google
