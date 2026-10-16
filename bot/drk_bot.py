@@ -234,7 +234,11 @@ def extract_exif(data: bytes):
 
     out = {"raw": raw, "tags": len(raw),
            "width": im.size[0], "height": im.size[1],
-           "bytes": len(data), "format": im.format}
+           "bytes": len(data), "format": im.format,
+           "make": None, "model": None, "software": None, "datetime": None,
+           "iso": None, "fnumber": None, "exposure": None, "focal": None,
+           "flash": None, "orientation": None,
+           "lat": None, "lon": None, "alt": None, "has_exif": bool(raw)}
 
     out["make"] = sval(base.get(271)) if base.get(271) else None
     out["model"] = sval(base.get(272)) if base.get(272) else None
@@ -389,6 +393,13 @@ def handle_message(bot: Bot, msg: dict):
             print(f"[warn] raw dump send failed, truncating: {exc}")
             bot.send_text(chat_id, "📄 Raw EXIF (truncated):\n"
                           + raw.decode("utf-8", "replace")[:3500])
+
+    if msg.get("photo"):
+        bot.send_text(chat_id,
+                      "🔍 Tip: Telegram re-compresses photos and strips most "
+                      "EXIF on the way. Send the same image as a File "
+                      "(paperclip → File) and I'll dissect the original "
+                      "bytes — every tag, untouched.", menu=True)
 
 
 # --------------------------------------------------------------------------- #
