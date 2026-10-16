@@ -1,11 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.drk.exifviewer"
-    android:versionCode="2"
-    android:versionName="1.1-offline">
+    android:versionCode="3"
+    android:versionName="1.2-offline">
 
     <!-- No storage permissions needed: ACTION_GET_CONTENT (SAF) grants a
-         per-URI read grant. No INTERNET permission: analysis is fully local. -->
+         per-URI read grant. INTERNET is used ONLY by the built-in Google
+         Maps preview (v1.2+); all EXIF analysis remains fully local, and
+         the app still works offline for every other feature. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <uses-sdk
         android:minSdkVersion="24"
         android:targetSdkVersion="29" />

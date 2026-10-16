@@ -15,6 +15,13 @@ object LocationHelper {
         "https://www.google.com/maps?q=$lat,$lon"
 
     /**
+     * Key-less embeddable Google Maps URL — loaded in the in-app WebView so the
+     * photo's pin appears on the map directly when the image is uploaded.
+     */
+    fun googleMapsEmbedUrl(lat: Double, lon: Double): String =
+        "https://maps.google.com/maps?q=$lat,$lon&z=16&hl=en&output=embed"
+
+    /**
      * Opens the coordinate directly in the Google Maps app (exact pin).
      * Falls back to any geo-capable app, then a plain browser link.
      */

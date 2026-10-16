@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/scrollView"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fillViewport="true"
@@ -79,6 +80,35 @@
                 android:textColor="@color/text"
                 android:textIsSelectable="true"
                 android:textSize="14sp" />
+
+            <!-- BUILT-IN Google Maps preview: the pin appears directly on upload -->
+            <TextView
+                android:id="@+id/mapTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/map_title"
+                android:textColor="@color/accent"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:layout_marginTop="10dp"
+                android:visibility="gone" />
+
+            <WebView
+                android:id="@+id/mapWebView"
+                android:layout_width="match_parent"
+                android:layout_height="300dp"
+                android:layout_marginTop="6dp"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/mapOfflineText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/map_needs_net"
+                android:textColor="@color/text_dim"
+                android:textSize="12sp"
+                android:layout_marginTop="8dp"
+                android:visibility="gone" />
 
             <!-- Direct Google Maps link (tappable via autoLink) -->
             <TextView

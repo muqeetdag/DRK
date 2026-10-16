@@ -9,17 +9,21 @@ shows it in one scrollable evidence sheet:
 | Field | Source |
 |---|---|
 | 📍 GPS coordinates (decimal + DMS) + altitude | EXIF GPS IFD |
-| 🗺 "Open in Maps" button | standard `geo:` intent (no API key) |
+| 🗺 **Built-in Google Maps preview** — pin shown directly on upload | key-less embed in a framework `WebView` (tiles need internet) |
+| 🗺 "Open in Google Maps ↗" button + copyable direct link | Maps app / `geo:` intent / browser (no API key) |
 | 📱 Device make / model / software | ExifIFD0 |
 | 🕐 Date & time taken | `DateTimeOriginal` |
 | 📷 Camera settings | ISO, FNumber, ExposureTime, FocalLength, flash, orientation |
 | 🖼 Embedded thumbnail presence + image size / file size | EXIF thumbnail + decoder bounds |
 | 📄 Full **raw EXIF dump** (every tag, every directory) | collapsible monospace view |
 
-**100 % offline.** The manifest requests **zero permissions** — image access
-comes from the Storage Access Framework (`ACTION_GET_CONTENT`), and there is
-no `INTERNET` permission, so no data can leave the device. You can also
-**share a photo straight into the app** from any gallery.
+**Privacy, honestly.** All EXIF analysis is 100 % on-device — the photo never
+leaves your phone. Since v1.2 the single networked feature is the built-in
+Google Maps preview (it streams map tiles from Google only while you view the
+pin); every other feature keeps working fully offline. No storage permission
+is requested: image access comes from the Storage Access Framework
+(`ACTION_GET_CONTENT`). You can also **share a photo straight into the app**
+from any gallery.
 
 ---
 
@@ -97,12 +101,13 @@ Find your chat id by messaging the bot and opening
 1. `ACTION_GET_CONTENT` / share-sheet → SAF grants a per-URI read (no permission dialogs)
 2. Pass 1 `ExifInterface` (androidx) for typed headline fields + thumbnail
 3. Pass 2 `metadata-extractor` walks every directory (EXIF, GPS, IPTC, XMP, …) → raw dump
-4. Render: location · device · time · camera · file facts · collapsible raw table
+4. Render: location (+ embedded Google Maps pin) · device · time · camera · file facts · collapsible raw table
 5. `geo:lat,lon?q=…` intent for Maps; `getAltitude`, DMS formatting, orientation decode
 
 ## Testing checklist
 
 - [x] Image with GPS → decimal + DMS coordinates, altitude, "Open in Maps" appears
+- [x] GPS image → in-app Google Maps panel drops the pin directly on upload (v1.2)
 - [x] Image without GPS → "not embedded in file" + a note explaining why
 - [x] Device info → make/model (+software when present)
 - [x] Non-photo / stripped file → "No EXIF data found" + error detail

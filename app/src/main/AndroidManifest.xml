@@ -2,8 +2,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <!-- No storage permission: ACTION_GET_CONTENT (SAF) grants per-URI access.
-         No INTERNET permission: all extraction happens on-device.
-         (Add INTERNET only if you wire up optional reverse geocoding.) -->
+         INTERNET is used ONLY by the built-in Google Maps preview (v1.2+);
+         all EXIF extraction itself still happens on-device. -->
+    <uses-permission android:name="android.permission.INTERNET" />
 
     <queries>
         <!-- Lets us probe for Google Maps before launching the geo: intent -->

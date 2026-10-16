@@ -15,9 +15,11 @@
     <string name="no_location">not embedded in file</string>
     <string name="unknown">unknown</string>
     <string name="fmt_location">📍 Location: %s</string>
+    <string name="map_title">🗺 Google Maps — where the photo was taken</string>
+    <string name="map_needs_net">🛰 Map preview needs internet — the GPS coordinates above are still exact. Copy the link or open Maps when online.</string>
     <string name="fmt_device">📱 Device: %s</string>
     <string name="fmt_taken">🕐 Taken: %s</string>
     <string name="fmt_camera">📷 Camera: %s</string>
     <string name="preview_desc">Selected image preview</string>
-    <string name="footer">All processing happens on-device. Nothing is uploaded.</string>
+    <string name="footer">EXIF parsing is 100% on-device — nothing is uploaded. Map preview streams from Google when online.</string>
 </resources>
