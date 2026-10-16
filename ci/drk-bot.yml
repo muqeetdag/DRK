@@ -1,0 +1,48 @@
+# DRK EXIF Bot — 24/7 polling runner (copy to .github/workflows/drk-bot.yml)
+#
+# Every ~5 minutes: fetch pending updates, answer each one (EXIF report +
+# Telegram location pin + Google Maps link + raw dump file), then commit the
+# new getUpdates offset so the next run resumes where this one stopped.
+#
+# Requires repo secret: TELEGRAM_BOT_TOKEN (rotate at @BotFather first!).
+
+name: drk-bot
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: drk-bot
+  cancel-in-progress: false
+
+jobs:
+  poll:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: deps
+        run: pip install --quiet "Pillow>=10"
+
+      - name: answer pending updates (one batch)
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+        run: python bot/drk_bot.py --once
+
+      - name: persist poll offset
+        run: |
+          git config user.name "drk-bot[actions]"
+          git config user.email "drk-bot-actions@users.noreply.github.com"
+          git add bot/state/offset.txt
+          git diff --cached --quiet || git commit -m "bot: getUpdates offset [skip ci]"
+          git push

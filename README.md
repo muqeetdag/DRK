@@ -98,6 +98,19 @@ Find your chat id by messaging the bot and opening
 `tools/telegram-send.py` is a third option for workstations: an MTProto
 (telethon) sender that works even where the HTTPS Bot API is unreachable.
 
+## The bot — DRK inside Telegram 🤖
+
+The same evidence reader also lives in your bot: send @DRKMUQEETsbot any photo
+and it answers with the full EXIF card — GPS (decimal + DMS), a **native
+Telegram map pin**, a **Google Maps inline button**, device, timestamp, camera
+settings, and the complete raw dump. Native app-like menu (`/start` `/help`
+`/about` + keyboard) comes pre-wired via the Bot API.
+
+Worker: `bot/drk_bot.py` (stdlib + Pillow only). Two ways to keep it alive:
+`ci/drk-bot.yml` — a free GitHub Actions cron that polls every ~5 min — or
+`python bot/drk_bot.py --poll` on any always-on host for instant replies.
+Setup (rotate token → secret → copy workflow): see `bot/README.md`.
+
 ## How it works (mechanism)
 
 1. `ACTION_GET_CONTENT` / share-sheet → SAF grants a per-URI read (no permission dialogs)
