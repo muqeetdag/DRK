@@ -1,4 +1,5 @@
 # device/xiaomi/begonia/device.mk — template (copy into your device tree as device.mk)
+# Credits: Base by @OnyxAsh
 # Keep DRKMUQEET compatible: no forced overclock, no thermal disable
 
 PRODUCT_NAME := lineage_begonia

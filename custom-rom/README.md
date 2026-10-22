@@ -1,5 +1,7 @@
 # DRK Custom ROM — Redmi Note 8 Pro (begonia) Scaffold
 
+**Credits:** Built by [@OnyxAsh](https://github.com/OnyxAsh) — custom ROM base for begonia
+
 This is a **source-build scaffold** for a begonia custom ROM, created inside the DRK repo.
 It does NOT replace DRKMUQEET (the Magisk tuning console) — it lives alongside it.
 
@@ -52,6 +54,11 @@ DRKMUQEET module will work on top of this ROM as a Magisk add-on for reversible 
 ## HackiOS relation
 HackiOS (XNU on POCO X5 Pro) is a separate research project in `oosexgang/hackios-xnu-*`.
 This scaffold is traditional Android AOSP — not XNU — but documents where HackiOS-style bring-up (UEFI, loader) differs from MTK Android bring-up.
+
+## Credits
+- **ROM Base & Bring-up:** [@OnyxAsh](https://github.com/OnyxAsh) — primary credit for base, device tree adaptation, and begonia support
+- **Tuning Console:** DRKMUQEET (Magisk module) — reversible performance/balanced profiles on top of this ROM
+- **Inspiration:** HackiOS project (oosexgang) for open-source XNU research
 
 ## Next steps
 - Tell me which base you want: LineageOS 20 (A13), LineageOS 21 (A14), crDroid, or PixelExperience

@@ -1,5 +1,7 @@
 # Redmi Note 8 Pro (begonia) — Bring-up Notes
 
+**Credits: @OnyxAsh — base ROM & begonia bring-up**
+
 ## Hardware
 - SoC: MT6785 (Helio G90T) — MediaTek, not Qualcomm — needs MTK-specific blobs
 - CPU: 2x Cortex-A76 + 6x Cortex-A55, Mali-G76 MC4

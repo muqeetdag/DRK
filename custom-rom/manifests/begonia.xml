@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!-- DRK Custom ROM — Redmi Note 8 Pro (begonia) -->
+<!-- Credits: Base by @OnyxAsh — https://github.com/OnyxAsh -->
 <!-- DRK Custom ROM manifest — Redmi Note 8 Pro (begonia) -->
 <!-- Sync with: repo init -u https://github.com/LineageOS/android.git -b lineage-20.0 --git-lfs -m custom-rom/manifests/begonia.xml -->
 <manifest>
