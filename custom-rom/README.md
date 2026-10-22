@@ -1,65 +1,41 @@
-# DRK Custom ROM — Redmi Note 8 Pro (begonia) Scaffold
+# DRK Custom ROM — Redmi Note 8 Pro (begonia)
 
-**Credits:** Built by [@OnyxAsh](https://github.com/OnyxAsh) — custom ROM base for begonia
+**Credits:** Built by [@OnyxAsh](https://github.com/OnyxAsh) — custom ROM + iOS bring-up for begonia
 
-This is a **source-build scaffold** for a begonia custom ROM, created inside the DRK repo.
-It does NOT replace DRKMUQEET (the Magisk tuning console) — it lives alongside it.
+This repo now has two scaffolds:
 
-> Device: Redmi Note 8 Pro (begonia) — MediaTek Helio G90T (MT6785)
-> Target: Android 13/14 based (LineageOS 20 style) — easiest to adapt to 14/15 later
+| Folder | What | Status |
+|--------|------|--------|
+| `ios/` | **iOS on begonia (HackiOS-style)** — XNU xnu-8796.121.2 / iOS 16.5 via UEFI → xnuloader → XNU | Experimental, research — latest iOS *open* target is 16.5 (see ios/README.md for why not 18/26 yet) |
+| `begonia/` + `manifests/` | LineageOS 20 Android scaffold (stable fallback) | Daily-driver ready template |
 
-## What you get here
-- `begonia/` — placeholder device tree + vendor extraction helper
-- `manifests/` — repo manifest to sync AOSP + device/kernel/vendor
-- `build.sh` — one-command sync helper
-- `device-begonia.md` — bring-up notes for MTK specifics (blobs, camera, fingerprint, SELinux)
+> Device: Redmi Note 8 Pro (begonia) — MediaTek Helio G90T (MT6785)  
+> iOS choice: We document iOS 16.5 as the latest *verifiable* open XNU; bump to newer XNU/IPSW when Apple publishes it — no Apple files stored, `ios165/fetch.sh` pulls from Apple CDN to your machine.
 
-## Not included (you must add)
-- Real vendor blobs — extract from stock MIUI with `extract-files.sh` (see device-begonia.md)
-- Full kernel source — clone `kernel_xiaomi_begonia` separately
-- 200GB build env — do the final compile on a proper Ubuntu build machine, not in this tiny sandbox
-
-## Quick start on a build machine (Ubuntu 22.04+)
+## Quick start — iOS (experimental)
 
 ```bash
-# 1. Install deps
-sudo apt update
-sudo apt install git git-lfs repo bc bison build-essential ccache \
-  curl flex g++-multilib gcc-multilib gnupg gperf imagemagick \
-  lib32readline-dev lib32z1-dev libelf-dev liblz4-tool libncurses5-dev \
-  libsdl1.2-dev libssl-dev libxml2 libxml2-utils lzop pngcrush \
-  rsync schedtool squashfs-tools xsltproc zip zlib1g-dev python3 openjdk-11-jdk
-
-# 2. Get scaffold
-git clone https://github.com/muqeetdag/DRK.git drk-rom
-cd drk-rom/custom-rom
-
-# 3. Sync sources (100GB+)
-./build.sh sync
-
-# 4. Extract blobs from your phone or MIUI zip
-./begonia/extract-files.sh
-
-# 5. Build
-source build/envsetup.sh
-lunch lineage_begonia-userdebug
-mka bacon -j$(nproc --all)
+git clone https://github.com/muqeetdag/DRK.git drk-ios
+cd drk-ios/custom-rom/ios
+./setup.sh              # clones oosexgang/hackios-xnu-kernel + userland as one tree
+cd hackios
+cat docs/*.md           # HackiOS docs
+# Apply begonia templates: cp ../begonia/adt.dts.template xnu/platform/begonia/begonia.dts
+# Build: make -C xnu / xnuloader / uefi ; userland/build.sh for APFS images
+# QEMU: qemu/run.sh ; Phone: fastboot boot ... (see ios/begonia/README.md)
 ```
 
-Result: `out/target/product/begonia/lineage-*.zip` — flash via TWRP.
+## Quick start — Android (stable)
 
-## DRKMUQEET integration
-DRKMUQEET module will work on top of this ROM as a Magisk add-on for reversible tuning (balanced/performance via 127.0.0.1:8080). No kernel overclock, no thermal bypass.
-
-## HackiOS relation
-HackiOS (XNU on POCO X5 Pro) is a separate research project in `oosexgang/hackios-xnu-*`.
-This scaffold is traditional Android AOSP — not XNU — but documents where HackiOS-style bring-up (UEFI, loader) differs from MTK Android bring-up.
+```bash
+cd custom-rom
+./build.sh sync
+./begonia/extract-files.sh
+source build/envsetup.sh && lunch lineage_begonia-userdebug && mka bacon
+```
 
 ## Credits
-- **ROM Base & Bring-up:** [@OnyxAsh](https://github.com/OnyxAsh) — primary credit for base, device tree adaptation, and begonia support
-- **Tuning Console:** DRKMUQEET (Magisk module) — reversible performance/balanced profiles on top of this ROM
-- **Inspiration:** HackiOS project (oosexgang) for open-source XNU research
+- **ROM Base & Bring-up:** [@OnyxAsh](https://github.com/OnyxAsh)
+- **HackiOS upstream:** OOSEX GANG / oosexgang (XNU + userland)
+- **Tuning Console:** DRKMUQEET Magisk module (127.0.0.1:8080, reversible — works on Android ROM)
 
-## Next steps
-- Tell me which base you want: LineageOS 20 (A13), LineageOS 21 (A14), crDroid, or PixelExperience
-- I'll fill `begonia/device.mk` + `manifests/begonia.xml` for that base

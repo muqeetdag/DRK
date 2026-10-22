@@ -1,0 +1,75 @@
+/dts-v1/;
+/*
+ * Apple Device Tree template for begonia (MT6785 / Helio G90T)
+ * Credits: @OnyxAsh — fill with real begonia MMIO from stock DTS
+ * See HackiOS docs + xnu/platform/redwood/begonia.dts equivalent
+ */
+/ {
+  model = "iPhone10,3"; // masquerade as iPhone X for iOS 16.5 userland (like sweet/topaz)
+  compatible = "iPhone10,3";
+  #address-cells = <2>;
+  #size-cells = <2>;
+
+  cpus {
+    #address-cells = <1>;
+    #size-cells = <0>;
+    cpu@0 { device_type = "cpu"; compatible = "arm,cortex-a55"; reg = <0x000>; enable-method = "psci"; };
+    cpu@100 { device_type = "cpu"; compatible = "arm,cortex-a55"; reg = <0x100>; enable-method = "psci"; };
+    // Add remaining A55 + 2x A76 (Cortex-A76) with correct MPIDR per MT6785
+    // cpu@1xx = A55, cpu@2xx = A76 — fill from PSCI + MTK topology
+  };
+
+  memory@40000000 {
+    device_type = "memory";
+    // Fill with actual DDR banks from begonia stock DTS (e.g., 0x40000000 + size)
+    // Reserve carveouts for display, SCP, modem (if kept)
+    reg = <0x0 0x40000000 0x1 0x00000000>; // PLACEHOLDER — 4GB example
+  };
+
+  soc {
+    compatible = "simple-bus";
+    #address-cells = <2>;
+    #size-cells = <2>;
+    ranges;
+
+    gic: interrupt-controller@0c000000 {
+      compatible = "arm,gic-v3";
+      #interrupt-cells = <3>;
+      interrupt-controller;
+      // Fill GICD/GICR bases + SPI counts for MT6785 (not redwood's bases)
+      reg = <0x0 0x0c000000 0x0 0x10000>,   // GICD PLACEHOLDER
+            <0x0 0x0c100000 0x0 0x100000>; // GICR PLACEHOLDER
+    };
+
+    timer {
+      compatible = "arm,armv8-timer";
+      interrupts = <1 13 0x08>, <1 14 0x08>, <1 11 0x08>, <1 10 0x08>;
+      always-on;
+    };
+
+    ufs@11270000 {
+      compatible = "mediatek,mt6785-ufs"; // PLACEHOLDER — needs MTK UFS host driver
+      reg = <0x0 0x11270000 0x0 0x1000>;
+      interrupts = <0 100 4>;
+    };
+
+    dsi@14000000 {
+      compatible = "mediatek,mt6785-dsi";
+      reg = <0x0 0x14000000 0x0 0x1000>;
+      // Panel timings for 1080x2340 — fill from stock panel driver
+    };
+
+    i2c@11000000 {
+      // Touch controller (check stock DTS: focaltech vs goodix variant on begonia)
+      touch@38 {
+        compatible = "focaltech,fts"; // or goodix,gt9916 — verify on your unit
+        reg = <0x38>;
+        interrupts = <0 60 4>;
+      };
+    };
+  };
+
+  chosen {
+    boot-args = "debug=0x144 serial=0"; // HackiOS-style boot-args
+  };
+};
