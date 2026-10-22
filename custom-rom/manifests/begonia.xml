@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- DRK Custom ROM manifest — Redmi Note 8 Pro (begonia) -->
+<!-- Sync with: repo init -u https://github.com/LineageOS/android.git -b lineage-20.0 --git-lfs -m custom-rom/manifests/begonia.xml -->
+<manifest>
+  <!-- LineageOS 20 (Android 13) base — change branch for A14/A15 -->
+  <remote name="github" fetch="https://github.com/" />
+  <remote name="lineage" fetch="https://github.com/LineageOS/" />
+
+  <!-- Device / Kernel / Vendor — replace with your maintained forks -->
+  <project path="device/xiaomi/begonia" remote="github" name="begonia-dev/device_xiaomi_begonia" revision="lineage-20" />
+  <project path="kernel/xiaomi/begonia" remote="github" name="begonia-dev/kernel_xiaomi_begonia" revision="lineage-20" clone-depth="1" />
+  <project path="vendor/xiaomi/begonia" remote="github" name="begonia-dev/vendor_xiaomi_begonia" revision="lineage-20" />
+
+  <!-- Common MTK HALs (if needed by your device tree) — comment out if not used -->
+  <!-- <project path="hardware/mediatek" remote="github" name="LineageOS/android_hardware_mediatek" revision="lineage-20.0" /> -->
+</manifest>

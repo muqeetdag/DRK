@@ -1,0 +1,23 @@
+# device/xiaomi/begonia/device.mk — template (copy into your device tree as device.mk)
+# Keep DRKMUQEET compatible: no forced overclock, no thermal disable
+
+PRODUCT_NAME := lineage_begonia
+PRODUCT_DEVICE := begonia
+PRODUCT_BRAND := Redmi
+PRODUCT_MODEL := Redmi Note 8 Pro
+PRODUCT_MANUFACTURER := Xiaomi
+
+# Inherit Lineage common
+$(call inherit-product, vendor/lineage/config/common_full_phone.mk)
+
+# Begonia specifics
+TARGET_BOOT_ANIMATION_RES := 1080
+TARGET_INCLUDE_STOCK_ARCORE := false
+TARGET_SUPPORTS_GOOGLE_RECORDER := false
+
+# Overlays / props for tuning console friendliness
+PRODUCT_SYSTEM_PROPERTIES += \
+    ro.drk.supported=true \
+    persist.sys.fflag.override.settings_enable_monitor_phantom_procs=false
+
+# Keep vendor blobs extraction intact — run begonia/extract-files.sh after first sync
