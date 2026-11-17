@@ -16,3 +16,6 @@ Routes: `/` landing + access gate, `/terminal` live dashboard,
 `/checkout` simulated upgrade. Any 8+ character license key works (e.g.
 `DEMO-KEY-2025`), or use the 5-signal free evaluation. See
 [`otc-terminal/README.md`](otc-terminal/README.md) for the API and caveats.
+
+**Live site:** https://otc-signal-terminal.vercel.app (static build, no backend —
+the engine runs in the browser). `docs/` holds the published static build.

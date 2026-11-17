@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#05070a">
+<title>Quotex Signals — Premium Trading Signals</title>
+<meta name="description" content="Institutional precision, zero-delay binary signals. Simulated OTC signal terminal demo.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%2305070a'/%3E%3Cpath d='M6 22l5-8 4 4 5-9 3 5 3-2' fill='none' stroke='%230ef29a' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: #05070a; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  #boot {
+    position: fixed; inset: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 18px; padding: 24px;
+    background:
+      radial-gradient(700px 400px at 50% 0%, rgba(0,224,138,.13), transparent 65%),
+      #05070a;
+    color: #e8eff5; text-align: center; z-index: 10;
+    transition: opacity .3s ease;
+  }
+  #boot .mark {
+    width: 52px; height: 52px; border-radius: 14px; display: grid; place-items: center;
+    border: 1px solid rgba(0,224,138,.45); background: rgba(0,224,138,.09);
+    box-shadow: 0 0 40px rgba(0,224,138,.25); color: #00e08a;
+  }
+  #boot .name { font-family: ui-monospace, Menlo, monospace; font-size: 12px; letter-spacing: .28em; text-transform: uppercase; }
+  #boot .msg { font-family: ui-monospace, Menlo, monospace; font-size: 10px; letter-spacing: .18em; text-transform: uppercase; color: #6f8190; }
+  #boot .bar { width: 190px; height: 3px; border-radius: 3px; background: rgba(255,255,255,.08); overflow: hidden; }
+  #boot .bar i { display: block; height: 100%; width: 40%; background: linear-gradient(90deg, #00e08a, #7ef7c5); animation: slide 1.15s ease-in-out infinite; }
+  @keyframes slide { 0% { transform: translateX(-100%); } 100% { transform: translateX(260%); } }
+  #boot button {
+    margin-top: 6px; padding: 11px 20px; border-radius: 9px; cursor: pointer;
+    border: 1px solid rgba(0,224,138,.6); background: #0ef29a; color: #03150e;
+    font-weight: 700; font-size: 13px;
+  }
+</style>
+</head>
+<body>
+<div id="boot">
+  <div class="mark">
+    <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l4-6 3 3 4-7 3 5 4-3"/><path d="M3 21h18"/></svg>
+  </div>
+  <div class="name">OTC Engine</div>
+  <div class="msg" id="bootMsg">Connecting to engine…</div>
+  <div class="bar"><i></i></div>
+</div>
+<script>
+(function () {
+  "use strict";
+
+  var SHA = "3fbed52797471fccc7c22df958ccedf1c716d8f5";
+  var BASES = [
+    "https://cdn.jsdelivr.net/gh/muqeetdag/DRK@" + SHA + "/docs/",
+    "https://raw.githubusercontent.com/muqeetdag/DRK/" + SHA + "/docs/"
+  ];
+  var PAGES = ["index", "terminal", "checkout"];
+  var params = new URLSearchParams(location.search);
+  var page = PAGES.indexOf(params.get("p")) >= 0 ? params.get("p") : "index";
+  var base = null;
+
+  function fail(message) {
+    var msg = document.getElementById("bootMsg");
+    if (!msg) return;
+    msg.textContent = message;
+    var btn = document.createElement("button");
+    btn.textContent = "Retry";
+    btn.onclick = function () { location.reload(); };
+    msg.parentNode.appendChild(btn);
+  }
+
+  function pickBase() {
+    if (base) return Promise.resolve(base);
+    return BASES.reduce(function (chain, candidate) {
+      return chain.catch(function () {
+        return fetch(candidate + "index.html", { cache: "no-store" })
+          .then(function (r) {
+            if (!r.ok) throw new Error("bad status " + r.status);
+            base = candidate;
+            return candidate;
+          });
+      });
+    }, Promise.reject(new Error("start")));
+  }
+
+  function get(path) {
+    return pickBase()
+      .then(function (b) { return fetch(b + path, { cache: "force-cache" }); })
+      .then(function (r) {
+        if (!r.ok) throw new Error("missing " + path);
+        return r.text();
+      });
+  }
+
+  function rewriteJS(code) {
+    return code
+      .replace(/'terminal\.html'/g, "'?p=terminal'")
+      .replace(/'checkout\.html'/g, "'?p=checkout'")
+      .replace(/location\.href = '\.\/'/g, "location.href = '?p=index'")
+      .replace(/replace\('\.\/#access'\)/g, "replace('?p=index#access')")
+      .replace(/replace\('\/#access'\)/g, "replace('?p=index#access')");
+  }
+
+  function rewriteLinks(root) {
+    var links = root.querySelectorAll("a[href]");
+    for (var i = 0; i < links.length; i++) {
+      var a = links[i];
+      var href = a.getAttribute("href");
+      if (!href) continue;
+      if (href === "terminal.html") a.setAttribute("href", "?p=terminal");
+      else if (href === "checkout.html") a.setAttribute("href", "?p=checkout");
+      else if (href === "checkout.html#partner") a.setAttribute("href", "?p=checkout#partner");
+      else if (href === "index.html" || href === "./" || href === "/") a.setAttribute("href", "?p=index");
+      else if (href.indexOf("assets/") === 0) a.setAttribute("href", base + href);
+    }
+    var imgs = root.querySelectorAll("img[src^='assets/'], link[href^='assets/']");
+    for (var j = 0; j < imgs.length; j++) {
+      var el = imgs[j];
+      var attr = el.tagName === "IMG" ? "src" : "href";
+      el.setAttribute(attr, base + el.getAttribute(attr));
+    }
+  }
+
+  function inlineStyles(doc) {
+    var links = doc.querySelectorAll("link[rel='stylesheet']");
+    var chain = Promise.resolve();
+    Array.prototype.forEach.call(links, function (link) {
+      var href = link.getAttribute("href") || "";
+      if (href.indexOf("assets/") !== 0) return;
+      chain = chain.then(function () {
+        return get(href).then(function (css) {
+          var style = document.createElement("style");
+          style.textContent = css;
+          document.head.appendChild(style);
+        });
+      });
+    });
+    return chain;
+  }
+
+  function runScripts(doc) {
+    var scripts = Array.prototype.slice.call(doc.querySelectorAll("script[src]"));
+    var chain = Promise.resolve();
+    scripts.forEach(function (tag) {
+      var src = tag.getAttribute("src") || "";
+      if (src.indexOf("assets/") !== 0) return;
+      chain = chain.then(function () {
+        return get(src).then(function (code) {
+          var el = document.createElement("script");
+          el.textContent = rewriteJS(code);
+          document.body.appendChild(el);
+        });
+      });
+    });
+    return chain;
+  }
+
+  function mount(html) {
+    var doc = new DOMParser().parseFromString(html, "text/html");
+    document.title = doc.title || "OTC Signal Terminal";
+    var themeMeta = doc.querySelector("meta[name='theme-color']");
+    if (themeMeta) {
+      var m = document.querySelector("meta[name='theme-color']");
+      if (m) m.setAttribute("content", themeMeta.getAttribute("content"));
+    }
+
+    return inlineStyles(doc).then(function () {
+      document.body.className = doc.body.className || "";
+      var boot = document.getElementById("boot");
+      document.body.innerHTML = doc.body.innerHTML;
+      document.body.classList.add("mounted");
+      if (boot) boot.parentNode && boot.parentNode.removeChild(boot);
+      rewriteLinks(document.body);
+      if (location.hash) {
+        var target = document.getElementById(location.hash.slice(1));
+        if (target) target.scrollIntoView();
+      }
+      return runScripts(doc);
+    });
+  }
+
+  pickBase()
+    .then(function () { return get(page + ".html"); })
+    .then(mount)
+    .catch(function (err) {
+      console.error(err);
+      fail("Could not reach the app bundle. Check your connection and retry.");
+    });
+
+  // keep navigation inside the shell so the CDN bundle stays warm
+  document.addEventListener("click", function (e) {
+    var a = e.target.closest ? e.target.closest("a") : null;
+    if (!a) return;
+    var href = a.getAttribute("href") || "";
+    if (href.indexOf("assets/") === 0 || href.indexOf("http") === 0 || href.charAt(0) === "#") return;
+  }, false);
+})();
+</script>
+</body>
+</html>

@@ -11,12 +11,40 @@ same live-signal terminal, rebuilt from scratch as plain Node + HTML/CSS/JS.
 > is not achievable or verifiable. Don't sell or publish this as a real signal
 > service — that would be fraud.
 
-## Run
+## Live URL
+
+**https://otc-signal-terminal.vercel.app** — deployed on Vercel (Hobby), works on
+any phone or desktop browser. Pages: `/` landing, `?p=terminal` dashboard,
+`?p=checkout` upgrade.
+
+How that deploy works: `shell/index.html` is a tiny (8 KB) bootstrap page hosted
+on Vercel. On load it pulls the built app (`docs/`, pinned to a commit SHA) from
+jsDelivr (with raw.githubusercontent.com as an automatic fallback), inlines the
+CSS and runs the JS, then rewrites the internal links to `?p=` routes. That keeps
+the Vercel payload tiny while the app itself stays in this repo.
+
+Rebuild + republish after editing the app:
+
+```bash
+node build-static.js                 # public/ -> static/ (server-less build)
+rm -rf docs && cp -r static docs && touch docs/.nojekyll
+git add docs && git commit -m "Rebuild static site" && git push
+# then bump the SHA constant in shell/index.html and redeploy it on Vercel
+```
+
+## Run locally
 
 ```bash
 cd otc-terminal
 node server.js          # or: npm start
 # http://localhost:3000
+```
+
+Static build (no server at all):
+
+```bash
+node build-static.js
+cd static && python3 -m http.server 8080   # http://localhost:8080
 ```
 
 Only Node 18+ is required — there is nothing to `npm install`.
