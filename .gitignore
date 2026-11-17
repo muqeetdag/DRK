@@ -1,1 +1,4 @@
 DRKMUQEET-v*.zip
+
+# Local Android toolchain, signing keys, and build intermediates
+.cache/
