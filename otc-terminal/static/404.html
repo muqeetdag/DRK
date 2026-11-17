@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>404 — Signal not found</title>
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="assets/style.css">
+<style>
+  .nf { min-height: 100vh; display: grid; place-items: center; text-align: center; padding: 30px; }
+  .nf code { font-family: var(--mono); font-size: .7rem; letter-spacing: .2em; color: var(--green); display: block; margin-bottom: 18px; }
+  .nf h1 { font-size: clamp(3rem, 10vw, 6rem); background: linear-gradient(100deg,#fff,var(--green-soft),var(--cyan)); -webkit-background-clip: text; background-clip: text; color: transparent; margin-bottom: 12px; }
+  .nf p { color: var(--muted); margin-bottom: 26px; }
+</style>
+</head>
+<body>
+<div class="nf">
+  <div>
+    <code>ERR_ROUTE_NOT_FOUND</code>
+    <h1>404</h1>
+    <p>That route isn't part of the terminal. The engine is still scanning 41 OTC pairs.</p>
+    <a class="btn btn-primary" href="./">Back to landing</a>
+    <a class="btn btn-ghost" href="terminal.html">Open terminal</a>
+  </div>
+</div>
+</body>
+</html>

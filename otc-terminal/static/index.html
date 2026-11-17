@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#05070a">
+<title>Quotex Signals — Premium Trading Signals</title>
+<meta name="description" content="Institutional precision, zero-delay binary signals. A simulated OTC signal terminal demo.">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<div class="demo-bar">
+  <b>Simulation build</b>
+  <span class="demo-long">All signals, prices and statistics on this site are generated locally — not market data, not financial advice.</span>
+  <span class="demo-short">Synthetic data — not financial advice.</span>
+</div>
+
+<header class="site-header">
+  <nav class="nav">
+    <a class="brand" href="./">
+      <span class="brand-mark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l4-6 3 3 4-7 3 5 4-3"/><path d="M3 21h18"/></svg>
+      </span>
+      <span>QUOTEX SIGNALS<small>OTC Synthetic Engine</small></span>
+    </a>
+    <div class="nav-links">
+      <a href="#engine">Engine</a>
+      <a href="#plans">Plans</a>
+      <a href="#access">Terminal</a>
+      <a href="checkout.html">Upgrade</a>
+    </div>
+    <div class="nav-actions">
+      <a class="btn btn-ghost btn-sm nav-signin" href="#access">Sign in</a>
+      <a class="btn btn-primary btn-sm" href="checkout.html">Get access</a>
+    </div>
+  </nav>
+</header>
+
+<!-- live ticker -->
+<div class="ticker" aria-label="Live signal feed">
+  <div class="ticker-label"><i class="live-dot"></i> Live OTC liquidity feed</div>
+  <div class="ticker-track" id="tickerTrack">
+    <!-- filled by landing.js; duplicated for seamless loop -->
+  </div>
+</div>
+
+<main>
+  <!-- ================= HERO ================= -->
+  <section class="hero">
+    <div class="wrap">
+      <div class="hero-grid">
+        <div>
+          <div class="badge"><i class="live-dot"></i> Proprietary Quotex &amp; OTC Synthetic Engine™</div>
+          <h1>Institutional Precision.<em>Zero-Delay Binary Signals.</em></h1>
+          <p class="hero-lede">
+            Stop trading on lagging indicators. Our classified multi-timeframe algorithm synthesizes
+            interbank liquidity sweeps, kinetic candle exhaustion, and institutional order blocks for
+            high-probability 1-minute execution.
+          </p>
+          <div class="hero-cta">
+            <a class="btn btn-primary btn-lg" href="#plans">Explore License Plans</a>
+            <a class="btn btn-ghost btn-lg" href="checkout.html">Purchase Lifetime Pro Access →</a>
+          </div>
+          <div class="hero-stats">
+            <div><strong data-count="89.4" data-suffix="%">0%</strong><span>Avg Win Rate</span></div>
+            <div><strong data-count="0" data-suffix=" ms">0 ms</strong><span>Websocket Latency</span></div>
+            <div><strong data-count="41" data-suffix=" Pairs">0 Pairs</strong><span>Active OTC Pairs</span></div>
+            <div><strong data-count="0" data-suffix=".00%">0.00%</strong><span>Candle Repaint</span></div>
+          </div>
+        </div>
+
+        <div class="preview-shell reveal">
+        <div class="preview">
+          <div class="preview-head">
+            <span class="dots"><i></i><i></i><i></i></span>
+            <span>terminal_preview</span>
+            <span class="right"><i class="live-dot"></i> LIVE</span>
+          </div>
+          <div class="preview-body" id="previewSignals">
+            <div class="sig-preview">
+              <div><div class="p">EUR/USD (OTC)</div><div class="t">5/5 Matrix · 1M</div></div>
+              <div class="d call">CALL 98.2%</div>
+            </div>
+            <div class="sig-preview">
+              <div><div class="p">GBP/USD (OTC)</div><div class="t">SMC Sweep · 1M</div></div>
+              <div class="d put">PUT 96.5%</div>
+            </div>
+            <div class="sig-preview">
+              <div><div class="p">USD/INR (OTC)</div><div class="t">Kinetic Reversal · 1M</div></div>
+              <div class="d call">CALL 95.8%</div>
+            </div>
+            <div class="sig-preview">
+              <div><div class="p">BTC/USD</div><div class="t">Trend Follow · 1M</div></div>
+              <div class="d call">CALL 94.6%</div>
+            </div>
+          </div>
+          <div class="preview-foot">
+            <span>Engine <b>5/5 CONFLUENCE</b></span>
+            <span id="previewClock">00:00:00 UTC</span>
+          </div>
+        </div>
+        <div class="float-chip a">41 pairs scanned</div>
+        <div class="float-chip b">0 ms latency</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= ACCESS GATE ================= -->
+  <section class="gate-section" id="access">
+    <div class="wrap">
+      <div class="gate reveal">
+        <div class="gate-top">
+          <span>Terminal access gate</span>
+          <span class="lock">
+            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 118 0v3"/></svg>
+            Encrypted 256-bit
+          </span>
+        </div>
+        <h2>Sign In to Terminal</h2>
+        <p class="sub">Enter your official license key to access live signals and the OTC engine.</p>
+
+        <p class="form-msg" id="gateMsg"></p>
+
+        <form id="licenseForm" autocomplete="off">
+          <div class="field">
+            <label for="licenseKey">License Key</label>
+            <div class="input-wrap">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 11-7.778 7.778 5.5 5.5 0 017.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3"/></svg>
+              <input class="input" id="licenseKey" name="key" placeholder="XXXX-XXXX-XXXX-XXXX" spellcheck="false" autocapitalize="characters">
+            </div>
+          </div>
+          <button class="btn btn-primary btn-block" type="submit" id="authBtn">Authenticate &amp; Launch Terminal</button>
+        </form>
+
+        <div class="divider">Or instant evaluation</div>
+
+        <button class="trial-btn" id="trialBtn">⚡ Try 5 Free Signals (Instant 1-Click Access)</button>
+
+        <p class="gate-foot">Don't have a license? <a href="checkout.html">Purchase Lifetime Pro Access</a></p>
+        <p class="gate-foot" style="margin-top:6px;font-family:var(--mono);font-size:.68rem;letter-spacing:.08em">
+          Demo key: <b style="color:var(--green-soft)">DEMO-KEY-2025</b>
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= FEATURES ================= -->
+  <section class="features" id="engine">
+    <div class="wrap">
+      <div class="section-head center reveal">
+        <p class="eyebrow">Algorithmic superiority</p>
+        <h2>The <span class="grad">5-Factor Confluence Engine™</span></h2>
+        <p>Every signal generated requires simultaneous multi-algorithm verification before firing. Zero guesses. Pure mathematical precision.</p>
+      </div>
+      <div class="feature-grid">
+        <article class="feature reveal">
+          <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></div>
+          <h3>Algorithmic Sequence Matrix</h3>
+          <p>Decodes micro-structure tick anomalies to identify hidden mathematical patterns executed by High-Frequency Trading bots.</p>
+        </article>
+        <article class="feature reveal">
+          <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L4.5 13H11l-1 9 8.5-11H12l1-9z"/></svg></div>
+          <h3>Kinetic Momentum Exhaustion</h3>
+          <p>Measures buyer vs seller kinetic energy at key psychological swing levels to pinpoint exact next-candle reversal points.</p>
+        </article>
+        <article class="feature reveal">
+          <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg></div>
+          <h3>False-Breakout Shield</h3>
+          <p>Actively filters dead consolidation and fake-out spikes during low-volume sessions to preserve trading capital.</p>
+        </article>
+        <article class="feature reveal">
+          <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 4-6"/></svg></div>
+          <h3>Smart Money Concepts (SMC)</h3>
+          <p>Detects institutional order block sweeps, liquidity voids, and Fair Value Gaps (FVG) across 1M, 3M, and 5M candles.</p>
+        </article>
+        <article class="feature reveal">
+          <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2.5"/></svg></div>
+          <h3>Sub-Second Candle Timing</h3>
+          <p>Live websocket streaming delivers the exact trade entry at the 00th second of the candle for maximum binary expiration edge.</p>
+        </article>
+        <article class="feature reveal">
+          <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 2.5 15.4 0 18M12 3c-2.5 2.6-2.5 15.4 0 18"/></svg></div>
+          <h3>41 OTC Pair Coverage</h3>
+          <p>Continuous 24/7 OTC coverage across Quotex, Pocket Option, and live interbank currency pairs with instant scanning.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= PRICING ================= -->
+  <section class="pricing" id="plans">
+    <div class="wrap">
+      <div class="section-head center reveal">
+        <p class="eyebrow">Access tiers</p>
+        <h2>Choose Your Arsenal</h2>
+        <p>Select the tier engineered for your trading frequency.</p>
+      </div>
+      <div class="price-grid">
+        <article class="price reveal">
+          <div class="tier">Evaluation Pass</div>
+          <div class="amount">Free <small>/ 5 signals</small></div>
+          <p class="blurb">Instant hardware device verification. No credit card required.</p>
+          <ul>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>5 Instant AI Signal Generations</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Access to Live OTC Scanner</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Real-time Websocket Feed</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Hardware Fingerprint Binding</li>
+          </ul>
+          <button class="btn btn-ghost btn-block" data-start-trial>Start Free Evaluation</button>
+        </article>
+
+        <article class="price featured reveal">
+          <span class="pop-flag">Most popular</span>
+          <div class="tier">Official Pro License</div>
+          <div class="amount">₹3,000 <small>/ $101 lifetime</small></div>
+          <p class="blurb">One-time payment. Unrestricted 24/7 institutional trading access.</p>
+          <ul>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Unlimited High-Frequency Signals</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>All 41 OTC Pairs &amp; Live Currency Feeds</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>5-Factor Beast Mode Confluence Engine</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Automated Real-Time Signal Alerts</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Lifetime Future Architecture Updates</li>
+          </ul>
+          <a class="btn btn-primary btn-block" href="checkout.html">Purchase Lifetime Pro Access</a>
+        </article>
+
+        <article class="price reveal">
+          <div class="tier">Broker Partner Pass</div>
+          <div class="amount">Free <small>/ deposit</small></div>
+          <p class="blurb">Register with our official Quotex broker link &amp; deposit min $300.</p>
+          <ul>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Register through our official broker link</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Deposit $300+ trading capital</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Submit UID for instant automated verification</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Get Lifetime Pro Access free</li>
+          </ul>
+          <a class="btn btn-ghost btn-block" href="checkout.html#partner">Create Quotex Account →</a>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= BROKER / DISCLAIMER ================= -->
+  <section class="broker-strip">
+    <div class="wrap">
+      <div class="broker reveal">
+        <div>
+          <h3>Prefer to activate through the broker?</h3>
+          <p>Deposit $300+ with our partner broker and unlock Lifetime Pro at no extra cost. Partner links are disabled in this simulation build.</p>
+        </div>
+        <div class="broker-actions">
+          <a class="btn btn-ghost" href="checkout.html">See upgrade options</a>
+          <a class="btn btn-primary" href="checkout.html">Activate demo Pro</a>
+        </div>
+      </div>
+
+      <div class="disclaimer">
+        <div class="disclaimer-inner">
+          <strong>Risk &amp; demo notice.</strong> This build is an educational recreation of a signal-service
+          interface. Every price, signal, direction, confidence score and win-rate figure shown is synthetic
+          and produced by a local simulation loop — no broker, no exchange and no live market feed is
+          connected. Binary options and OTC derivatives are high-risk products that are restricted or banned
+          for retail clients in many jurisdictions, and a win-rate of 89% is not achievable or verifiable in
+          practice. Nothing here is investment advice. Do not publish, sell or present this build as a real
+          signal service. If you are considering trading, use money you can afford to lose and consult a
+          licensed adviser.
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap footer-grid">
+    <div>© <span id="year"></span> OTC Signal Terminal — simulation build. Not affiliated with Quotex.</div>
+    <div class="footer-links">
+      <a href="#engine">Engine</a>
+      <a href="#plans">Plans</a>
+      <a href="checkout.html">Upgrade</a>
+      <a href="terminal.html">Terminal</a>
+    </div>
+  </div>
+</footer>
+
+<script src="assets/engine-local.js"></script>
+<script src="assets/config.js"></script>
+<script src="assets/landing.js"></script>
+</body>
+</html>
