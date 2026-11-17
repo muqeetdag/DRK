@@ -36,6 +36,7 @@ copyDir(SRC, OUT);
 const rewrites = [
   [/\/terminal(?=["'#?\s]|$)/g, '/terminal.html'],
   [/\/generator(?=["'#?\s]|$)/g, '/generator.html'],
+  [/\/scanner(?=["'#?\s]|$)/g, '/scanner.html'],
   [/\/checkout(?=["'#?\s]|$)/g, '/checkout.html'],
   [/\/terms(?=["'#?\s]|$)/g, '/terms.html'],
 ];
@@ -57,7 +58,7 @@ function processFile(file) {
   // must use the same relative routes as the external scripts.
   if (ext === '.html') {
     const next = text
-      .replace(/'\/(terminal|generator|checkout|terms|index)\.html'/g, "'$1.html'")
+      .replace(/'\/(terminal|generator|scanner|checkout|terms|index)\.html'/g, "'$1.html'")
       .replace(/location\.href = '\/'/g, "location.href = './'");
     if (next !== text) { text = next; changed = true; }
   }

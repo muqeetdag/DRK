@@ -42,21 +42,25 @@
     </a>
 
     <nav class="gs-nav">
-      <div class="gs-label">Main menu</div>
-      <a href="terminal.html">
+      <div class="gs-label">Navigation</div>
+      <a class="on" href="generator.html">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-5 4 3 6-7"/><path d="M18 8h3v3"/></svg>
-        <span>Signals</span><i class="gs-count" id="navActive">14</i>
+        <span>Signals</span><i class="gs-count" id="navActive">0</i>
+      </a>
+      <a href="scanner.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4.2-4.2"/></svg>
+        <span>Live Scanner</span><i class="gs-dot"></i>
       </a>
       <a href="terminal.html">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4.2-4.2"/></svg>
-        <span>Live Scanner</span>
-      </a>
-      <a href="./">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 9h18"/><path d="M7 14h4"/></svg>
         <span>OTC Bot</span>
       </a>
+      <a href="generator.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c2.5 3.4 5 5.2 5 9a5 5 0 01-10 0c0-3.8 2.5-5.6 5-9z"/><path d="M12 18a2 2 0 002-2c0-1.6-2-3-2-3s-2 1.4-2 3a2 2 0 002 2z"/></svg>
+        <span>Beast Mode</span><i class="gs-flame"><svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c2.5 3.4 5 5.2 5 9a5 5 0 01-10 0c0-3.8 2.5-5.6 5-9z"/></svg></i>
+      </a>
       <button class="gs-more" id="moreBtn" type="button" aria-expanded="false">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h16"/></svg>
         <span>More</span>
         <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
       </button>
@@ -66,25 +70,39 @@
         <a href="https://t.me/DRKMUQEETT" target="_blank" rel="noopener">Support · @DRKMUQEETT</a>
       </div>
 
-      <div class="gs-label">Overview</div>
+      <div class="gs-label">Admin</div>
       <a href="terminal.html">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V9"/><path d="M10 19V5"/><path d="M16 19v-7"/><path d="M22 19H2"/></svg>
-        <span>Analytics</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M8 20V10"/><path d="M13 20V6"/><path d="M18 20v-6"/></svg>
+        <span>Overview</span>
+      </a>
+      <a href="terminal.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.4"/><path d="M5 20c.8-3.4 3.6-5 7-5s6.2 1.6 7 5"/></svg>
+        <span>Users</span>
       </a>
       <a href="checkout.html">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.6 5.4 6 .9-4.3 4.2 1 6-5.3-2.8-5.3 2.8 1-6L3.4 9.3l6-.9L12 3z"/></svg>
         <span>Licenses</span>
       </a>
-      <a class="on" href="generator.html">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L4.5 13.5H11l-1 8.5 8.5-11.5H12l1-8.5z"/></svg>
-        <span>Analysis</span>
+      <a href="scanner.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V9"/><path d="M10 19V5"/><path d="M16 19v-7"/><path d="M22 19H2"/></svg>
+        <span>Analytics</span>
       </a>
     </nav>
 
+    <div class="gs-push">
+      <div class="gp-label"><i class="live-dot"></i> Last push update</div>
+      <div class="gp-time" id="lastPush">—</div>
+    </div>
+
     <div class="gs-access">
-      <div class="ga-top"><span>Active access</span><i class="live-dot"></i></div>
-      <div class="ga-plan" id="gaPlan">PRO · Lifetime</div>
-      <div class="ga-note" id="gaNote">Beast Mode · 50 signals per session</div>
+      <div class="ga-top"><span>Admin access</span><b>Unlimited</b></div>
+      <div class="ga-key">Master-key</div>
+      <div class="ga-chips" id="masterChips">
+        <span class="ga-chip on" data-src="live"><i></i>Live</span>
+        <span class="ga-chip on" data-src="otc"><i></i>OTC</span>
+        <span class="ga-chip on beast" data-src="beast" id="beastChip"><i></i>Beast</span>
+      </div>
+      <div class="ga-note" id="gaNote">Beast Mode · 50 of 50 signals left</div>
       <div class="ga-bar"><i id="gaBar" style="width:100%"></i></div>
       <a href="https://t.me/DRKMUQEETT" target="_blank" rel="noopener">@DRKMUQEETT →</a>
     </div>
@@ -133,7 +151,7 @@
           <span class="pick-label">Instrument</span>
           <div class="pick-row">
             <select id="instSel" aria-label="Select instrument"></select>
-            <span class="pick-name" id="instName">Euro / US Dollar</span>
+            <span class="pick-name" id="instName">EUR/USD</span>
           </div>
         </div>
         <div class="gc-stats">

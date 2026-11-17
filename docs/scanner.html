@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#06060c">
+<title>Live Scanner — OTC Bot</title>
+<meta name="description" content="OTC Bot live scanner: every OTC, forex, crypto and Indian rupee pair scanned in real time with trend, signal status and execution time.">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="assets/style.css">
+<link rel="stylesheet" href="assets/generator.css">
+<link rel="stylesheet" href="assets/scanner.css">
+</head>
+<body class="gen-body scan-body">
+
+<div class="gen-shell">
+  <aside class="gen-side" id="genSide">
+    <a class="gs-brand" href="./">
+      <span class="mark">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M2 15c1.6 0 2.2-2 3.6-2s2 2 3.6 2 2-2 3.6-2 2 2 3.6 2 2-2 3.6-2"/><circle cx="17.5" cy="7" r="2.6"/></svg>
+      </span>
+      <span class="txt"><b>OTC Bot</b><small>Live Scanner <span class="gs-pro">PRO</span></small></span>
+    </a>
+
+    <nav class="gs-nav">
+      <div class="gs-label">Navigation</div>
+      <a href="generator.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-5 4 3 6-7"/><path d="M18 8h3v3"/></svg>
+        <span>Signals</span><i class="gs-count" id="navActive">0</i>
+      </a>
+      <a class="on" href="scanner.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4.2-4.2"/></svg>
+        <span>Live Scanner</span><i class="gs-dot"></i>
+      </a>
+      <a href="terminal.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 9h18"/><path d="M7 14h4"/></svg>
+        <span>OTC Bot</span>
+      </a>
+      <a href="generator.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c2.5 3.4 5 5.2 5 9a5 5 0 01-10 0c0-3.8 2.5-5.6 5-9z"/><path d="M12 18a2 2 0 002-2c0-1.6-2-3-2-3s-2 1.4-2 3a2 2 0 002 2z"/></svg>
+        <span>Beast Mode</span><i class="gs-flame"><svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c2.5 3.4 5 5.2 5 9a5 5 0 01-10 0c0-3.8 2.5-5.6 5-9z"/></svg></i>
+      </a>
+      <button class="gs-more" id="moreBtn" type="button" aria-expanded="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h16"/></svg>
+        <span>More</span>
+        <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+      </button>
+      <div class="gs-more-list" id="moreList" hidden>
+        <a href="checkout.html">Plans &amp; licensing</a>
+        <a href="terms.html">Terms &amp; Conditions</a>
+        <a href="https://t.me/DRKMUQEETT" target="_blank" rel="noopener">Support · @DRKMUQEETT</a>
+      </div>
+
+      <div class="gs-label">Admin</div>
+      <a href="terminal.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M8 20V10"/><path d="M13 20V6"/><path d="M18 20v-6"/></svg>
+        <span>Overview</span>
+      </a>
+      <a href="terminal.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.4"/><path d="M5 20c.8-3.4 3.6-5 7-5s6.2 1.6 7 5"/></svg>
+        <span>Users</span>
+      </a>
+      <a href="checkout.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.6 5.4 6 .9-4.3 4.2 1 6-5.3-2.8-5.3 2.8 1-6L3.4 9.3l6-.9L12 3z"/></svg>
+        <span>Licenses</span>
+      </a>
+      <a href="generator.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V9"/><path d="M10 19V5"/><path d="M16 19v-7"/><path d="M22 19H2"/></svg>
+        <span>Analytics</span>
+      </a>
+    </nav>
+
+    <div class="gs-push">
+      <div class="gp-label"><i class="live-dot"></i> Last push update</div>
+      <div class="gp-time" id="lastPush">—</div>
+    </div>
+
+    <div class="gs-access">
+      <div class="ga-top"><span>Admin access</span><b>Unlimited</b></div>
+      <div class="ga-key">Master-key</div>
+      <div class="ga-chips" id="masterChips">
+        <button type="button" class="ga-chip on" data-src="live"><i></i>Live</button>
+        <button type="button" class="ga-chip on" data-src="otc"><i></i>OTC</button>
+        <button type="button" class="ga-chip beast" data-src="beast"><i></i>Beast</button>
+      </div>
+      <a href="https://t.me/DRKMUQEETT" target="_blank" rel="noopener">@DRKMUQEETT →</a>
+    </div>
+
+    <div class="gs-foot">
+      <div class="gs-user"><span class="av">S</span><span class="gu-txt"><b>Super Admin</b><small id="guPlan">Pro licence</small></span></div>
+      <button class="gs-out" id="signOut" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+        Sign out
+      </button>
+    </div>
+  </aside>
+
+  <div class="gen-main">
+    <header class="gen-top">
+      <div class="gt-title">
+        <button class="gt-burger" id="sideToggle" type="button" aria-label="Toggle navigation">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h16"/></svg>
+        </button>
+        <div>
+          <h1>Live Scanner</h1>
+          <p>Advanced real-time trading signals</p>
+        </div>
+      </div>
+      <div class="gt-right">
+        <span class="pill pill-green hide-sm"><i class="live-dot"></i> <b id="liveUsers">450</b>&nbsp;Live Users</span>
+        <span class="pill pill-green">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+          <span class="lbl">Markets Open</span> <b id="sessionClock">00:00:00</b>
+        </span>
+        <button class="icon-btn" id="bellBtn" type="button" title="Signal alerts" aria-label="Signal alerts">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 10-12 0c0 7-3 8-3 8h18s-3-1-3-8"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg>
+        </button>
+        <div class="avatar"><i>S</i> <span class="hide-sm">Super</span> <span class="pill pill-purple" style="padding:2px 7px;font-size:9px">PRO</span></div>
+      </div>
+    </header>
+
+    <div class="gen-content">
+      <div class="scan-toolbar">
+        <div class="scan-chips" id="kindChips">
+          <button type="button" data-kind="all" class="on">All pairs</button>
+          <button type="button" data-kind="otc">OTC</button>
+          <button type="button" data-kind="forex">Forex</button>
+          <button type="button" data-kind="crypto">Crypto</button>
+          <button type="button" data-kind="india">India (INR)</button>
+        </div>
+        <div class="scan-chips alt" id="statusChips">
+          <button type="button" data-status="all" class="on">All</button>
+          <button type="button" data-status="active">Active</button>
+          <button type="button" data-status="wait">Waiting</button>
+        </div>
+        <div class="scan-meta">
+          <span><b id="scanCount">0</b> pairs</span>
+          <span>sync <b id="scanSync">--:--:--</b></span>
+        </div>
+      </div>
+
+      <div class="scan-grid" id="scanGrid"></div>
+
+      <div class="gen-foot">
+        <span>Live Scanner · engine v3.2 · 17 Nov 2026</span>
+        <span>Support &amp; licensing <a href="https://t.me/DRKMUQEETT" target="_blank" rel="noopener">@DRKMUQEETT</a></span>
+        <span><a href="terms.html">Terms &amp; Conditions</a></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toasts" id="toasts"></div>
+
+<script src="assets/config.js"></script>
+<script src="assets/market.js"></script>
+<script src="assets/scanner.js"></script>
+</body>
+</html>

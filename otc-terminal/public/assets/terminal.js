@@ -169,7 +169,7 @@
     const arrow = s.dir === 'BUY'
       ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18L18 6"/><path d="M9 6h9v9"/></svg>'
       : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6l14 12"/><path d="M18 9v9H9"/></svg>';
-    const kindLabel = `${s.tag || 'OTC'} · ${s.name || ''}`;
+    const kindLabel = `${s.tag || 'OTC'} · ${s.pair || s.symbol}`;
     const chg = s.chg != null ? `<span class="chg ${s.chg >= 0 ? 'chg-up' : 'chg-dn'}">${s.chg >= 0 ? '+' : ''}${s.chg.toFixed(2)}%</span>` : '';
     const live = s.kind === 'otc'
       ? '<i class="mk-dot otc"></i>'

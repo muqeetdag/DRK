@@ -24,7 +24,8 @@ browser; if a feed is unreachable the UI falls back to a local model and says so
 
 **https://otc-signal-terminal.vercel.app** — deployed on Vercel (Hobby), works on
 any phone or desktop browser. Pages: `/` landing, `?p=terminal` dashboard,
-`?p=generator` Beast Mode signal generator, `?p=checkout` upgrade, `?p=terms` legal.
+`?p=scanner` live scanner, `?p=generator` Beast Mode signal generator,
+`?p=checkout` upgrade, `?p=terms` legal.
 
 How that deploy works: `shell/index.html` is a tiny (8 KB) bootstrap page hosted
 on Vercel. On load it pulls the built app (`docs/`, pinned to a commit SHA) from
@@ -40,6 +41,16 @@ rm -rf docs && cp -r static docs && touch docs/.nojekyll
 git add docs && git commit -m "Rebuild static site" && git push
 # then bump the SHA constant in shell/index.html and redeploy it on Vercel
 ```
+
+## Live Scanner
+
+`/scanner` is the dense scanner grid: every pair as a card with its status
+(`WAIT`, or `BUY`/`SELL` with the confidence), the trend read from the
+algorithmic-sequence factor (Uptrend / Downtrend / Sideways), the next execution
+minute, a copy action and a real-time feed badge. Filters: market chips
+(All / OTC / Forex / Crypto / India) plus Active / Waiting, and the master-key
+chips in the sidebar toggle the Live (forex + crypto + INR) and OTC feeds, while
+Beast floats the strongest setups to the top. Cards refresh in place every 5 s.
 
 ## Beast Mode (signal generator)
 

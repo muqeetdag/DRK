@@ -123,6 +123,15 @@
 
   /* ------------------------------------------------------------ header */
   let liveUsers = 259 + Math.floor(Math.random() * 40);
+
+  function paintPush() {
+    const el = $('lastPush');
+    if (!el) return;
+    const d = new Date();
+    el.textContent = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+      + ', ' + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+  }
+
   function paintClock() {
     const d = new Date();
     const clock = $('sessionClock');
@@ -160,8 +169,8 @@
     if (st) st.textContent = state.beast ? 'ON' : 'LOCKED';
     const ind = $('indCount');
     if (ind) ind.textContent = state.beast ? '23 Indicators' : '11 Indicators';
-    const ga = $('gaPlan');
-    if (ga) ga.textContent = state.beast ? 'PRO · Beast Mode' : 'PRO · Lifetime';
+    const chip = $('beastChip');
+    if (chip) chip.classList.toggle('on', state.beast);
     if (state.beast) store(BEAST_STORE, '1');
     paintCount();
     if (announce) {
@@ -217,7 +226,7 @@
       const rows = instruments().filter((i) => i.kind === kind);
       if (!rows.length) return '';
       return `<optgroup label="${label} · ${rows.length}">` + rows
-        .map((i) => `<option value="${i.id}">${i.symbol} — ${i.name}</option>`)
+        .map((i) => `<option value="${i.id}">${i.symbol}</option>`)
         .join('') + '</optgroup>';
     }).join('');
     if (!instById(state.id)) state.id = instruments()[0]?.id || state.id;
@@ -229,7 +238,7 @@
     if (!inst) return;
     $('cpSym').textContent = inst.pair || inst.symbol;
     $('cpTf').textContent = state.tf;
-    $('instName').textContent = inst.name || '';
+    $('instName').textContent = inst.pair || inst.symbol;
     $('tvLink').href = inst.kind === 'crypto' || inst.kind === 'india'
       ? 'https://www.tradingview.com/chart/?symbol=' + encodeURIComponent('BINANCE:' + (inst.bsym || 'BTCUSDT'))
       : inst.kind === 'forex'
@@ -460,6 +469,13 @@
     const rows = state.candles;
     if (!rows.length) return;
 
+    const wash = g.createLinearGradient(0, 0, 0, h);
+    wash.addColorStop(0, 'rgba(46, 33, 92, .34)');
+    wash.addColorStop(0.6, 'rgba(16, 16, 34, .2)');
+    wash.addColorStop(1, 'rgba(10, 10, 22, .35)');
+    g.fillStyle = wash;
+    g.fillRect(0, 0, w, h);
+
     const padR = 62, padL = 6, padT = 12, padB = 20;
     const plotW = Math.max(40, w - padL - padR);
     const volH = clamp((h - padT - padB) * 0.17, 24, 54);
@@ -474,23 +490,23 @@
     lo -= span * 0.06;
     const y = (v) => padT + plotH - ((v - lo) / (hi - lo)) * plotH;
     const stepX = plotW / rows.length;
-    const bodyW = Math.max(1.2, stepX * 0.62);
+    const bodyW = Math.max(1.6, stepX * 0.74);
     const xAt = (i) => padL + i * stepX + stepX / 2;
 
     /* grid + price axis */
-    g.font = '9.5px ui-monospace, Menlo, monospace';
+    g.font = '10px ui-monospace, Menlo, monospace';
     g.textBaseline = 'middle';
     const lines = 5;
     for (let i = 0; i <= lines; i++) {
       const v = lo + ((hi - lo) / lines) * i;
       const yy = y(v);
-      g.strokeStyle = 'rgba(255,255,255,.055)';
+      g.strokeStyle = 'rgba(255,255,255,.1)';
       g.lineWidth = 1;
       g.beginPath();
       g.moveTo(padL, Math.round(yy) + 0.5);
       g.lineTo(padL + plotW, Math.round(yy) + 0.5);
       g.stroke();
-      g.fillStyle = 'rgba(142,142,169,.75)';
+      g.fillStyle = 'rgba(196,196,224,.95)';
       g.textAlign = 'left';
       g.fillText(v.toPrecision(6), padL + plotW + 7, yy);
     }
@@ -499,17 +515,22 @@
     const maxV = Math.max(...rows.map((k) => k.v || 0), 1);
     rows.forEach((k, i) => {
       const vh = ((k.v || 0) / maxV) * volH;
-      g.fillStyle = k.c >= k.o ? 'rgba(34,197,94,.34)' : 'rgba(239,68,68,.34)';
+      g.fillStyle = k.c >= k.o ? 'rgba(52,211,153,.5)' : 'rgba(248,113,113,.5)';
       g.fillRect(xAt(i) - bodyW / 2, volTop + volH - vh, bodyW, Math.max(1, vh));
     });
 
     /* candles */
+    const upFill = g.createLinearGradient(0, padT, 0, padT + plotH);
+    upFill.addColorStop(0, '#34e37f');
+    upFill.addColorStop(1, '#17a34a');
+    const dnFill = g.createLinearGradient(0, padT, 0, padT + plotH);
+    dnFill.addColorStop(0, '#ff5f6d');
+    dnFill.addColorStop(1, '#c81e2b');
     rows.forEach((k, i) => {
       const up = k.c >= k.o;
-      const col = up ? '#22c55e' : '#ef4444';
       const x = xAt(i);
-      g.strokeStyle = col;
-      g.lineWidth = Math.max(1, bodyW * 0.16);
+      g.strokeStyle = up ? '#3ddc84' : '#ff5566';
+      g.lineWidth = Math.max(1.1, bodyW * 0.18);
       g.beginPath();
       g.moveTo(x, y(k.h));
       g.lineTo(x, y(k.l));
@@ -517,16 +538,16 @@
       const yo = y(k.o);
       const yc = y(k.c);
       const top = Math.min(yo, yc);
-      const bh = Math.max(1.2, Math.abs(yc - yo));
-      g.fillStyle = up ? 'rgba(34,197,94,.92)' : 'rgba(239,68,68,.92)';
-      g.fillRect(x - bodyW / 2, top, bodyW, bh);
+      const bh = Math.max(1.4, Math.abs(yc - yo));
+      g.fillStyle = up ? upFill : dnFill;
+      g.fillRect(x - bodyW / 2, top, Math.max(1.6, bodyW * 0.92), bh);
     });
 
     /* moving average */
     const period = 20;
     if (rows.length > period) {
-      g.strokeStyle = 'rgba(250,204,21,.75)';
-      g.lineWidth = 1.3;
+      g.strokeStyle = 'rgba(251,191,36,.95)';
+      g.lineWidth = 1.7;
       g.beginPath();
       for (let i = period - 1; i < rows.length; i++) {
         let sum = 0;
@@ -543,7 +564,7 @@
     const last = rows[rows.length - 1];
     const ys = y(last.c);
     g.setLineDash([4, 4]);
-    g.strokeStyle = 'rgba(139,92,246,.7)';
+    g.strokeStyle = 'rgba(167,139,250,.9)';
     g.lineWidth = 1;
     g.beginPath();
     g.moveTo(padL, ys);
@@ -553,7 +574,7 @@
     const tag = last.c.toPrecision(6);
     g.font = '700 10px ui-monospace, Menlo, monospace';
     const tw = g.measureText(tag).width + 12;
-    g.fillStyle = '#8b5cf6';
+    g.fillStyle = '#8b3df0';
     g.beginPath();
     const tx = padL + plotW + 3;
     if (g.roundRect) g.roundRect(tx, ys - 8, tw, 16, 4); else g.rect(tx, ys - 8, tw, 16);
@@ -563,8 +584,8 @@
     g.fillText(tag, tx + 6, ys + 0.5);
 
     /* time axis */
-    g.fillStyle = 'rgba(142,142,169,.7)';
-    g.font = '9px ui-monospace, Menlo, monospace';
+    g.fillStyle = 'rgba(190,190,220,.9)';
+    g.font = '10px ui-monospace, Menlo, monospace';
     g.textAlign = 'center';
     const marks = Math.min(6, Math.max(2, Math.floor(plotW / 90)));
     for (let i = 0; i < marks; i++) {
@@ -582,7 +603,7 @@
     if (state.hover >= 0 && state.hover < rows.length) {
       const k = rows[state.hover];
       const x = xAt(state.hover);
-      g.strokeStyle = 'rgba(255,255,255,.28)';
+      g.strokeStyle = 'rgba(196,181,253,.6)';
       g.setLineDash([3, 3]);
       g.beginPath();
       g.moveTo(x, padT);
@@ -977,6 +998,10 @@
     }, 1000);
 
     setInterval(() => {
+      paintPush();
+    }, 30000);
+
+    setInterval(() => {
       tickExpiry();
       paintInstrument();
       const next = $('spNext');
@@ -1033,6 +1058,7 @@
     state.used = clamp(Number(store(USED_KEY) || 0) || 0, 0, GEN_LIMIT);
     wire();
     paintClock();
+    paintPush();
     paintCount();
     renderHistory();
     bindChartInteractions();
