@@ -327,3 +327,28 @@ section.block { padding: 54px 0; }
 .toast.err { border-color: rgba(239, 68, 68, .45); }
 .toast strong { font-size: 12.5px; }
 @keyframes toast-in { from { opacity: 0; transform: translateY(8px); } }
+
+/* ---------------------------------------------------------------- beast mode band */
+.beast-band {
+  display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 22px; align-items: center;
+  padding: 22px; border-radius: 16px;
+  background:
+    radial-gradient(520px 260px at 0% 0%, rgba(250, 204, 21, .13), transparent 62%),
+    linear-gradient(150deg, rgba(139, 92, 246, .16), rgba(139, 92, 246, .03));
+  border: 1px solid rgba(139, 92, 246, .3);
+  box-shadow: 0 30px 70px -50px #000;
+}
+.bb-txt h2 { margin: 8px 0 6px; font-size: clamp(19px, 2.4vw, 25px); letter-spacing: -.02em; }
+.bb-txt p { margin: 0; color: var(--muted); font-size: 13.5px; line-height: 1.65; max-width: 52ch; }
+.bb-side { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; justify-content: flex-end; }
+.bb-stat { display: grid; line-height: 1.15; }
+.bb-stat b { font-size: 19px; font-weight: 900; font-family: var(--mono); }
+.bb-stat span { font-size: 9.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--dim); }
+.bb-side .btn { padding: 10px 16px; font-size: 13px; }
+.bb-note { flex-basis: 100%; text-align: right; font-size: 10.5px; color: var(--dim); }
+.bb-note a { color: var(--purple-2); font-weight: 700; }
+@media (max-width: 820px) {
+  .beast-band { grid-template-columns: minmax(0, 1fr); gap: 16px; padding: 18px; }
+  .bb-side { justify-content: flex-start; }
+  .bb-note { text-align: left; }
+}

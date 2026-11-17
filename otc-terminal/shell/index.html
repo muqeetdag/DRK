@@ -58,7 +58,7 @@
     "https://cdn.jsdelivr.net/gh/muqeetdag/DRK@" + SHA + "/docs/",
     "https://raw.githubusercontent.com/muqeetdag/DRK/" + SHA + "/docs/"
   ];
-  var PAGES = ["index", "terminal", "checkout", "terms"];
+  var PAGES = ["index", "terminal", "generator", "checkout", "terms"];
   var params = new URLSearchParams(location.search);
   var page = PAGES.indexOf(params.get("p")) >= 0 ? params.get("p") : "index";
   var base = null;
@@ -98,12 +98,14 @@
 
   function rewriteJS(code) {
     return code
-      .replace(/(['"])\/(terminal|checkout|terms|index)\.html\1/g, "$1?p=$2$1")
+      .replace(/(['"])\/(terminal|generator|checkout|terms|index)\.html\1/g, "$1?p=$2$1")
       .replace(/'terminal\.html'/g, "'?p=terminal'")
+      .replace(/'generator\.html'/g, "'?p=generator'")
       .replace(/'checkout\.html'/g, "'?p=checkout'")
       .replace(/'terms\.html'/g, "'?p=terms'")
       .replace(/'index\.html'/g, "'?p=index'")
       .replace(/href="terminal\.html"/g, 'href="?p=terminal"')
+      .replace(/href="generator\.html"/g, 'href="?p=generator"')
       .replace(/href="checkout\.html"/g, 'href="?p=checkout"')
       .replace(/href="terms\.html"/g, 'href="?p=terms"')
       .replace(/href="index\.html"/g, 'href="?p=index"')
@@ -120,6 +122,7 @@
       var href = a.getAttribute("href");
       if (!href) continue;
       if (href === "terminal.html") a.setAttribute("href", "?p=terminal");
+      else if (href === "generator.html") a.setAttribute("href", "?p=generator");
       else if (href === "checkout.html") a.setAttribute("href", "?p=checkout");
       else if (href === "terms.html") a.setAttribute("href", "?p=terms");
       else if (href === "index.html" || href === "./" || href === "/") a.setAttribute("href", "?p=index");

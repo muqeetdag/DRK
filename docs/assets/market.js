@@ -437,7 +437,7 @@ window.MARKET = (function () {
   /* ------------------------------------------------------------------ */
   /* candles                                                            */
   /* ------------------------------------------------------------------ */
-  const BINANCE_TF = { '1m': '1m', '3m': '3m', '5m': '5m', '15m': '15m' };
+  const BINANCE_TF = { '1m': '1m', '3m': '3m', '5m': '5m', '15m': '15m', '1h': '1h', '4h': '4h', '1d': '1d' };
 
   async function cryptoCandles(inst, tf) {
     const key = inst.bsym;
@@ -490,7 +490,7 @@ window.MARKET = (function () {
       const cur = row[inst.quote];
       let v = null;
       if (inst.base === 'USD') v = cur;
-      else if (inst.quote === 'USD') v = cur ? 1 / cur : null;
+      else if (inst.quote === 'USD') v = row[inst.base] ? 1 / row[inst.base] : null;
       else if (row[inst.base] && cur) v = cur / row[inst.base];
       if (v) vals.push({ t: Date.parse(d + 'T00:00:00Z'), c: v });
     });
@@ -524,7 +524,7 @@ window.MARKET = (function () {
         const cur = row[inst.quote];
         let v = null;
         if (inst.base === 'USD') v = cur;
-        else if (inst.quote === 'USD') v = cur ? 1 / cur : null;
+        else if (inst.quote === 'USD') v = row[inst.base] ? 1 / row[inst.base] : null;
         else if (row[inst.base] && cur) v = cur / row[inst.base];
         if (v) vals.push({ t: Date.parse(d + 'T00:00:00Z'), c: v });
       }

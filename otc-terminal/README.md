@@ -24,7 +24,7 @@ browser; if a feed is unreachable the UI falls back to a local model and says so
 
 **https://otc-signal-terminal.vercel.app** — deployed on Vercel (Hobby), works on
 any phone or desktop browser. Pages: `/` landing, `?p=terminal` dashboard,
-`?p=checkout` upgrade.
+`?p=generator` Beast Mode signal generator, `?p=checkout` upgrade, `?p=terms` legal.
 
 How that deploy works: `shell/index.html` is a tiny (8 KB) bootstrap page hosted
 on Vercel. On load it pulls the built app (`docs/`, pinned to a commit SHA) from
@@ -40,6 +40,20 @@ rm -rf docs && cp -r static docs && touch docs/.nojekyll
 git add docs && git commit -m "Rebuild static site" && git push
 # then bump the SHA constant in shell/index.html and redeploy it on Vercel
 ```
+
+## Beast Mode (signal generator)
+
+`/generator` is the Signal Generator module: a TradingView-style candle chart with
+volume, MA(20), crosshair readout and eight timeframes (1m → 1M), an instrument
+picker across all four markets, and a Generate Signal action that scores the
+instrument with the same five-factor engine and renders a trade card —
+direction, confidence, strength, AI accuracy, per-factor breakdown, entry time,
+duration and a live expiry countdown.
+
+The module is gated: it asks for the Beast Mode access key (`OXIDATIVE`) once and
+remembers it in `localStorage` (`otc.beast`). Each session has 50 generated
+signals (`otc.gen.used`); the generated feed is kept in `otc.gen.history`. A key
+can also be passed as `?key=OXIDATIVE` for direct links.
 
 ## Run locally
 

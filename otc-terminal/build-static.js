@@ -35,6 +35,7 @@ copyDir(SRC, OUT);
 // whitespace) so asset paths such as /assets/terminal.js are left untouched.
 const rewrites = [
   [/\/terminal(?=["'#?\s]|$)/g, '/terminal.html'],
+  [/\/generator(?=["'#?\s]|$)/g, '/generator.html'],
   [/\/checkout(?=["'#?\s]|$)/g, '/checkout.html'],
   [/\/terms(?=["'#?\s]|$)/g, '/terms.html'],
 ];
@@ -56,7 +57,7 @@ function processFile(file) {
   // must use the same relative routes as the external scripts.
   if (ext === '.html') {
     const next = text
-      .replace(/'\/(terminal|checkout|terms|index)\.html'/g, "'$1.html'")
+      .replace(/'\/(terminal|generator|checkout|terms|index)\.html'/g, "'$1.html'")
       .replace(/location\.href = '\/'/g, "location.href = './'");
     if (next !== text) { text = next; changed = true; }
   }
