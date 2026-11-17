@@ -17,5 +17,6 @@ Routes: `/` landing + access gate, `/terminal` live dashboard,
 `DEMO-KEY-2025`), or use the 5-signal free evaluation. See
 [`otc-terminal/README.md`](otc-terminal/README.md) for the API and caveats.
 
-**Live site:** https://otc-signal-terminal.vercel.app (static build, no backend —
-the engine runs in the browser). `docs/` holds the published static build.
+**Live site:** https://otc-signal-terminal.vercel.app — OTC Bot, four markets
+(OTC / forex / crypto / Indian), real market data from public APIs, no backend.
+`docs/` holds the published static build that the Vercel shell streams.
