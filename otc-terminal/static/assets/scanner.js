@@ -95,8 +95,6 @@
       next: CLOCK.istTime(plan.nextScanMs),
       left: CLOCK.mmss(plan.pending ? plan.toEntryMs : plan.toExpiryMs),
       scanLeft: CLOCK.mmss(scanLeft),
-      frac: plan.pending ? 1 : Math.max(0, Math.min(1, plan.toExpiryMs / plan.windowMs)),
-      scanFrac: Math.max(0, Math.min(1, scanLeft / plan.windowMs)),
     };
   }
 
@@ -196,11 +194,6 @@
       <div class="sc-rows">
         <div class="sc-kv"><span>Trend</span><b data-ref="trend" class="${trend.cls}">${ICON[trend.icon]}${trend.word}</b></div>
         <div class="sc-kv"><span data-ref="l1">Entry · IST</span><b class="time" data-ref="time">${ICON.clock}${t.entry}</b></div>
-        <div class="sc-kv wide">
-          <span data-ref="l2">${sig.active ? (t.pending ? 'Entry in' : 'Expires in') : 'Next scan in'}</span>
-          <b class="cd" data-ref="cd">${sig.active ? t.left : t.scanLeft}</b>
-          <i class="sc-bar"><i data-ref="bar" style="width:${Math.round((sig.active ? t.frac : t.scanFrac) * 100)}%"></i></i>
-        </div>
       </div>
       <i class="sc-accent"></i>
     </article>`;
@@ -224,9 +217,6 @@
         trend: card.querySelector('[data-ref="trend"]'),
         time: card.querySelector('[data-ref="time"]'),
         l1: card.querySelector('[data-ref="l1"]'),
-        l2: card.querySelector('[data-ref="l2"]'),
-        cd: card.querySelector('[data-ref="cd"]'),
-        bar: card.querySelector('[data-ref="bar"]'),
       });
     });
     paintCards(rows);
@@ -253,8 +243,8 @@
     if (nav) nav.textContent = String(active);
   }
 
-  /* re-stamps every card's entry time and counts the seconds down; called
-     once a second so the numbers move in real time */
+  /* re-stamps each card's entry time once a second (the stamp changes when
+     the pair rolls onto its next trade window) */
   function paintTimes() {
     state.entries.forEach((el) => {
       if (!el.sig || !el.time) return;
@@ -263,15 +253,9 @@
       if (active) {
         el.time.innerHTML = ICON.clock + t.entry;
         if (el.l1) el.l1.textContent = 'Entry · IST';
-        if (el.l2) el.l2.textContent = t.pending ? 'Entry in' : 'Expires in';
-        if (el.cd) el.cd.textContent = t.left;
-        if (el.bar) el.bar.style.width = Math.round(t.frac * 100) + '%';
       } else {
         el.time.innerHTML = ICON.clock + t.next;
         if (el.l1) el.l1.textContent = 'Next scan · IST';
-        if (el.l2) el.l2.textContent = 'Next scan in';
-        if (el.cd) el.cd.textContent = t.scanLeft;
-        if (el.bar) el.bar.style.width = Math.round(t.scanFrac * 100) + '%';
       }
     });
   }
