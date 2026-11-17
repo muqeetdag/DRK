@@ -409,7 +409,7 @@
 
 /* sidebar extras (shared with the generator) */
 .gs-dot { margin-left: auto; width: 6px; height: 6px; border-radius: 50%; background: #4ade80; box-shadow: 0 0 7px #4ade80; }
-.gs-flame { margin-left: auto; display: inline-flex; color: #fbbf24; font-style: normal; }
+.gs-flame { margin-left: auto; display: inline-flex; color: #fbbf24; font-style: normal; filter: drop-shadow(0 0 5px rgba(251,191,36,.55)); }
 .gs-flame svg { width: 11px; height: 11px; }
 .gs-push {
   margin-top: 10px; padding: 8px 10px; border-radius: 10px;
