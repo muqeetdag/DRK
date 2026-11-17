@@ -1,0 +1,15 @@
+{
+  "name": "otc-signal-terminal",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Simulated OTC binary-signal landing page and live terminal — a design recreation of a paid signal service, built for local demo/testing only.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT"
+}

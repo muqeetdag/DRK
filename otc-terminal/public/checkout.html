@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#05070a">
+<title>Upgrade to Pro — OTC Signal Terminal</title>
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/style.css">
+<style>
+  .checkout { padding: 54px 0 80px; }
+  .co-head { max-width: 660px; margin: 0 auto 40px; text-align: center; }
+  .co-head h1 { font-size: clamp(2rem, 4.2vw, 3rem); margin-bottom: 14px; }
+  .co-head p { color: var(--muted); }
+  .co-grid { display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 18px; align-items: start; max-width: 980px; margin: 0 auto; }
+  .co-card {
+    border-radius: 18px; border: 1px solid var(--line-strong);
+    background: linear-gradient(180deg, rgba(255,255,255,.035), rgba(255,255,255,.006));
+    padding: 26px;
+  }
+  .co-card.featured {
+    border-color: rgba(0,224,138,.45);
+    background: radial-gradient(520px 200px at 50% 0%, rgba(0,224,138,.16), transparent 70%), linear-gradient(180deg, rgba(10,20,17,.96), rgba(6,10,12,.98));
+    box-shadow: 0 30px 80px -40px rgba(0,224,138,.55);
+  }
+  .co-card h2 { font-size: 1.25rem; margin-bottom: 6px; }
+  .co-card .tier { font-family: var(--mono); font-size: .6rem; letter-spacing: .2em; text-transform: uppercase; color: var(--muted-dim); margin-bottom: 12px; }
+  .co-card.featured .tier { color: var(--green); }
+  .co-price { display: flex; align-items: baseline; gap: 10px; margin: 14px 0 6px; }
+  .co-price strong { font-size: 2.3rem; letter-spacing: -.03em; }
+  .co-price small { color: var(--muted-dim); font-size: .8rem; }
+  .co-list { list-style: none; padding: 0; margin: 18px 0 22px; display: grid; gap: 10px; }
+  .co-list li { display: flex; gap: 10px; font-size: .87rem; color: #c3cfd9; }
+  .co-list svg { width: 15px; height: 15px; flex: none; margin-top: 3px; color: var(--green); }
+  .pay-mock {
+    display: flex; align-items: center; gap: 12px;
+    padding: 13px 14px; border-radius: 10px; border: 1px dashed rgba(255,255,255,.18);
+    background: rgba(0,0,0,.35); margin-bottom: 14px;
+  }
+  .pay-mock svg { width: 22px; height: 22px; color: var(--muted-dim); flex: none; }
+  .pay-mock div { font-family: var(--mono); font-size: .68rem; letter-spacing: .05em; color: var(--muted-dim); line-height: 1.6; }
+  .pay-mock b { color: var(--muted); }
+  .steps { counter-reset: s; display: grid; gap: 12px; margin: 18px 0 22px; }
+  .step { display: flex; gap: 12px; font-size: .85rem; color: var(--muted); }
+  .step::before {
+    counter-increment: s; content: counter(s);
+    width: 22px; height: 22px; border-radius: 50%; flex: none;
+    display: grid; place-items: center;
+    font-family: var(--mono); font-size: .66rem;
+    border: 1px solid rgba(53,201,255,.4); background: rgba(53,201,255,.1); color: #9ce0ff;
+  }
+  .co-note { font-family: var(--mono); font-size: .62rem; letter-spacing: .06em; color: var(--muted-dim); text-align: center; margin-top: 18px; line-height: 1.9; }
+  .secure-row { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-top: 22px; }
+  .secure-row span {
+    font-family: var(--mono); font-size: .56rem; letter-spacing: .13em; text-transform: uppercase;
+    padding: 5px 9px; border-radius: 5px; border: 1px solid var(--line); color: var(--muted-dim);
+  }
+  @media (max-width: 860px) { .co-grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<div class="demo-bar">
+  <b>Simulation build</b>
+  <span>No payment is processed here. “Activate demo Pro” grants a local simulated seat.</span>
+</div>
+
+<header class="site-header">
+  <nav class="nav">
+    <a class="brand" href="/">
+      <span class="brand-mark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l4-6 3 3 4-7 3 5 4-3"/><path d="M3 21h18"/></svg>
+      </span>
+      <span>QUOTEX SIGNALS<small>OTC Synthetic Engine</small></span>
+    </a>
+    <div class="nav-links">
+      <a href="/#engine">Engine</a>
+      <a href="/#plans">Plans</a>
+      <a href="/terminal">Terminal</a>
+    </div>
+    <div class="nav-actions">
+      <a class="btn btn-ghost btn-sm" href="/terminal">Open terminal</a>
+    </div>
+  </nav>
+</header>
+
+<main class="checkout">
+  <div class="wrap">
+    <div class="co-head">
+      <p class="eyebrow" style="justify-content:center">Upgrade to Pro</p>
+      <h1>Unlock the <span class="grad">full engine</span></h1>
+      <p>Your free evaluation gives you 5 signal generations. Upgrade to keep unlimited sweeps, the full 41-pair scanner and priority feed.</p>
+    </div>
+
+    <div class="co-grid">
+      <section class="co-card featured">
+        <div class="tier">Official Pro License</div>
+        <h2>Lifetime Pro Access</h2>
+        <div class="co-price"><strong>₹3,000</strong><small>/ $101 one-time</small></div>
+        <p style="color:var(--muted);font-size:.87rem">One-time payment. Unrestricted 24/7 institutional trading access.</p>
+        <ul class="co-list">
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Unlimited live scanner sweeps</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Unlimited manual signal generations</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>All 41 OTC pairs &amp; synthetic feeds</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Priority websocket data &amp; alert sound</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Lifetime architecture updates</li>
+        </ul>
+
+        <div class="pay-mock">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+          <div><b>Crypto checkout disabled in this build.</b><br>In the original site this button opens NOWPayments.</div>
+        </div>
+
+        <button class="btn btn-primary btn-block btn-lg" id="activateBtn">Activate demo Pro access</button>
+        <p class="co-note">Instant. No card, no wallet, no signup —<br>a local simulated license is issued to this browser.</p>
+
+        <div class="secure-row">
+          <span>Encrypted 256-bit</span>
+          <span>One-time payment</span>
+          <span>41 pairs</span>
+        </div>
+      </section>
+
+      <section class="co-card" id="partner">
+        <div class="tier" style="color:var(--cyan)">Broker Partner Pass</div>
+        <h2>Free Lifetime Access</h2>
+        <p style="color:var(--muted);font-size:.87rem;margin-top:8px">Register with the official Quotex broker link and deposit minimum $300. Send your UID for verification.</p>
+        <div class="steps">
+          <div class="step">Register through the official broker link</div>
+          <div class="step">Deposit $300+ trading capital</div>
+          <div class="step">Send UID to support for verification</div>
+          <div class="step">Receive lifetime Pro access</div>
+        </div>
+        <button class="btn btn-ghost btn-block" id="partnerBtn" disabled title="Partner link removed in simulation build">Broker link disabled in demo</button>
+        <p class="co-note" style="text-align:left">
+          This recreation deliberately removes the broker referral link: deposit-based “free access”
+          offers like this are a common way to funnel traders into high-risk products.
+        </p>
+      </section>
+    </div>
+
+    <div class="disclaimer" style="max-width:980px;margin:34px auto 0">
+      <div class="disclaimer-inner">
+        <strong>Demo build.</strong> Nothing on this page charges money. The payment button and the broker
+        partner flow from the original site are intentionally non-functional. Signals, prices and win rates
+        in the terminal are synthetic. Binary options are high risk and restricted in many countries.
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap footer-grid">
+    <div>© <span id="year"></span> OTC Signal Terminal — simulation build. Not affiliated with Quotex.</div>
+    <div class="footer-links">
+      <a href="/">Home</a>
+      <a href="/terminal">Terminal</a>
+      <a href="/#plans">Plans</a>
+    </div>
+  </div>
+</footer>
+
+<div class="toast-wrap" id="toasts"></div>
+
+<script src="/assets/config.js"></script>
+<script>
+  document.getElementById('year').textContent = new Date().getFullYear();
+
+  const btn = document.getElementById('activateBtn');
+  btn.addEventListener('click', async () => {
+    btn.disabled = true;
+    btn.textContent = 'Issuing license…';
+    try {
+      const key = 'DEMO-KEY-2025';
+      const data = await window.OTC.post('/api/auth', { mode: 'license', key });
+      window.OTC.api.set(data.token, 'pro');
+      sessionStorage.setItem('otc.flash', 'Pro license activated — unlimited engine access.');
+      btn.textContent = 'License issued ✓ Opening terminal…';
+      setTimeout(() => (window.location.href = '/terminal'), 700);
+    } catch (err) {
+      btn.disabled = false;
+      btn.textContent = 'Try again';
+      alert(err.message || 'Could not activate.');
+    }
+  });
+</script>
+</body>
+</html>
