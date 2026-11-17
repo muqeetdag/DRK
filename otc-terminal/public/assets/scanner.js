@@ -335,13 +335,11 @@
   }
 
   function init() {
-    if (!api.token) {
-      window.location.replace('/');
-      return;
-    }
-    const plan = api.plan || 'trial';
+    /* the scanner is readable without a key (it is public market data);
+       signing in only unlocks the licence label and the Pro-only modules */
+    const plan = api.plan || 'guest';
     const planEl = $('guPlan');
-    if (planEl) planEl.textContent = plan === 'trial' ? 'Trial licence' : 'Pro licence';
+    if (planEl) planEl.textContent = plan === 'pro' ? 'Pro licence' : plan === 'trial' ? 'Trial licence' : 'Guest access';
     wire();
     boot();
   }
