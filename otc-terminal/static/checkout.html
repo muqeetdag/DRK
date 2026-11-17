@@ -2,84 +2,64 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#05070a">
-<title>Upgrade to Pro — OTC Signal Terminal</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#06060c">
+<title>Unlock Pro — OTC Bot</title>
+<meta name="description" content="Unlock the full OTC Bot engine: OTC pairs, forex, crypto and Indian market with unlimited signals.">
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="assets/style.css">
 <style>
-  .checkout { padding: 54px 0 80px; }
-  .co-head { max-width: 660px; margin: 0 auto 40px; text-align: center; }
-  .co-head h1 { font-size: clamp(2rem, 4.2vw, 3rem); margin-bottom: 14px; }
-  .co-head p { color: var(--muted); }
-  .co-grid { display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 18px; align-items: start; max-width: 980px; margin: 0 auto; }
-  .co-card {
-    border-radius: 18px; border: 1px solid var(--line-strong);
-    background: linear-gradient(180deg, rgba(255,255,255,.035), rgba(255,255,255,.006));
-    padding: 26px;
-  }
+  .checkout { padding: 46px 0 70px; }
+  .co-head { max-width: 680px; margin: 0 auto 34px; text-align: center; }
+  .co-head h1 { font-size: clamp(1.9rem, 4.4vw, 2.9rem); letter-spacing: -.035em; margin: 14px 0 10px; }
+  .co-head p { color: var(--muted); margin: 0; }
+  .co-grid { display: grid; grid-template-columns: 1.1fr .9fr; gap: 18px; max-width: 980px; margin: 0 auto; align-items: start; }
+  @media (max-width: 880px) { .co-grid { grid-template-columns: 1fr; } }
+  .co-card { padding: 26px; border-radius: 18px; border: 1px solid var(--line-2); background: var(--panel); }
   .co-card.featured {
-    border-color: rgba(0,224,138,.45);
-    background: radial-gradient(520px 200px at 50% 0%, rgba(0,224,138,.16), transparent 70%), linear-gradient(180deg, rgba(10,20,17,.96), rgba(6,10,12,.98));
-    box-shadow: 0 30px 80px -40px rgba(0,224,138,.55);
+    border-color: rgba(139, 92, 246, .45);
+    background: radial-gradient(520px 220px at 50% 0%, rgba(139, 92, 246, .2), transparent 72%), var(--panel);
+    box-shadow: 0 34px 80px -44px rgba(139, 92, 246, .95);
   }
-  .co-card h2 { font-size: 1.25rem; margin-bottom: 6px; }
-  .co-card .tier { font-family: var(--mono); font-size: .6rem; letter-spacing: .2em; text-transform: uppercase; color: var(--muted-dim); margin-bottom: 12px; }
-  .co-card.featured .tier { color: var(--green); }
-  .co-price { display: flex; align-items: baseline; gap: 10px; margin: 14px 0 6px; }
-  .co-price strong { font-size: 2.3rem; letter-spacing: -.03em; }
-  .co-price small { color: var(--muted-dim); font-size: .8rem; }
-  .co-list { list-style: none; padding: 0; margin: 18px 0 22px; display: grid; gap: 10px; }
-  .co-list li { display: flex; gap: 10px; font-size: .87rem; color: #c3cfd9; }
-  .co-list svg { width: 15px; height: 15px; flex: none; margin-top: 3px; color: var(--green); }
-  .pay-mock {
-    display: flex; align-items: center; gap: 12px;
-    padding: 13px 14px; border-radius: 10px; border: 1px dashed rgba(255,255,255,.18);
-    background: rgba(0,0,0,.35); margin-bottom: 14px;
-  }
-  .pay-mock svg { width: 22px; height: 22px; color: var(--muted-dim); flex: none; }
-  .pay-mock div { font-family: var(--mono); font-size: .68rem; letter-spacing: .05em; color: var(--muted-dim); line-height: 1.6; }
-  .pay-mock b { color: var(--muted); }
-  .steps { counter-reset: s; display: grid; gap: 12px; margin: 18px 0 22px; }
-  .step { display: flex; gap: 12px; font-size: .85rem; color: var(--muted); }
+  .co-price { display: flex; align-items: baseline; gap: 10px; margin: 16px 0 4px; }
+  .co-price strong { font-family: var(--mono); font-size: 2.4rem; letter-spacing: -.04em; }
+  .co-price small { color: var(--muted); font-size: 12px; }
+  .co-list { list-style: none; padding: 0; margin: 18px 0 22px; display: grid; gap: 9px; }
+  .co-list li { position: relative; padding-left: 22px; font-size: 13px; color: #c9c9dd; }
+  .co-list li::before { content: "✓"; position: absolute; left: 0; color: var(--green); font-weight: 800; }
+  .pay-box { display: flex; gap: 12px; padding: 13px 14px; border-radius: 11px; border: 1px dashed rgba(255, 255, 255, .18); background: rgba(0, 0, 0, .35); margin-bottom: 14px; }
+  .pay-box svg { width: 22px; height: 22px; color: var(--muted); flex: none; }
+  .pay-box div { font-size: 12px; color: var(--muted); line-height: 1.6; }
+  .pay-box b { color: var(--text); }
+  .steps { display: grid; gap: 12px; margin: 18px 0 22px; counter-reset: s; }
+  .step { display: flex; gap: 12px; font-size: 12.8px; color: var(--muted); }
   .step::before {
-    counter-increment: s; content: counter(s);
-    width: 22px; height: 22px; border-radius: 50%; flex: none;
-    display: grid; place-items: center;
-    font-family: var(--mono); font-size: .66rem;
-    border: 1px solid rgba(53,201,255,.4); background: rgba(53,201,255,.1); color: #9ce0ff;
+    counter-increment: s; content: counter(s); width: 22px; height: 22px; border-radius: 50%; flex: none;
+    display: grid; place-items: center; font-family: var(--mono); font-size: 10px;
+    border: 1px solid rgba(139, 92, 246, .45); background: rgba(139, 92, 246, .14); color: var(--purple-2);
   }
-  .co-note { font-family: var(--mono); font-size: .62rem; letter-spacing: .06em; color: var(--muted-dim); text-align: center; margin-top: 18px; line-height: 1.9; }
-  .secure-row { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-top: 22px; }
-  .secure-row span {
-    font-family: var(--mono); font-size: .56rem; letter-spacing: .13em; text-transform: uppercase;
-    padding: 5px 9px; border-radius: 5px; border: 1px solid var(--line); color: var(--muted-dim);
-  }
-  @media (max-width: 860px) { .co-grid { grid-template-columns: 1fr; } }
+  .co-note { font-family: var(--mono); font-size: 10.5px; letter-spacing: .04em; color: var(--dim); text-align: center; margin-top: 14px; line-height: 1.9; }
 </style>
 </head>
 <body>
 
-<div class="demo-bar">
-  <b>Simulation build</b>
-  <span>No payment is processed here. “Activate demo Pro” grants a local simulated seat.</span>
-</div>
-
 <header class="site-header">
-  <nav class="nav">
+  <nav class="nav wrap">
     <a class="brand" href="./">
       <span class="brand-mark">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l4-6 3 3 4-7 3 5 4-3"/><path d="M3 21h18"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M2 15c1.6 0 2.2-2 3.6-2s2 2 3.6 2 2-2 3.6-2 2 2 3.6 2 2-2 3.6-2"/><circle cx="17.5" cy="7" r="2.6"/></svg>
       </span>
-      <span>QUOTEX SIGNALS<small>OTC Synthetic Engine</small></span>
+      <span>OTC BOT<small>Market Confidence Engine™</small></span>
     </a>
     <div class="nav-links">
+      <a href="#markets">Markets</a>
       <a href="#engine">Engine</a>
       <a href="#plans">Plans</a>
       <a href="terminal.html">Terminal</a>
     </div>
     <div class="nav-actions">
-      <a class="btn btn-ghost btn-sm" href="terminal.html">Open terminal</a>
+      <a class="btn btn-ghost btn-sm" href="#access">Sign in</a>
+      <a class="btn btn-primary btn-sm" href="terminal.html">Open terminal</a>
     </div>
   </nav>
 </header>
@@ -87,102 +67,93 @@
 <main class="checkout">
   <div class="wrap">
     <div class="co-head">
-      <p class="eyebrow" style="justify-content:center">Upgrade to Pro</p>
-      <h1>Unlock the <span class="grad">full engine</span></h1>
-      <p>Your free evaluation gives you 5 signal generations. Upgrade to keep unlimited sweeps, the full 41-pair scanner and priority feed.</p>
+      <span class="pill pill-purple">Lifetime license</span>
+      <h1>Unlock the full engine</h1>
+      <p>One key. Every market. Unlimited signals across OTC, forex, crypto and the Indian market.</p>
     </div>
 
     <div class="co-grid">
       <section class="co-card featured">
-        <div class="tier">Official Pro License</div>
-        <h2>Lifetime Pro Access</h2>
+        <div class="flex" style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+          <span class="pill pill-purple">Pro · Lifetime</span>
+          <span class="pill pill-green"><i class="live-dot"></i> Instant activation</span>
+        </div>
+        <h2 style="margin:14px 0 0;font-size:1.3rem">Lifetime Pro access</h2>
         <div class="co-price"><strong>₹3,000</strong><small>/ $101 one-time</small></div>
-        <p style="color:var(--muted);font-size:.87rem">One-time payment. Unrestricted 24/7 institutional trading access.</p>
+        <p style="color:var(--muted);font-size:13px;margin:0">Unrestricted 24/7 access to every market the engine scans.</p>
         <ul class="co-list">
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Unlimited live scanner sweeps</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Unlimited manual signal generations</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>All 41 OTC pairs &amp; synthetic feeds</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Priority websocket data &amp; alert sound</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Lifetime architecture updates</li>
+          <li>Unlimited signal unlocks — no evaluation limit</li>
+          <li>All 41 OTC pairs, 41 forex pairs, 28 crypto coins</li>
+          <li>Indian market module (BTC/INR, ETH/INR, USD/INR…)</li>
+          <li>Live charts, 1m–15m candles, confidence breakdown</li>
+          <li>Alert sound, auto-rescan, priority feed</li>
+          <li>Lifetime engine updates</li>
         </ul>
 
-        <div class="pay-mock">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
-          <div><b>Crypto checkout disabled in this build.</b><br>In the original site this button opens NOWPayments.</div>
+        <div class="pay-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+          <div><b>No card is charged in this build.</b><br>Press activate to issue a local Pro license for this browser instantly.</div>
         </div>
 
-        <button class="btn btn-primary btn-block btn-lg" id="activateBtn">Activate demo Pro access</button>
-        <p class="co-note">Instant. No card, no wallet, no signup —<br>a local simulated license is issued to this browser.</p>
-
-        <div class="secure-row">
-          <span>Encrypted 256-bit</span>
-          <span>One-time payment</span>
-          <span>41 pairs</span>
-        </div>
+        <button class="btn btn-primary btn-block btn-lg" id="activateBtn">Activate Pro access</button>
+        <a class="btn btn-ghost btn-block" href="https://t.me/DRKMUQEETT" target="_blank" rel="noopener" style="margin-top:8px">Buy your key · @DRKMUQEETT</a>
+        <p class="co-note">One-time · 41 pairs · live charts · 4 markets</p>
       </section>
 
-      <section class="co-card" id="partner">
-        <div class="tier" style="color:var(--cyan)">Broker Partner Pass</div>
-        <h2>Free Lifetime Access</h2>
-        <p style="color:var(--muted);font-size:.87rem;margin-top:8px">Register with the official Quotex broker link and deposit minimum $300. Send your UID for verification.</p>
+      <section class="co-card">
+        <span class="pill">Manual activation</span>
+        <h2 style="margin:14px 0 6px;font-size:1.15rem">Get a key from @DRKMUQEETT</h2>
+        <p style="color:var(--muted);font-size:13px;margin:0">Prefer a personal key? Message on Telegram and the license is issued by hand.</p>
         <div class="steps">
-          <div class="step">Register through the official broker link</div>
-          <div class="step">Deposit $300+ trading capital</div>
-          <div class="step">Send UID to support for verification</div>
-          <div class="step">Receive lifetime Pro access</div>
+          <div class="step">Message <b style="color:var(--text)">&nbsp;@DRKMUQEETT&nbsp;</b> on Telegram</div>
+          <div class="step">Receive your lifetime license key</div>
+          <div class="step">Paste it in the terminal access box</div>
+          <div class="step">Every market unlocks instantly</div>
         </div>
-        <button class="btn btn-ghost btn-block" id="partnerBtn" disabled title="Partner link removed in simulation build">Broker link disabled in demo</button>
-        <p class="co-note" style="text-align:left">
-          This recreation deliberately removes the broker referral link: deposit-based “free access”
-          offers like this are a common way to funnel traders into high-risk products.
+        <a class="btn btn-ghost btn-block" href="https://t.me/DRKMUQEETT" target="_blank" rel="noopener">Open Telegram →</a>
+        <div style="margin-top:18px;padding-top:16px;border-top:1px solid var(--line-2);display:grid;gap:10px">
+          <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted)"><span>Evaluation</span><b class="mono" style="color:var(--text)">5 signals</b></div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted)"><span>Pro</span><b class="mono green">unlimited</b></div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted)"><span>Markets</span><b class="mono" style="color:var(--text)">4</b></div>
+        </div>
+        <p style="font-size:11px;color:var(--dim);margin:16px 0 0;line-height:1.7">
+          Use of OTC Bot is governed by our <a href="terms.html" style="color:var(--purple-2)">Terms &amp; Conditions</a>.
         </p>
       </section>
-    </div>
-
-    <div class="disclaimer" style="max-width:980px;margin:34px auto 0">
-      <div class="disclaimer-inner">
-        <strong>Demo build.</strong> Nothing on this page charges money. The payment button and the broker
-        partner flow from the original site are intentionally non-functional. Signals, prices and win rates
-        in the terminal are synthetic. Binary options are high risk and restricted in many countries.
-      </div>
     </div>
   </div>
 </main>
 
 <footer class="site-footer">
-  <div class="wrap footer-grid">
-    <div>© <span id="year"></span> OTC Signal Terminal — simulation build. Not affiliated with Quotex.</div>
-    <div class="footer-links">
+  <div class="wrap foot-grid">
+    <div class="mono" style="font-size:11.5px;color:var(--dim)">© <span id="year">2026</span> OTC Bot</div>
+    <div class="foot-links">
       <a href="./">Home</a>
       <a href="terminal.html">Terminal</a>
       <a href="#plans">Plans</a>
+      <a href="terms.html">Terms &amp; Conditions</a>
+      <a href="https://t.me/DRKMUQEETT" target="_blank" rel="noopener">@DRKMUQEETT</a>
     </div>
   </div>
 </footer>
 
 <div class="toast-wrap" id="toasts"></div>
 
-<script src="assets/engine-local.js"></script>
 <script src="assets/config.js"></script>
 <script>
   document.getElementById('year').textContent = new Date().getFullYear();
-
   const btn = document.getElementById('activateBtn');
-  btn.addEventListener('click', async () => {
+  btn.addEventListener('click', () => {
     btn.disabled = true;
     btn.textContent = 'Issuing license…';
-    try {
-      const key = 'DEMO-KEY-2025';
-      const data = await window.OTC.post('/api/auth', { mode: 'license', key });
-      window.OTC.api.set(data.token, 'pro');
-      sessionStorage.setItem('otc.flash', 'Pro license activated — unlimited engine access.');
+    const key = 'DEMO-KEY-2025';
+    window.OTC.api.set('lic-' + key, 'pro');
+    try { localStorage.removeItem('otc.trialLeft'); } catch {}
+    sessionStorage.setItem('otc.flash', 'Pro license activated — every market unlocked.');
+    setTimeout(() => {
       btn.textContent = 'License issued ✓ Opening terminal…';
-      setTimeout(() => (window.location.href = '/terminal.html'), 700);
-    } catch (err) {
-      btn.disabled = false;
-      btn.textContent = 'Try again';
-      alert(err.message || 'Could not activate.');
-    }
+      setTimeout(() => (window.location.href = '/terminal.html'), 550);
+    }, 500);
   });
 </script>
 </body>

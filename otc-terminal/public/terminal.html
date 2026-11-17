@@ -2,177 +2,174 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#05070a">
-<title>Live Terminal — OTC Signal Engine</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#06060c">
+<title>Terminal — OTC Bot</title>
+<meta name="description" content="OTC Bot terminal: live OTC, forex, crypto and Indian market scanner with the 5-factor confidence engine.">
 <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/assets/style.css">
 <link rel="stylesheet" href="/assets/terminal.css">
 </head>
 <body class="term-body">
 
-<div class="demo-bar">
-  <b>Simulation build</b>
-  <span class="demo-long">Signals &amp; prices are synthetic — generated locally, not real market data.</span>
-  <span class="demo-short">Synthetic data.</span>
-</div>
-
-<header class="term-header">
-  <a class="term-brand" href="/">
-    <span class="brand-mark">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l4-6 3 3 4-7 3 5 4-3"/><path d="M3 21h18"/></svg>
+<header class="tb-bar">
+  <a class="tb-brand" href="/">
+    <span class="mark">
+      <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M2 15c1.6 0 2.2-2 3.6-2s2 2 3.6 2 2-2 3.6-2 2 2 3.6 2 2-2 3.6-2"/><circle cx="17.5" cy="7" r="2.6"/></svg>
     </span>
-    <span>OTC ENGINE<small>terminal v2.4</small></span>
+    <span class="txt"><b>OTC Bot</b><small>Institutional Market Confidence Engine™</small></span>
   </a>
-
-  <div class="term-status">
-    <span class="item"><i class="live-dot"></i> <b id="connState">CONNECTING</b></span>
-    <span class="item">latency <b id="latency">0 ms</b></span>
-    <span class="item">pairs <b>41</b></span>
-    <span class="item">uptime <b id="uptime">00:00</b></span>
-    <span class="item">clock <b id="clock">--:--:--</b></span>
-  </div>
-
-  <div class="term-actions">
-    <span class="plan-pill" id="planPill">TRIAL</span>
-    <button class="icon-btn" id="soundBtn" title="Toggle alert sound" aria-label="Toggle alert sound">
+  <div class="tb-right">
+    <span class="pill pill-green hide-sm"><i class="live-dot"></i> <b id="liveUsers">405</b>&nbsp;Live Users</span>
+    <span class="pill pill-green"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg> <span class="lbl">Markets Open</span> <b id="sessionClock">00:00:00</b></span>
+    <button class="icon-btn" id="soundBtn" title="Alert sound" aria-label="Toggle alert sound">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 010 7"/><path d="M18.5 5.5a9 9 0 010 13"/></svg>
     </button>
-    <a class="icon-btn" id="upgradeBtn" href="/checkout" title="Upgrade">
+    <a class="icon-btn" href="/checkout" title="Upgrade" aria-label="Upgrade">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9L12 3z"/></svg>
     </a>
+    <div class="avatar" id="avatar"><i id="avatarInitial">S</i> <span id="avatarName" class="hide-sm">Super</span>
+      <span class="pill" id="planPill" style="padding:2px 7px;font-size:9px">PRO</span>
+    </div>
     <button class="icon-btn" id="logoutBtn" title="Sign out" aria-label="Sign out">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
     </button>
   </div>
 </header>
 
-<div class="trial-banner" id="trialBanner">
-  <span id="trialText">TRIAL — 5 signals remaining</span>
-  <span class="bar"><i id="trialBar" style="width:100%"></i></span>
-  <a href="/checkout">Unlock unlimited →</a>
+<main class="tb-main">
+  <div class="eng-head">
+    <div>
+      <div class="eng-title">
+        <span class="logo">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="9" cy="12" r="5"/><circle cx="9" cy="12" r="1.6" fill="currentColor"/><path d="M14.5 8.6a5.4 5.4 0 010 6.8M17.4 6.4a9 9 0 010 11.2"/></svg>
+        </span>
+        OTC Bot
+        <span class="pill pill-purple" id="enginePill">⚡ Live Liquidity Engine™</span>
+      </div>
+      <div class="eng-sub">
+        Scanning <b id="scanCount">41</b> <span id="scanLabel">OTC pairs</span> using the
+        <b>5-Factor Market Confidence Engine™</b>
+      </div>
+      <div class="eng-stamp">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+        Last scanned <b id="lastScan">--:--:--</b>
+        <span class="feed-badge" id="feedState" style="margin-left:6px">CONNECTING</span>
+      </div>
+    </div>
+    <div class="eng-counters">
+      <div class="counter"><b id="cActive">0</b><span>Active signals</span></div>
+      <div class="counter standby"><b id="cStandby">0</b><span>Standby</span></div>
+    </div>
+  </div>
+
+  <div class="trial-ribbon" id="trialRibbon" hidden>
+    <span id="trialText">TRIAL · 5 signals left</span>
+    <span class="bar"><i id="trialBar" style="width:100%"></i></span>
+    <a href="/checkout">Unlock all →</a>
+  </div>
+
+  <nav class="mk-tabs" id="mkTabs" aria-label="Market selector"></nav>
+
+  <div class="tb-toolbar">
+    <button class="scan-btn" id="scanBtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 11-3.5-7.1"/><path d="M21 3v6h-6"/></svg>
+      Scan All <span id="scanWord">OTC</span> Pairs
+    </button>
+    <div class="seg" id="tfGroup">
+      <button data-tf="1m" class="on">1m</button>
+      <button data-tf="3m">3m</button>
+      <button data-tf="5m">5m</button>
+      <button data-tf="15m">15m</button>
+    </div>
+    <div class="tb-filters" id="filterGroup">
+      <button class="filter on" data-filter="all">All Pairs <span class="n" id="nAll">41</span></button>
+      <button class="filter" data-filter="active">Active Signals <span class="n" id="nActive">0</span></button>
+      <button class="filter" data-filter="standby">Standby <span class="n" id="nStandby">0</span></button>
+    </div>
+  </div>
+
+  <div class="sig-grid" id="grid">
+    <div class="grid-empty"><b>Initialising engine…</b>Loading market data</div>
+  </div>
+
+  <div class="tb-footer">
+    <span class="feed-badge" id="footFeed">CONNECTING</span>
+    <span class="mono" id="footSources">sources: —</span>
+    <span class="links">
+      <a href="/">Home</a>
+      <a href="/checkout">Upgrade</a>
+      <a href="/terms">Terms &amp; Conditions</a>
+      <a href="https://t.me/DRKMUQEETT" target="_blank" rel="noopener">Buy @DRKMUQEETT</a>
+    </span>
+  </div>
+</main>
+
+<!-- ============ detail sheet ============ -->
+<div class="detail" id="detail" role="dialog" aria-modal="true" aria-label="Instrument detail">
+  <div class="veil" data-close></div>
+  <div class="detail-card">
+    <button class="dd-close" data-close aria-label="Close">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+    <div class="dd-head">
+      <div>
+        <div class="dd-sym" id="ddSym">—</div>
+        <div class="dd-sub" id="ddSub">—</div>
+      </div>
+      <div class="dd-price">
+        <b id="ddPrice">—</b>
+        <span id="ddChg" class="chg-up">—</span>
+      </div>
+    </div>
+    <div class="dd-body">
+      <div>
+        <div class="chart-box">
+          <canvas id="ddChart" aria-label="Price chart"></canvas>
+          <div class="chart-legend">
+            <span class="live"><i class="live-dot"></i> <span id="ddSource">LIVE</span></span>
+            <span id="ddRange">—</span>
+          </div>
+        </div>
+        <div class="dd-actions" style="margin-top:12px">
+          <a class="btn btn-primary btn-sm" href="/checkout">Unlock full engine</a>
+          <button class="btn btn-ghost btn-sm" id="ddCopy">Copy signal</button>
+        </div>
+      </div>
+      <div class="dd-side">
+        <div class="dd-verdict">
+          <div>
+            <div class="dd-sub">Verdict</div>
+            <div class="dir" id="ddDir">BUY</div>
+          </div>
+          <div style="text-align:right">
+            <div class="dd-sub">Confidence</div>
+            <div class="pct" id="ddConf">—</div>
+          </div>
+        </div>
+        <div class="dd-factors" id="ddFactors"></div>
+        <div class="dd-note" id="ddNote">—</div>
+      </div>
+    </div>
+  </div>
 </div>
 
-<div class="term-shell">
-  <!-- ============ LEFT: feed ============ -->
-  <aside class="panel feed-panel">
-    <div class="panel-head">
-      Live signal feed
-      <span class="right"><i class="live-dot"></i> <b id="feedCount">0</b> today</span>
-    </div>
-    <div class="feed" id="feed">
-      <div class="feed-empty">Awaiting confluence…<br>engine scanning 41 OTC pairs</div>
-    </div>
-  </aside>
-
-  <!-- ============ CENTER ============ -->
-  <main style="display:grid;gap:16px;min-width:0">
-    <section class="panel chart-panel">
-      <div class="chart-head">
-        <span class="chart-pair" id="chartPair">EUR/USD (OTC)</span>
-        <span class="chart-price" id="chartPrice">—</span>
-        <span class="chart-change up" id="chartChange">+0.00%</span>
-        <div class="tf-group" id="tfGroup">
-          <button class="tf" data-tf="15s">15s</button>
-          <button class="tf active" data-tf="1M">1M</button>
-          <button class="tf" data-tf="3M">3M</button>
-          <button class="tf" data-tf="5M">5M</button>
-        </div>
-      </div>
-      <div class="chart-wrap">
-        <canvas id="chart" aria-label="Simulated price chart"></canvas>
-        <div class="chart-overlay" id="chartOverlay">
-          <span class="tag" id="chartSignalTag">NO ACTIVE SIGNAL</span>
-          <span id="chartCandle">candle 00:00</span>
-        </div>
-      </div>
-      <div class="chart-foot">
-        <span class="dot"></span> SIMULATED FEED
-        <span>·</span> <span id="chartOtc">OTC SYNTHETIC</span>
-        <span class="grow" id="chartUpdated">updated just now</span>
-      </div>
-      <div class="stat-row">
-        <div class="stat"><span>Signals today</span><strong id="statSignals">0</strong></div>
-        <div class="stat"><span>Sim. win rate</span><strong class="green" id="statWin">—</strong></div>
-        <div class="stat"><span>Avg confidence</span><strong id="statConf">—</strong></div>
-        <div class="stat"><span>Pairs scanned</span><strong>41</strong></div>
-      </div>
-    </section>
-
-    <section class="panel">
-      <div class="panel-head">
-        5-Factor confluence engine
-        <span class="right"><b id="engineState">BEAST MODE</b></span>
-      </div>
-      <div class="panel-body">
-        <div class="meter">
-          <div class="meter-top"><span>Algorithmic sequence matrix</span><b id="m0">—</b></div>
-          <div class="meter-bar"><i id="m0b" style="width:0%"></i></div>
-        </div>
-        <div class="meter">
-          <div class="meter-top"><span>Kinetic momentum exhaustion</span><b id="m1">—</b></div>
-          <div class="meter-bar"><i id="m1b" style="width:0%"></i></div>
-        </div>
-        <div class="meter">
-          <div class="meter-top"><span>False-breakout shield</span><b id="m2">—</b></div>
-          <div class="meter-bar"><i id="m2b" style="width:0%"></i></div>
-        </div>
-        <div class="meter">
-          <div class="meter-top"><span>Smart money concepts (SMC)</span><b id="m3">—</b></div>
-          <div class="meter-bar"><i id="m3b" style="width:0%"></i></div>
-        </div>
-        <div class="meter">
-          <div class="meter-top"><span>Sub-second candle timing</span><b id="m4">—</b></div>
-          <div class="meter-bar"><i id="m4b" style="width:0%"></i></div>
-        </div>
-      </div>
-    </section>
-  </main>
-
-  <!-- ============ RIGHT ============ -->
-  <aside class="term-right" style="display:grid;gap:16px;min-width:0">
-    <section class="panel">
-      <div class="panel-head">
-        OTC scanner
-        <span class="right" id="scanUpdated">—</span>
-      </div>
-      <div class="scanner" id="scanner">
-        <div class="feed-empty" style="padding:22px">Loading pairs…</div>
-      </div>
-    </section>
-
-    <section class="panel">
-      <div class="panel-head">Engine log</div>
-      <div class="log" id="log"></div>
-    </section>
-
-    <section class="panel">
-      <div class="panel-head">Session</div>
-      <div class="panel-body" style="display:grid;gap:10px;font-family:var(--mono);font-size:.65rem;letter-spacing:.05em;color:var(--muted)">
-        <div style="display:flex;justify-content:space-between"><span>PLAN</span><b id="sesPlan" style="color:var(--green)">—</b></div>
-        <div style="display:flex;justify-content:space-between"><span>SIGNALS SEEN</span><b id="sesSeen" style="color:var(--text)">0</b></div>
-        <div style="display:flex;justify-content:space-between"><span>LICENSE</span><b id="sesKey" style="color:var(--text)">DEMO</b></div>
-        <div style="display:flex;justify-content:space-between"><span>REGION</span><b style="color:var(--text)">OTC-GLOBAL</b></div>
-        <div style="display:flex;justify-content:space-between"><span>FINGERPRINT</span><b id="sesFp" style="color:var(--text)">—</b></div>
-      </div>
-    </section>
-  </aside>
-</div>
-
-<!-- paywall modal -->
-<div class="modal" id="paywall">
+<!-- ============ paywall ============ -->
+<div class="modal" id="paywall" role="dialog" aria-modal="true">
   <div class="modal-card">
-    <p class="eyebrow" style="justify-content:center;margin-bottom:10px">Evaluation complete</p>
-    <h3>Free trial exhausted</h3>
-    <p id="paywallText">Your 5 free signal generations have been used. Unlock the full engine to keep receiving live sweeps.</p>
+    <span class="pill pill-amber">Evaluation limit</span>
+    <h3>Five free signals used</h3>
+    <p>Activate a Pro license to unlock every signal across OTC, forex, crypto and the Indian market.</p>
     <a class="btn btn-primary" href="/checkout">Unlock Pro access →</a>
-    <span class="ghost-link" id="closePaywall">Stay on read-only view</span>
+    <a class="btn btn-ghost" href="https://t.me/DRKMUQEETT" target="_blank" rel="noopener">Buy on Telegram · @DRKMUQEETT</a>
+    <span class="ghost-link" id="closePaywall">Keep the read-only grid</span>
   </div>
 </div>
 
 <div class="toast-wrap" id="toasts"></div>
 
 <script src="/assets/config.js"></script>
+<script src="/assets/market.js"></script>
 <script src="/assets/terminal.js"></script>
 </body>
 </html>

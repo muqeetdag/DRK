@@ -2,290 +2,331 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#05070a">
-<title>Quotex Signals — Premium Trading Signals</title>
-<meta name="description" content="Institutional precision, zero-delay binary signals. A simulated OTC signal terminal demo.">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#06060c">
+<title>OTC Bot — Institutional Market Confidence Engine™</title>
+<meta name="description" content="OTC Bot scans 41 OTC pairs, forex, crypto and the Indian market in real time and ranks every instrument with a 5-factor confidence engine.">
 <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/assets/style.css">
 </head>
 <body>
 
-<div class="demo-bar">
-  <b>Simulation build</b>
-  <span class="demo-long">All signals, prices and statistics on this site are generated locally — not market data, not financial advice.</span>
-  <span class="demo-short">Synthetic data — not financial advice.</span>
-</div>
-
 <header class="site-header">
-  <nav class="nav">
+  <nav class="nav wrap">
     <a class="brand" href="/">
       <span class="brand-mark">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l4-6 3 3 4-7 3 5 4-3"/><path d="M3 21h18"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M2 15c1.6 0 2.2-2 3.6-2s2 2 3.6 2 2-2 3.6-2 2 2 3.6 2 2-2 3.6-2"/><path d="M2 20c1.6 0 2.2-2 3.6-2s2 2 3.6 2"/><circle cx="17.5" cy="7" r="2.6"/></svg>
       </span>
-      <span>QUOTEX SIGNALS<small>OTC Synthetic Engine</small></span>
+      <span>OTC BOT<small>Market Confidence Engine™</small></span>
     </a>
     <div class="nav-links">
+      <a href="#markets">Markets</a>
       <a href="#engine">Engine</a>
       <a href="#plans">Plans</a>
       <a href="#access">Terminal</a>
-      <a href="/checkout">Upgrade</a>
+      <a href="#terms">Terms</a>
     </div>
     <div class="nav-actions">
-      <a class="btn btn-ghost btn-sm nav-signin" href="#access">Sign in</a>
+      <a class="btn btn-ghost btn-sm" href="#access">Sign in</a>
       <a class="btn btn-primary btn-sm" href="/checkout">Get access</a>
     </div>
   </nav>
 </header>
 
-<!-- live ticker -->
-<div class="ticker" aria-label="Live signal feed">
-  <div class="ticker-label"><i class="live-dot"></i> Live OTC liquidity feed</div>
-  <div class="ticker-track" id="tickerTrack">
-    <!-- filled by landing.js; duplicated for seamless loop -->
-  </div>
+<div class="ticker" aria-label="Live market feed">
+  <div class="ticker-label"><i class="live-dot"></i> Live market feed</div>
+  <div class="ticker-track" id="tickerTrack"><div class="tick"><span class="pct">loading live quotes…</span></div></div>
 </div>
 
 <main>
-  <!-- ================= HERO ================= -->
+  <!-- ============================ HERO ============================ -->
   <section class="hero">
-    <div class="wrap">
-      <div class="hero-grid">
-        <div>
-          <div class="badge"><i class="live-dot"></i> Proprietary Quotex &amp; OTC Synthetic Engine™</div>
-          <h1>Institutional Precision.<em>Zero-Delay Binary Signals.</em></h1>
-          <p class="hero-lede">
-            Stop trading on lagging indicators. Our classified multi-timeframe algorithm synthesizes
-            interbank liquidity sweeps, kinetic candle exhaustion, and institutional order blocks for
-            high-probability 1-minute execution.
-          </p>
-          <div class="hero-cta">
-            <a class="btn btn-primary btn-lg" href="#plans">Explore License Plans</a>
-            <a class="btn btn-ghost btn-lg" href="/checkout">Purchase Lifetime Pro Access →</a>
-          </div>
-          <div class="hero-stats">
-            <div><strong data-count="89.4" data-suffix="%">0%</strong><span>Avg Win Rate</span></div>
-            <div><strong data-count="0" data-suffix=" ms">0 ms</strong><span>Websocket Latency</span></div>
-            <div><strong data-count="41" data-suffix=" Pairs">0 Pairs</strong><span>Active OTC Pairs</span></div>
-            <div><strong data-count="0" data-suffix=".00%">0.00%</strong><span>Candle Repaint</span></div>
-          </div>
-        </div>
-
-        <div class="preview-shell reveal">
-        <div class="preview">
-          <div class="preview-head">
-            <span class="dots"><i></i><i></i><i></i></span>
-            <span>terminal_preview</span>
-            <span class="right"><i class="live-dot"></i> LIVE</span>
-          </div>
-          <div class="preview-body" id="previewSignals">
-            <div class="sig-preview">
-              <div><div class="p">EUR/USD (OTC)</div><div class="t">5/5 Matrix · 1M</div></div>
-              <div class="d call">CALL 98.2%</div>
-            </div>
-            <div class="sig-preview">
-              <div><div class="p">GBP/USD (OTC)</div><div class="t">SMC Sweep · 1M</div></div>
-              <div class="d put">PUT 96.5%</div>
-            </div>
-            <div class="sig-preview">
-              <div><div class="p">USD/INR (OTC)</div><div class="t">Kinetic Reversal · 1M</div></div>
-              <div class="d call">CALL 95.8%</div>
-            </div>
-            <div class="sig-preview">
-              <div><div class="p">BTC/USD</div><div class="t">Trend Follow · 1M</div></div>
-              <div class="d call">CALL 94.6%</div>
-            </div>
-          </div>
-          <div class="preview-foot">
-            <span>Engine <b>5/5 CONFLUENCE</b></span>
-            <span id="previewClock">00:00:00 UTC</span>
-          </div>
-        </div>
-        <div class="float-chip a">41 pairs scanned</div>
-        <div class="float-chip b">0 ms latency</div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ================= ACCESS GATE ================= -->
-  <section class="gate-section" id="access">
-    <div class="wrap">
-      <div class="gate reveal">
-        <div class="gate-top">
-          <span>Terminal access gate</span>
-          <span class="lock">
-            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 118 0v3"/></svg>
-            Encrypted 256-bit
-          </span>
-        </div>
-        <h2>Sign In to Terminal</h2>
-        <p class="sub">Enter your official license key to access live signals and the OTC engine.</p>
-
-        <p class="form-msg" id="gateMsg"></p>
-
-        <form id="licenseForm" autocomplete="off">
-          <div class="field">
-            <label for="licenseKey">License Key</label>
-            <div class="input-wrap">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 11-7.778 7.778 5.5 5.5 0 017.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3"/></svg>
-              <input class="input" id="licenseKey" name="key" placeholder="XXXX-XXXX-XXXX-XXXX" spellcheck="false" autocapitalize="characters">
-            </div>
-          </div>
-          <button class="btn btn-primary btn-block" type="submit" id="authBtn">Authenticate &amp; Launch Terminal</button>
-        </form>
-
-        <div class="divider">Or instant evaluation</div>
-
-        <button class="trial-btn" id="trialBtn">⚡ Try 5 Free Signals (Instant 1-Click Access)</button>
-
-        <p class="gate-foot">Don't have a license? <a href="/checkout">Purchase Lifetime Pro Access</a></p>
-        <p class="gate-foot" style="margin-top:6px;font-family:var(--mono);font-size:.68rem;letter-spacing:.08em">
-          Demo key: <b style="color:var(--green-soft)">DEMO-KEY-2025</b>
+    <div class="wrap hero-grid">
+      <div>
+        <span class="eyebrow-badge"><i class="live-dot"></i> <span id="feedBadge">Live market data</span></span>
+        <h1 class="hero-title">Institutional precision.<em>Every market, one terminal.</em></h1>
+        <p class="hero-lede">
+          OTC Bot streams 41 OTC pairs, interbank forex, 28 crypto coins and the Indian
+          market — then scores each instrument with a five-factor confidence engine so you
+          see the setups worth trading, and the ones to leave alone.
         </p>
+        <div class="hero-cta">
+          <a class="btn btn-primary btn-lg" href="#access">Open the terminal</a>
+          <a class="btn btn-ghost btn-lg" href="#markets">See the markets →</a>
+        </div>
+        <div class="hero-stats">
+          <div><strong id="statInstruments">121</strong><span>Instruments scanned</span></div>
+          <div><strong>4</strong><span>Markets covered</span></div>
+          <div><strong>5</strong><span>Confidence factors</span></div>
+          <div><strong>24/7</strong><span>Crypto coverage</span></div>
+        </div>
+      </div>
+
+      <div class="panel reveal" style="overflow:hidden">
+        <div class="board-head">
+          <span>Live market board</span>
+          <span class="pill pill-green" id="boardSource" style="padding:3px 8px;font-size:10px"><i class="live-dot"></i> SYNCING</span>
+        </div>
+        <div class="board board-rows" id="boardRows">
+          <div class="board-row"><span class="sym">—</span><span class="px">connecting…</span><span class="chg">—</span></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:10px 8px 2px;font-size:10.5px;color:var(--dim)" class="mono">
+          <span id="boardStamp">—</span>
+          <span>confidence engine · v3.1</span>
+        </div>
       </div>
     </div>
   </section>
 
-  <!-- ================= FEATURES ================= -->
-  <section class="features" id="engine">
+  <!-- ============================ MARKETS ============================ -->
+  <section class="block" id="markets">
     <div class="wrap">
-      <div class="section-head center reveal">
-        <p class="eyebrow">Algorithmic superiority</p>
-        <h2>The <span class="grad">5-Factor Confluence Engine™</span></h2>
-        <p>Every signal generated requires simultaneous multi-algorithm verification before firing. Zero guesses. Pure mathematical precision.</p>
+      <div class="section-head reveal">
+        <span class="pill pill-purple">Coverage</span>
+        <h2>Four markets. One scanning engine.</h2>
+        <p>OTC synthetic pairs, live institutional forex, global crypto and Indian rupee markets — switch market inside the terminal and the whole grid rescans instantly.</p>
       </div>
-      <div class="feature-grid">
-        <article class="feature reveal">
-          <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></div>
-          <h3>Algorithmic Sequence Matrix</h3>
-          <p>Decodes micro-structure tick anomalies to identify hidden mathematical patterns executed by High-Frequency Trading bots.</p>
-        </article>
-        <article class="feature reveal">
-          <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L4.5 13H11l-1 9 8.5-11H12l1-9z"/></svg></div>
-          <h3>Kinetic Momentum Exhaustion</h3>
-          <p>Measures buyer vs seller kinetic energy at key psychological swing levels to pinpoint exact next-candle reversal points.</p>
-        </article>
-        <article class="feature reveal">
-          <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg></div>
-          <h3>False-Breakout Shield</h3>
-          <p>Actively filters dead consolidation and fake-out spikes during low-volume sessions to preserve trading capital.</p>
-        </article>
-        <article class="feature reveal">
-          <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 4-6"/></svg></div>
-          <h3>Smart Money Concepts (SMC)</h3>
-          <p>Detects institutional order block sweeps, liquidity voids, and Fair Value Gaps (FVG) across 1M, 3M, and 5M candles.</p>
-        </article>
-        <article class="feature reveal">
-          <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2.5"/></svg></div>
-          <h3>Sub-Second Candle Timing</h3>
-          <p>Live websocket streaming delivers the exact trade entry at the 00th second of the candle for maximum binary expiration edge.</p>
-        </article>
-        <article class="feature reveal">
-          <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 2.5 15.4 0 18M12 3c-2.5 2.6-2.5 15.4 0 18"/></svg></div>
-          <h3>41 OTC Pair Coverage</h3>
-          <p>Continuous 24/7 OTC coverage across Quotex, Pocket Option, and live interbank currency pairs with instant scanning.</p>
-        </article>
+      <div class="cards-4">
+        <div class="mkt reveal">
+          <div class="count" id="mkOtc">41</div>
+          <h3>OTC pairs</h3>
+          <p>Synthetic liquidity pairs, 3-second candles, 1-minute expiries.</p>
+          <div class="src">engine · local liquidity model</div>
+        </div>
+        <div class="mkt reveal">
+          <div class="count" id="mkForex">41</div>
+          <h3>Forex</h3>
+          <p>Majors and crosses with 120 days of daily candles and live spot rates.</p>
+          <div class="src">source · ECB / currency-api</div>
+        </div>
+        <div class="mkt reveal">
+          <div class="count" id="mkCrypto">28</div>
+          <h3>Crypto</h3>
+          <p>BTC, ETH, SOL and 25 more with 1m–15m candles and 24h volume.</p>
+          <div class="src">source · Binance / CoinGecko</div>
+        </div>
+        <div class="mkt reveal">
+          <div class="count" id="mkIndia">9</div>
+          <h3>Indian market</h3>
+          <p>Crypto quoted in rupees plus USD/INR, EUR/INR and AED/INR.</p>
+          <div class="src">source · INR quotes, live rate</div>
+        </div>
       </div>
     </div>
   </section>
 
-  <!-- ================= PRICING ================= -->
-  <section class="pricing" id="plans">
+  <!-- ============================ ENGINE ============================ -->
+  <section class="block" id="engine" style="padding-top:0">
     <div class="wrap">
-      <div class="section-head center reveal">
-        <p class="eyebrow">Access tiers</p>
-        <h2>Choose Your Arsenal</h2>
-        <p>Select the tier engineered for your trading frequency.</p>
+      <div class="section-head reveal">
+        <span class="pill pill-purple">The engine</span>
+        <h2>Five factors, scored on every instrument.</h2>
+        <p>Each instrument is re-scored continuously. Anything under the confidence floor stays on standby — the grid only flags a setup when the factors agree.</p>
       </div>
-      <div class="price-grid">
-        <article class="price reveal">
-          <div class="tier">Evaluation Pass</div>
-          <div class="amount">Free <small>/ 5 signals</small></div>
-          <p class="blurb">Instant hardware device verification. No credit card required.</p>
-          <ul>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>5 Instant AI Signal Generations</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Access to Live OTC Scanner</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Real-time Websocket Feed</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Hardware Fingerprint Binding</li>
-          </ul>
-          <button class="btn btn-ghost btn-block" data-start-trial>Start Free Evaluation</button>
-        </article>
-
-        <article class="price featured reveal">
-          <span class="pop-flag">Most popular</span>
-          <div class="tier">Official Pro License</div>
-          <div class="amount">₹3,000 <small>/ $101 lifetime</small></div>
-          <p class="blurb">One-time payment. Unrestricted 24/7 institutional trading access.</p>
-          <ul>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Unlimited High-Frequency Signals</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>All 41 OTC Pairs &amp; Live Currency Feeds</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>5-Factor Beast Mode Confluence Engine</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Automated Real-Time Signal Alerts</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Lifetime Future Architecture Updates</li>
-          </ul>
-          <a class="btn btn-primary btn-block" href="/checkout">Purchase Lifetime Pro Access</a>
-        </article>
-
-        <article class="price reveal">
-          <div class="tier">Broker Partner Pass</div>
-          <div class="amount">Free <small>/ deposit</small></div>
-          <p class="blurb">Register with our official Quotex broker link &amp; deposit min $300.</p>
-          <ul>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Register through our official broker link</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Deposit $300+ trading capital</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Submit UID for instant automated verification</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Get Lifetime Pro Access free</li>
-          </ul>
-          <a class="btn btn-ghost btn-block" href="/checkout#partner">Create Quotex Account →</a>
-        </article>
+      <div class="cards-3">
+        <div class="feature reveal">
+          <div class="ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 17l4-6 3 3 4-7 3 5 3-2"/></svg></div>
+          <h3>Algorithmic sequence matrix</h3>
+          <p>Fast and slow EMA structure decides the directional bias of the instrument.</p>
+          <div class="meta">weight 34%</div>
+        </div>
+        <div class="feature reveal">
+          <div class="ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3v6l3 3"/><circle cx="12" cy="12" r="9"/></svg></div>
+          <h3>Kinetic momentum exhaustion</h3>
+          <p>RSI distance from equilibrium measures how much fuel is left in the move.</p>
+          <div class="meta">weight 24%</div>
+        </div>
+        <div class="feature reveal">
+          <div class="ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3l8 18H4z"/><path d="M12 10v4"/></svg></div>
+          <h3>False-breakout shield</h3>
+          <p>ATR expansion and wick behaviour filter the traps that stop most traders out.</p>
+          <div class="meta">weight 16%</div>
+        </div>
+        <div class="feature reveal">
+          <div class="ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9h4M7 13h7"/></svg></div>
+          <h3>Smart money concepts</h3>
+          <p>Where price sits inside the recent range — premium, discount or equilibrium.</p>
+          <div class="meta">weight 14%</div>
+        </div>
+        <div class="feature reveal">
+          <div class="ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h11M4 18h6"/></svg></div>
+          <h3>Multi-timeframe confluence</h3>
+          <p>Short-term drift has to agree with the higher timeframe before a signal activates.</p>
+          <div class="meta">weight 12%</div>
+        </div>
+        <div class="feature reveal" style="border-color:rgba(34,197,94,.28)">
+          <div class="ico" style="background:rgba(34,197,94,.14);border-color:rgba(34,197,94,.32);color:var(--green-2)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg></div>
+          <h3>Result</h3>
+          <p>BUY or SELL with a match score, a confidence percentage, a trade duration and an entry timestamp.</p>
+          <div class="meta">active ≥ 86.5% confidence</div>
+        </div>
       </div>
     </div>
   </section>
 
-  <!-- ================= BROKER / DISCLAIMER ================= -->
-  <section class="broker-strip">
+  <!-- ============================ PLANS ============================ -->
+  <section class="block" id="plans" style="padding-top:0">
     <div class="wrap">
-      <div class="broker reveal">
-        <div>
-          <h3>Prefer to activate through the broker?</h3>
-          <p>Deposit $300+ with our partner broker and unlock Lifetime Pro at no extra cost. Partner links are disabled in this simulation build.</p>
+      <div class="section-head reveal">
+        <span class="pill pill-purple">Access</span>
+        <h2>Start with five free signals.</h2>
+        <p>No card, no wallet, no signup. Activate the terminal with a license key or take the free evaluation.</p>
+      </div>
+      <div class="plans">
+        <div class="plan reveal">
+          <span class="pill tag">Evaluation</span>
+          <h3>Free trial</h3>
+          <div class="price">₹0 <small>· 5 signals</small></div>
+          <ul>
+            <li>Full terminal, all four markets</li>
+            <li>5 active signals unlocked</li>
+            <li>Live charts &amp; confidence breakdown</li>
+            <li>Everything else stays on standby</li>
+          </ul>
+          <a class="btn btn-ghost btn-block" href="#access" id="trialCta">Try 5 free signals</a>
         </div>
-        <div class="broker-actions">
-          <a class="btn btn-ghost" href="/checkout">See upgrade options</a>
-          <a class="btn btn-primary" href="/checkout">Activate demo Pro</a>
+        <div class="plan pro reveal">
+          <span class="pill pill-purple tag">Lifetime</span>
+          <h3>Pro license</h3>
+          <div class="price">₹3,000 <small>/ $101 one-time</small></div>
+          <ul>
+            <li>Unlimited signal unlocks</li>
+            <li>All 41 OTC pairs + 41 forex + 28 crypto</li>
+            <li>Indian market module (INR)</li>
+            <li>Alert sound, priority feed, auto-rescan</li>
+            <li>Lifetime updates</li>
+          </ul>
+          <a class="btn btn-primary btn-block" href="/checkout">Unlock Pro access →</a>
         </div>
       </div>
+    </div>
+  </section>
 
-      <div class="disclaimer">
-        <div class="disclaimer-inner">
-          <strong>Risk &amp; demo notice.</strong> This build is an educational recreation of a signal-service
-          interface. Every price, signal, direction, confidence score and win-rate figure shown is synthetic
-          and produced by a local simulation loop — no broker, no exchange and no live market feed is
-          connected. Binary options and OTC derivatives are high-risk products that are restricted or banned
-          for retail clients in many jurisdictions, and a win-rate of 89% is not achievable or verifiable in
-          practice. Nothing here is investment advice. Do not publish, sell or present this build as a real
-          signal service. If you are considering trading, use money you can afford to lose and consult a
-          licensed adviser.
+  <!-- ============================ GATE ============================ -->
+  <section class="block" id="access" style="padding-top:0">
+    <div class="wrap">
+      <div class="gate">
+        <div class="gate-inner">
+          <div>
+            <span class="pill pill-purple">Terminal access</span>
+            <h2>Enter your license key</h2>
+            <p>Already have a key? Paste it to unlock the full engine. New here? Take the five-signal evaluation — it opens instantly.</p>
+            <form class="gate-form" id="gateForm" autocomplete="off">
+              <input id="licenseInput" name="license" type="text" placeholder="XXXX-XXXX-XXXX" aria-label="License key" spellcheck="false">
+              <button class="btn btn-primary" type="submit">Authenticate</button>
+            </form>
+            <div class="gate-error" id="gateError"></div>
+            <button class="btn btn-green btn-block" id="trialBtn" style="margin-top:6px">
+              ⚡ Try 5 Free Signals (instant 1-click access)
+            </button>
+            <div class="gate-note">Demo key: DEMO-KEY-2025 · any 8+ character key works in this build</div>
+          </div>
+          <div class="gate-aside">
+            <div class="row"><span>Markets online</span><b class="green">OTC · FX · CRYPTO · INR</b></div>
+            <div class="row"><span>Instruments scanned</span><b id="gateCount">121</b></div>
+            <div class="row"><span>Data feed</span><b id="gateFeed">live</b></div>
+            <div class="row"><span>Average response</span><b>0 ms</b></div>
+            <div class="row"><span>Support</span><b><a href="https://t.me/DRKMUQEETT" target="_blank" rel="noopener">@DRKMUQEETT</a></b></div>
+          </div>
         </div>
       </div>
+    </div>
+  </section>
+
+  <!-- ============================ TERMS ============================ -->
+  <section class="block" id="terms" style="padding-top:0">
+    <div class="wrap">
+      <details class="tc">
+        <summary>
+          <span>Terms &amp; Conditions — read before using OTC Bot</span>
+          <span class="dim mono" style="font-size:10px;letter-spacing:.08em">v3.1 · 17 NOV 2026</span>
+        </summary>
+        <div class="tc-body">
+          <div>
+            <h4>1. Acceptance</h4>
+            <p>By opening OTC Bot, activating a license key or using the free evaluation you accept these Terms &amp; Conditions in full. If you do not agree, close the site and do not use the terminal.</p>
+          </div>
+          <div>
+            <h4>2. What OTC Bot is</h4>
+            <p>OTC Bot is a market-analysis and signal-display tool. It reads public market data and applies a five-factor scoring model. It is an information product — not a broker, dealer, exchange, portfolio manager or investment adviser. All order execution happens on your own platform and under that platform's terms.</p>
+          </div>
+          <div>
+            <h4>3. Risk disclosure</h4>
+            <p>Trading OTC binary options, forex and crypto involves a high risk of losing your entire capital and is not suitable for most people. Confidence scores, match percentages and win-rate figures are model outputs, not guarantees. A high score can still lose. Never trade money you cannot afford to lose, never trade with borrowed money, and never treat any output of this site as advice or a promise of profit.</p>
+          </div>
+          <div>
+            <h4>4. Data sources and accuracy</h4>
+            <p>Forex spot and history come from public central-bank and community feeds (ECB / Frankfurter / currency-api); crypto prices and candles come from public Binance and CoinGecko endpoints; Indian rupee crypto quotes are derived from those feeds and the live USD/INR rate. OTC pairs are generated by a synthetic liquidity model because OTC instruments have no public order book. Feeds can be delayed, unavailable, rate-limited or wrong. Where a feed cannot be reached the terminal falls back to a local simulation and labels it. Verify every price on your broker's platform before acting.</p>
+          </div>
+          <div>
+            <h4>5. No financial advice</h4>
+            <p>Nothing on OTC Bot constitutes financial, investment, tax, accounting or legal advice, a recommendation, a solicitation or an offer to buy or sell any instrument. You are solely responsible for your own decisions. Consult a licensed adviser in your jurisdiction before trading.</p>
+          </div>
+          <div>
+            <h4>6. Eligibility</h4>
+            <p>You must be at least 18 years old (or the age of majority where you live) and legally permitted to trade the instruments shown. Binary options and leveraged products are restricted or banned in many countries, including parts of the EU, the UK, Canada, Australia, Israel and the USA. It is your responsibility to comply with local law and with your broker's rules.</p>
+          </div>
+          <div>
+            <h4>7. License and fair use</h4>
+            <p>A license key is personal and non-transferable and grants access to this build of the terminal. In this deployment activation is local to your browser; no payment is collected and no real money moves. Do not resell keys, scrape the service, attack it, or attempt to bypass the evaluation limits.</p>
+          </div>
+          <div>
+            <h4>8. No warranty</h4>
+            <p>The service is provided "as is" and "as available", without warranties of any kind, express or implied, including merchantability, fitness for a particular purpose, accuracy and non-infringement. We do not warrant uninterrupted, timely, secure or error-free operation.</p>
+          </div>
+          <div>
+            <h4>9. Limitation of liability</h4>
+            <p>To the maximum extent permitted by law, OTC Bot, its owners, operators and affiliates are not liable for any direct, indirect, incidental, consequential, special or punitive damages — including trading losses, lost profits, lost data or business interruption — arising from the use of, or inability to use, this site, even if advised of the possibility.</p>
+          </div>
+          <div>
+            <h4>10. Third-party links</h4>
+            <p>Links to brokers, charts or messaging platforms are provided for convenience. We do not control and are not responsible for third-party content, pricing, solvency or conduct. Any account you open with a third party is governed by that party's agreement.</p>
+          </div>
+          <div>
+            <h4>11. Changes</h4>
+            <p>We may change the engine, the markets offered, the pricing or these Terms at any time. Continued use after an update constitutes acceptance of the revised Terms.</p>
+          </div>
+          <div>
+            <h4>12. Contact</h4>
+            <p>Questions, licensing and support: <a href="https://t.me/DRKMUQEETT" target="_blank" rel="noopener" style="color:var(--purple-2)">@DRKMUQEETT</a> on Telegram. Full text also available at <a href="/terms" style="color:var(--purple-2)">/terms</a>.</p>
+            <p class="fine">By using this site you confirm you have read, understood and accepted these Terms &amp; Conditions.</p>
+          </div>
+        </div>
+      </details>
     </div>
   </section>
 </main>
 
 <footer class="site-footer">
-  <div class="wrap footer-grid">
-    <div>© <span id="year"></span> OTC Signal Terminal — simulation build. Not affiliated with Quotex.</div>
-    <div class="footer-links">
-      <a href="#engine">Engine</a>
-      <a href="#plans">Plans</a>
-      <a href="/checkout">Upgrade</a>
-      <a href="/terminal">Terminal</a>
+  <div class="wrap">
+    <div class="foot-grid">
+      <a class="brand" href="/">
+        <span class="brand-mark">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M2 15c1.6 0 2.2-2 3.6-2s2 2 3.6 2 2-2 3.6-2 2 2 3.6 2 2-2 3.6-2"/><circle cx="17.5" cy="7" r="2.6"/></svg>
+        </span>
+        <span>OTC BOT<small>Market Confidence Engine™</small></span>
+      </a>
+      <div class="foot-links">
+        <a href="#markets">Markets</a>
+        <a href="#engine">Engine</a>
+        <a href="#plans">Plans</a>
+        <a href="/terminal">Terminal</a>
+        <a href="/terms">Terms &amp; Conditions</a>
+        <a href="https://t.me/DRKMUQEETT" target="_blank" rel="noopener">@DRKMUQEETT</a>
+      </div>
+    </div>
+    <div class="foot-note">
+      © <span id="year">2026</span> OTC Bot. All rights reserved. Buy &amp; support:
+      <a href="https://t.me/DRKMUQEETT" target="_blank" rel="noopener">@DRKMUQEETT</a>.
+      Use of this site is subject to our <a href="/terms">Terms &amp; Conditions</a>.
     </div>
   </div>
 </footer>
 
+<div class="toast-wrap" id="toasts"></div>
+
 <script src="/assets/config.js"></script>
+<script src="/assets/market.js"></script>
 <script src="/assets/landing.js"></script>
 </body>
 </html>

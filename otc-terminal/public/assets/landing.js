@@ -1,169 +1,169 @@
-/* Landing page behaviour: ticker, preview feed, counters, gate auth. */
+/* Landing page: live quotes, board, gate authentication, reveals. */
 (function () {
-  const { api, post, clock, countdown } = window.OTC;
+  'use strict';
+  const { api } = window.OTC;
+  const M = window.MARKET;
 
-  /* ---------------- ticker ---------------- */
-  const tickerData = [
-    ['EUR/USD (OTC)', 'CALL', 98.2, '5/5 Matrix'],
-    ['GBP/USD (OTC)', 'PUT', 96.5, 'SMC Sweep'],
-    ['USD/INR (OTC)', 'CALL', 95.8, 'Kinetic Reversal'],
-    ['USD/JPY (OTC)', 'CALL', 97.4, 'Order Block'],
-    ['BTC/USD', 'CALL', 94.6, 'Trend Follow'],
-    ['AUD/CAD (OTC)', 'PUT', 95.1, 'Liquidity Grab'],
-    ['EUR/GBP (OTC)', 'CALL', 97.9, 'Breakout Shield'],
-    ['XAU/USD', 'PUT', 96.2, 'Order Block'],
-    ['USD/CHF (OTC)', 'CALL', 95.4, '5/5 Matrix'],
-    ['NZD/JPY (OTC)', 'PUT', 96.9, 'Kinetic Reversal'],
+  const $ = (id) => document.getElementById(id);
+  const TRIAL_KEY = 'otc.trialLeft';
+  const TRIAL_LIMIT = 5;
+
+  /* ---------------------------------------------------------------- helpers */
+  function fmt(px, digits) {
+    if (px == null || Number.isNaN(px)) return '—';
+    const d = px < 0.01 ? 8 : px < 1 ? 5 : px < 100 ? 4 : px < 10000 ? (digits || 2) : 0;
+    return px.toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
+  }
+  function chgHTML(chg) {
+    if (chg == null) return '<span class="chg">—</span>';
+    const up = chg >= 0;
+    return `<span class="chg ${up ? 'chg-up' : 'chg-dn'}">${up ? '▲' : '▼'} ${Math.abs(chg).toFixed(2)}%</span>`;
+  }
+  const toast = (msg, cls = '') => {
+    const wrap = $('toasts');
+    if (!wrap) return;
+    const el = document.createElement('div');
+    el.className = 'toast ' + cls;
+    el.innerHTML = msg;
+    wrap.appendChild(el);
+    setTimeout(() => el.remove(), 3800);
+  };
+
+  /* ---------------------------------------------------------------- ticker */
+  const TICKER_IDS = [
+    'CRYPTO:BTC', 'CRYPTO:ETH', 'CRYPTO:SOL', 'CRYPTO:XRP', 'FX:EURUSD', 'FX:GBPUSD',
+    'FX:USDJPY', 'FX:USDINR', 'INDIA:BTC', 'CRYPTO:DOGE', 'FX:AUDUSD', 'OTC:EURUSD',
   ];
 
-  function tickHTML([pair, dir, pct, tag]) {
-    return `<div class="tick"><b>${pair}</b><span class="dir ${dir.toLowerCase()}">${dir}</span>` +
-      `<span class="pct">${pct.toFixed(1)}%</span><span class="tag">[${tag}]</span></div>`;
+  function tickHTML(s) {
+    const px = fmt(s.price, 4);
+    return `<div class="tick"><b>${s.pair}</b>` +
+      `<span class="dir ${s.dir.toLowerCase() === 'buy' ? 'buy' : 'sell'}">${s.dir}</span>` +
+      `<span class="pct">${px}</span>` +
+      `<span class="tag">${s.match}% ${s.kind === 'otc' ? '[OTC]' : ''}</span></div>`;
   }
 
-  const track = document.getElementById('tickerTrack');
-  if (track) {
-    const html = tickerData.map(tickHTML).join('');
-    track.innerHTML = html + html; // duplicated for a seamless -50% loop
+  function renderTicker() {
+    const track = $('tickerTrack');
+    if (!track) return;
+    const rows = TICKER_IDS.map((id) => M.signalFor(M.state.byId[id])).filter(Boolean);
+    if (!rows.length) return;
+    const html = rows.map(tickHTML).join('');
+    track.innerHTML = html + html;
   }
 
-  /* ---------------- hero clock ---------------- */
-  const previewClock = document.getElementById('previewClock');
-  const tickClock = () => { if (previewClock) previewClock.textContent = clock(); };
-  tickClock();
-  setInterval(tickClock, 1000);
+  /* ---------------------------------------------------------------- board */
+  const BOARD_IDS = [
+    'CRYPTO:BTC', 'CRYPTO:ETH', 'CRYPTO:SOL', 'FX:EURUSD', 'FX:USDINR',
+    'INDIA:BTC', 'FX:USDJPY', 'OTC:EURUSD',
+  ];
 
-  /* ---------------- rotating preview ---------------- */
-  const previewSignals = document.getElementById('previewSignals');
-  let rotate = 0;
-  if (previewSignals) {
-    setInterval(() => {
-      const rows = Array.from(previewSignals.children);
-      const first = rows[0];
-      if (!first) return;
-      first.style.transition = 'opacity .3s ease, transform .3s ease';
-      first.style.opacity = '0';
-      first.style.transform = 'translateY(-6px)';
-      setTimeout(() => {
-        first.style.transition = '';
-        first.style.opacity = '';
-        first.style.transform = '';
-        previewSignals.appendChild(first);
-      }, 320);
-      rotate++;
-    }, 2600);
-  }
+  function renderBoard() {
+    const box = $('boardRows');
+    if (!box) return;
+    const rows = BOARD_IDS.map((id) => M.signalFor(M.state.byId[id])).filter(Boolean);
+    box.innerHTML = rows.map((s) => {
+      const cls = s.kind === 'otc' ? 'OTC' : s.kind === 'crypto' ? 'CRYPTO'
+        : s.kind === 'india' ? 'INR' : 'FX';
+      return `<div class="board-row">
+        <span class="sym">${s.pair}<i class="cls">${cls}</i></span>
+        <span class="px">${fmt(s.price, 4)}</span>
+        ${chgHTML(s.chg)}
+      </div>`;
+    }).join('');
 
-  /* ---------------- stat counters ---------------- */
-  function animateCount(el) {
-    const target = parseFloat(el.dataset.count || '0');
-    const suffix = el.dataset.suffix || '';
-    const decimals = (el.dataset.count || '').includes('.') ? 1 : 0;
-    const start = performance.now();
-    const dur = 1400;
-    function frame(now) {
-      const t = Math.min(1, (now - start) / dur);
-      const eased = 1 - Math.pow(1 - t, 3);
-      el.textContent = (target * eased).toFixed(decimals) + suffix;
-      if (t < 1) requestAnimationFrame(frame);
+    const stamp = $('boardStamp');
+    if (stamp) {
+      stamp.textContent = M.state.mode === 'demo'
+        ? 'feed offline · local model'
+        : 'synced ' + new Date(M.state.lastSync).toLocaleTimeString();
     }
-    requestAnimationFrame(frame);
-  }
-
-  /* ---------------- reveal on scroll ---------------- */
-  const revealEls = document.querySelectorAll('.reveal');
-  if ('IntersectionObserver' in window) {
-    const io = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        if (!entry.isIntersecting) return;
-        entry.target.classList.add('in');
-        entry.target.querySelectorAll('[data-count]').forEach(animateCount);
-        io.unobserve(entry.target);
-      });
-    }, { threshold: 0.18 });
-    revealEls.forEach((el) => io.observe(el));
-
-    // hero stats are visible immediately
-    document.querySelectorAll('.hero-stats [data-count]').forEach((el) => {
-      const obs = new IntersectionObserver((e) => {
-        if (e[0].isIntersecting) { animateCount(el); obs.disconnect(); }
-      }, { threshold: 0.4 });
-      obs.observe(el);
-    });
-  } else {
-    revealEls.forEach((el) => el.classList.add('in'));
-  }
-
-  /* ---------------- auth gate ---------------- */
-  const form = document.getElementById('licenseForm');
-  const msg = document.getElementById('gateMsg');
-  const btn = document.getElementById('authBtn');
-  const keyInput = document.getElementById('licenseKey');
-
-  function showMessage(text, ok) {
-    if (!msg) return;
-    msg.textContent = text;
-    msg.classList.add('show');
-    msg.classList.toggle('ok', !!ok);
-  }
-
-  function launch(token, plan, extra) {
-    api.set(token, plan);
-    if (extra) sessionStorage.setItem('otc.flash', extra);
-    window.location.href = '/terminal';
-  }
-
-  async function startTrial() {
-    showMessage('Provisioning evaluation seat…', true);
-    try {
-      const data = await post('/api/auth', { mode: 'trial' });
-      launch(data.token, 'trial', 'Free evaluation active — 5 signals remaining.');
-    } catch (err) {
-      showMessage(err.message || 'Could not start evaluation.');
+    const src = $('boardSource');
+    if (src) {
+      const live = M.state.mode !== 'demo';
+      src.className = 'pill ' + (live ? 'pill-green' : 'pill-amber');
+      src.style.cssText = 'padding:3px 8px;font-size:10px';
+      src.innerHTML = live
+        ? `<i class="live-dot"></i> ${(M.state.cryptoSource || 'live').toUpperCase()}`
+        : 'LOCAL MODEL';
     }
+    const badge = $('feedBadge');
+    if (badge) {
+      badge.textContent = M.state.mode === 'demo' ? 'Local model feed' : 'Live market data';
+    }
+    const gf = $('gateFeed');
+    if (gf) gf.textContent = M.state.mode === 'demo' ? 'local model' : 'live';
   }
 
-  document.querySelectorAll('[data-start-trial]').forEach((el) => {
-    el.addEventListener('click', (e) => {
+  /* ---------------------------------------------------------------- counts */
+  function renderCounts() {
+    const c = M.counts();
+    const set = (id, v) => { const el = $(id); if (el) el.textContent = v; };
+    set('mkOtc', c.otc);
+    set('mkForex', c.forex);
+    set('mkCrypto', c.crypto);
+    set('mkIndia', c.india);
+    set('statInstruments', c.otc + c.forex + c.crypto + c.india);
+    set('gateCount', c.otc + c.forex + c.crypto + c.india);
+  }
+
+  /* ---------------------------------------------------------------- gate */
+  function goTerminal() { window.location.href = '/terminal'; }
+
+  function startTrial() {
+    api.set('trial-' + Date.now().toString(36), 'trial');
+    try { localStorage.setItem(TRIAL_KEY, String(TRIAL_LIMIT)); } catch { /* ignore */ }
+    toast('<strong>Trial activated</strong> — 5 signals unlocked.', 'ok');
+    setTimeout(goTerminal, 380);
+  }
+
+  function activate(key) {
+    const clean = String(key || '').trim().toUpperCase();
+    const err = $('gateError');
+    if (clean.length < 8 || !/^[A-Z0-9][A-Z0-9-]{6,}[A-Z0-9]$/.test(clean)) {
+      if (err) err.textContent = 'Enter a valid license key (8+ characters, letters, numbers, dashes).';
+      return;
+    }
+    if (err) err.textContent = '';
+    api.set('lic-' + clean, 'pro');
+    try { localStorage.removeItem(TRIAL_KEY); } catch { /* ignore */ }
+    if (window.OTC.recordActivation) window.OTC.recordActivation();
+    toast('<strong>License accepted</strong> — Pro unlocked.', 'ok');
+    setTimeout(goTerminal, 380);
+  }
+
+  const form = $('gateForm');
+  if (form) {
+    form.addEventListener('submit', (e) => {
       e.preventDefault();
-      startTrial();
+      activate($('licenseInput').value);
     });
+  }
+  ['trialBtn', 'trialCta'].forEach((id) => {
+    const el = $(id);
+    if (el) el.addEventListener('click', (e) => { e.preventDefault(); startTrial(); });
   });
 
-  if (form) {
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const key = (keyInput.value || '').trim().toUpperCase();
-      if (key.length < 8) {
-        showMessage('License keys are at least 8 characters. Try DEMO-KEY-2025.');
-        keyInput.focus();
-        return;
-      }
-      btn.disabled = true;
-      showMessage('Verifying license against seat server…', true);
-      try {
-        const data = await post('/api/auth', { mode: 'license', key });
-        showMessage(`License accepted (${data.key}) — launching terminal…`, true);
-        setTimeout(() => launch(data.token, 'pro', 'Pro seat authenticated. Full engine unlocked.'), 550);
-      } catch (err) {
-        btn.disabled = false;
-        showMessage(err.message || 'Authentication failed.');
-      }
-    });
-  }
+  /* ---------------------------------------------------------------- reveals */
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((en) => { if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); } });
+  }, { rootMargin: '0px 0px -8% 0px' });
+  document.querySelectorAll('.reveal').forEach((el) => io.observe(el));
 
-  const trialBtn = document.getElementById('trialBtn');
-  if (trialBtn) trialBtn.addEventListener('click', startTrial);
+  const y = $('year');
+  if (y) y.textContent = new Date().getFullYear();
 
-  // If a valid session already exists, offer a shortcut back into the terminal.
-  if (api.token && form) {
-    const existing = document.createElement('p');
-    existing.className = 'gate-foot';
-    existing.style.marginTop = '10px';
-    existing.innerHTML = 'Session detected. <a href="/terminal">Re-open terminal →</a>';
-    form.after(existing);
-  }
+  /* ---------------------------------------------------------------- boot */
+  renderCounts();
+  renderTicker();
+  renderBoard();
 
-  const year = document.getElementById('year');
-  if (year) year.textContent = new Date().getFullYear();
+  M.init().then(() => {
+    renderCounts();
+    renderTicker();
+    renderBoard();
+    if (M.state.mode === 'demo') toast('Live feeds unreachable — showing the local model.', 'err');
+  }).catch(() => {});
+
+  setInterval(() => { renderTicker(); renderBoard(); }, 6000);
 })();

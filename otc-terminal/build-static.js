@@ -1,13 +1,13 @@
 'use strict';
 
 /**
- * Builds the fully static (server-less) version of the terminal into ./static.
+ * Builds the fully static version of the site into ./static.
  *
- * The pages are identical to the Node build; the only differences are:
- *   - assets/engine-local.js is loaded first, which shims fetch()/EventSource
- *     so the simulated engine runs in the browser (no backend required),
+ * The app is already server-less (all market data is fetched in the browser),
+ * so the build only has to make the pages portable:
  *   - internal routes are rewritten to .html so any static host works,
- *   - a robots.txt keeps the demo out of search indexes.
+ *   - every asset/route reference becomes relative (sub-path safe),
+ *   - a robots.txt and a minimal vercel.json are emitted.
  */
 
 const fs = require('fs');
@@ -36,6 +36,7 @@ copyDir(SRC, OUT);
 const rewrites = [
   [/\/terminal(?=["'#?\s]|$)/g, '/terminal.html'],
   [/\/checkout(?=["'#?\s]|$)/g, '/checkout.html'],
+  [/\/terms(?=["'#?\s]|$)/g, '/terms.html'],
 ];
 
 function processFile(file) {
@@ -43,16 +44,6 @@ function processFile(file) {
   if (!['.html', '.js', '.css', '.json', '.txt'].includes(ext)) return;
   let text = fs.readFileSync(file, 'utf8');
   let changed = false;
-
-  // Inject the local engine before config.js — must happen before the
-  // asset paths below are made relative.
-  if (ext === '.html' && text.includes('/assets/config.js')) {
-    text = text.replace(
-      '<script src="/assets/config.js"></script>',
-      '<script src="/assets/engine-local.js"></script>\n<script src="/assets/config.js"></script>'
-    );
-    changed = true;
-  }
 
   if (ext === '.html' || ext === '.js') {
     for (const [pattern, replacement] of rewrites) {
@@ -73,8 +64,12 @@ function processFile(file) {
     const next = text
       .replace(/'\/terminal\.html'/g, "'terminal.html'")
       .replace(/'\/checkout\.html'/g, "'checkout.html'")
+      .replace(/'\/terms\.html'/g, "'terms.html'")
       .replace(/replace\('\/#access'\)/g, "replace('./#access')")
-      .replace(/location\.href = '\/'/g, "location.href = './'");
+      .replace(/location\.href = '\/'/g, "location.href = './'")
+      .replace(/location\.replace\('\/'\)/g, "location.replace('./')")
+      .replace(/href="\/(terminal|checkout|terms|index)"/g, 'href="$1.html"')
+      .replace(/href="\/"/g, 'href="./"');
     if (next !== text) { text = next; changed = true; }
   }
 

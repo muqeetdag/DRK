@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#06060c">
+<title>Terms &amp; Conditions — OTC Bot</title>
+<meta name="description" content="The complete terms and conditions, risk disclosure and data-source notes for OTC Bot.">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/style.css">
+<style>
+  .legal { padding: 46px 0 70px; }
+  .legal .wrap { max-width: 860px; }
+  .legal-head { text-align: center; margin-bottom: 30px; }
+  .legal-head h1 { font-size: clamp(1.8rem, 4.6vw, 2.7rem); letter-spacing: -.035em; margin: 12px 0 8px; }
+  .legal-head p { color: var(--muted); margin: 0; font-size: 13px; }
+  .legal-card { padding: 26px 26px 30px; border-radius: 18px; border: 1px solid var(--line-2); background: var(--panel); }
+  .legal section { padding: 16px 0; border-bottom: 1px solid var(--line-2); }
+  .legal section:last-child { border-bottom: 0; padding-bottom: 0; }
+  .legal h2 { font-size: 14px; letter-spacing: .01em; margin: 0 0 6px; }
+  .legal p, .legal li { font-size: 13px; line-height: 1.72; color: var(--muted); margin: 0 0 8px; }
+  .legal ul, .legal ol { margin: 0 0 8px; padding-left: 20px; }
+  .legal a { color: var(--purple-2); }
+  .legal .callout { padding: 14px 16px; border-radius: 12px; border: 1px solid rgba(245, 158, 11, .3); background: rgba(245, 158, 11, .07); color: #fcd34d; font-size: 12.5px; line-height: 1.7; }
+  .legal .toc { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+  .legal .toc a { padding: 5px 10px; border-radius: 7px; border: 1px solid var(--line-2); font-size: 11.5px; color: var(--muted); }
+  .legal .toc a:hover { color: var(--text); border-color: rgba(139, 92, 246, .4); }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <nav class="nav wrap">
+    <a class="brand" href="/">
+      <span class="brand-mark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M2 15c1.6 0 2.2-2 3.6-2s2 2 3.6 2 2-2 3.6-2 2 2 3.6 2 2-2 3.6-2"/><circle cx="17.5" cy="7" r="2.6"/></svg>
+      </span>
+      <span>OTC BOT<small>Market Confidence Engine™</small></span>
+    </a>
+    <div class="nav-actions" style="margin-left:auto">
+      <a class="btn btn-ghost btn-sm" href="/">Home</a>
+      <a class="btn btn-primary btn-sm" href="/terminal">Open terminal</a>
+    </div>
+  </nav>
+</header>
+
+<main class="legal">
+  <div class="wrap">
+    <div class="legal-head">
+      <span class="pill pill-purple">Legal</span>
+      <h1>Terms &amp; Conditions</h1>
+      <p>Version 3.1 · effective 17 November 2026 · applies to otc-bot.vercel.app and every sub-page of the terminal</p>
+    </div>
+
+    <div class="legal-card">
+      <div class="toc">
+        <a href="#acceptance">1 Acceptance</a>
+        <a href="#service">2 Service</a>
+        <a href="#risk">3 Risk</a>
+        <a href="#data">4 Data</a>
+        <a href="#advice">5 No advice</a>
+        <a href="#eligibility">6 Eligibility</a>
+        <a href="#license">7 License</a>
+        <a href="#warranty">8 Warranty</a>
+        <a href="#liability">9 Liability</a>
+        <a href="#thirdparty">10 Third parties</a>
+        <a href="#changes">11 Changes</a>
+        <a href="#contact">12 Contact</a>
+      </div>
+
+      <section id="acceptance">
+        <h2>1. Acceptance of these terms</h2>
+        <p>By opening OTC Bot, activating a license key, starting the free evaluation or using any part of the terminal, you accept these Terms &amp; Conditions in full. If you do not accept them, close the site and do not use it.</p>
+      </section>
+
+      <section id="service">
+        <h2>2. What OTC Bot is — and is not</h2>
+        <p>OTC Bot is a market-analysis and signal-display tool. It reads public market data, applies a five-factor scoring model and displays the result. It is an information product. It is not a broker, dealer, exchange, investment adviser, portfolio manager or custodian, and it never places orders on your behalf.</p>
+        <p>Every trade you place happens on your own platform, under your own account and that platform's agreement, at your own risk.</p>
+      </section>
+
+      <section id="risk">
+        <h2>3. Risk disclosure</h2>
+        <div class="callout" style="margin-bottom:12px">Trading OTC binary options, forex and crypto carries a high risk of losing all of your capital. It is not suitable for most people. Confidence and match scores are model outputs, not guarantees.</div>
+        <p>Nothing displayed by the engine — confidence percentage, match score, direction, entry time or historical win rate — is a promise, prediction or assurance of profit. A 99% confidence reading can still lose. You must never trade money you cannot afford to lose, never trade with borrowed funds, and never increase risk on the basis of a score.</p>
+        <p>OTC (over-the-counter) instruments are priced by the platform offering them, not by a public exchange. Their quotes can differ from the underlying interbank market and are generated here by a synthetic liquidity model for demonstration of the interface.</p>
+      </section>
+
+      <section id="data">
+        <h2>4. Data sources, delays and accuracy</h2>
+        <ul>
+          <li><b>Forex</b> — spot rates and 120 days of daily closes from public central-bank and community feeds (European Central Bank via Frankfurter; currency-api via jsDelivr).</li>
+          <li><b>Crypto</b> — prices, 24h statistics and 1m–15m candles from public Binance market endpoints, with CoinGecko as a fallback.</li>
+          <li><b>Indian market</b> — rupee quotes derived from the live USD/INR rate and the crypto feeds above.</li>
+          <li><b>OTC pairs</b> — generated by the local synthetic liquidity model, because OTC instruments have no public order book.</li>
+        </ul>
+        <p>Public feeds may be delayed, rate-limited, geo-restricted, interrupted or simply wrong. Where a feed cannot be reached the terminal falls back to a local model and labels the feed accordingly. Always verify a price on your broker's platform before acting on it.</p>
+      </section>
+
+      <section id="advice">
+        <h2>5. No financial, investment or legal advice</h2>
+        <p>Nothing on OTC Bot constitutes financial, investment, tax, accounting or legal advice, a recommendation, a solicitation, or an offer to buy or sell any instrument. No output is tailored to your circumstances, objectives or risk tolerance. You are solely responsible for your decisions. Consult a licensed professional in your jurisdiction before trading.</p>
+      </section>
+
+      <section id="eligibility">
+        <h2>6. Eligibility and restricted jurisdictions</h2>
+        <p>You must be at least 18 years old (or the age of majority where you live) and legally permitted to access speculative trading information. Binary options and leveraged products are restricted or prohibited in many jurisdictions, including parts of the European Union, the United Kingdom, Canada, Australia, Israel and the United States of America. You are responsible for knowing and following your local law and your broker's rules. If using OTC Bot would breach any law that applies to you, do not use it.</p>
+      </section>
+
+      <section id="license">
+        <h2>7. License, activation and fair use</h2>
+        <p>A license key is personal, non-transferable and grants access to this build of the terminal. In this deployment activation happens locally in your browser: no payment is collected, no card is charged and no real money moves. Do not resell keys, share paid access, scrape the service, reverse-engineer it, attack it or attempt to bypass evaluation limits.</p>
+      </section>
+
+      <section id="warranty">
+        <h2>8. No warranty</h2>
+        <p>The service is provided “as is” and “as available”, without warranty of any kind, express or implied, including merchantability, fitness for a particular purpose, accuracy, availability and non-infringement. We do not warrant uninterrupted, timely, secure or error-free operation, or that any defect will be corrected.</p>
+      </section>
+
+      <section id="liability">
+        <h2>9. Limitation of liability</h2>
+        <p>To the maximum extent permitted by law, OTC Bot and its owners, operators, contributors and affiliates are not liable for any direct, indirect, incidental, consequential, special or punitive loss or damage — including trading losses, lost profits, lost data, loss of goodwill or business interruption — arising from the use of, or inability to use, this site or its outputs, even if advised of the possibility of such damage. Where liability cannot be excluded it is limited to the amount you paid to access the service, which in this build is zero.</p>
+      </section>
+
+      <section id="thirdparty">
+        <h2>10. Third-party links and services</h2>
+        <p>Links to brokers, charting tools or messaging platforms are provided for convenience only. We do not control and are not responsible for third-party content, pricing, solvency, data practices or conduct. Any account you open with a third party is governed exclusively by that party's agreement.</p>
+      </section>
+
+      <section id="changes">
+        <h2>11. Changes to the service and these terms</h2>
+        <p>We may modify the engine, the markets offered, pricing, availability or these Terms at any time. Material changes take effect when published on this page. Continued use after publication constitutes acceptance of the revised Terms.</p>
+      </section>
+
+      <section id="contact">
+        <h2>12. Contact and support</h2>
+        <p>Licensing, support and purchase enquiries: <a href="https://t.me/DRKMUQEETT" target="_blank" rel="noopener">@DRKMUQEETT</a> on Telegram.</p>
+        <p style="font-size:11.5px;color:var(--dim);font-family:var(--mono)">By continuing to use OTC Bot you confirm that you have read, understood and accepted these Terms &amp; Conditions in full.</p>
+      </section>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap foot-grid">
+    <div class="mono" style="font-size:11.5px;color:var(--dim)">© <span id="year">2026</span> OTC Bot</div>
+    <div class="foot-links">
+      <a href="/">Home</a>
+      <a href="/terminal">Terminal</a>
+      <a href="/#plans">Plans</a>
+      <a href="https://t.me/DRKMUQEETT" target="_blank" rel="noopener">@DRKMUQEETT</a>
+    </div>
+  </div>
+</footer>
+
+<script>document.getElementById('year').textContent = new Date().getFullYear();</script>
+</body>
+</html>
