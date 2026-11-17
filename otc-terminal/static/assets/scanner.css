@@ -103,6 +103,13 @@
 .sc-kv b.dn { color: #f87171; }
 .sc-kv b.flat { color: #fbbf24; }
 .sc-kv b.time { color: #c7c7e2; font-family: var(--mono); }
+.sc-kv.wide { grid-column: 1 / -1; }
+.sc-kv b.cd { color: #c4b5fd; font-family: var(--mono); font-size: 11px; }
+.sc-kv b.cd::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: #a78bfa; box-shadow: 0 0 6px #a78bfa; }
+.sc-bar { display: block; height: 3px; margin-top: 2px; border-radius: 3px; background: rgba(255, 255, 255, .07); overflow: hidden; }
+.sc-bar i { display: block; height: 100%; width: 100%; border-radius: 3px; background: linear-gradient(90deg, #8b5cf6, #c4b5fd); transition: width .9s linear; }
+.scan-card.active.buy .sc-bar i { background: linear-gradient(90deg, #16a34a, #86efac); }
+.scan-card.active.sell .sc-bar i { background: linear-gradient(90deg, #dc2626, #fca5a5); }
 
 .sc-accent {
   position: absolute; left: 0; right: 0; bottom: 0; height: 2px;

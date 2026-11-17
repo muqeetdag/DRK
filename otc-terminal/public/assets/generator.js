@@ -10,6 +10,11 @@
 
   const { api } = window.OTC;
   const M = window.MARKET;
+  const CLOCK = window.CLOCK || {
+    istFull: (d) => new Date(d).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
+    istTime: (d) => new Date(d).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+    plan: () => ({ entryMs: Date.now(), expiryMs: Date.now() + 60000, pending: false, leftMs: 60000 }),
+  };
   const $ = (id) => document.getElementById(id);
 
   /* ---------------------------------------------------------------- keys */
@@ -31,6 +36,8 @@
     source: '',
     hover: -1,
     beast: false,
+    tv: '',
+    tvBlocked: false,
     used: 0,
     signal: null,
     entryAt: 0,
@@ -135,7 +142,7 @@
   function paintClock() {
     const d = new Date();
     const clock = $('sessionClock');
-    if (clock) clock.textContent = `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+    if (clock) clock.textContent = CLOCK.istClock ? CLOCK.istClock(d) : `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
     const lu = $('liveUsers');
     if (lu) lu.textContent = liveUsers;
   }
@@ -239,11 +246,10 @@
     $('cpSym').textContent = inst.pair || inst.symbol;
     $('cpTf').textContent = state.tf;
     $('instName').textContent = inst.pair || inst.symbol;
-    $('tvLink').href = inst.kind === 'crypto' || inst.kind === 'india'
-      ? 'https://www.tradingview.com/chart/?symbol=' + encodeURIComponent('BINANCE:' + (inst.bsym || 'BTCUSDT'))
-      : inst.kind === 'forex'
-        ? 'https://www.tradingview.com/chart/?symbol=' + encodeURIComponent('FX:' + inst.symbol)
-        : 'https://www.tradingview.com/markets/currencies/';
+    const tvSym = tvSymbol(inst);
+    $('tvLink').href = tvSym
+      ? 'https://www.tradingview.com/chart/?symbol=' + encodeURIComponent(tvSym)
+      : 'https://www.tradingview.com/markets/currencies/';
     const px = M.priceOf(inst);
     $('statPrice').textContent = fmtPrice(px, inst.digits || 5);
     const chg = inst.chg;
@@ -265,6 +271,146 @@
       const active = Object.values(M.state.view).filter((v) => v.data && v.data.active).length;
       if (active) nav.textContent = active;
     }
+  }
+
+  /* ------------------------------------------------ tradingview chart */
+  const TV_TF = { '1m': '1', '5m': '5', '15m': '15', '1H': '60', '4H': '240', '1D': 'D', '1W': 'W', '1M': 'M' };
+
+  /* the real exchange symbol behind an instrument; OTC pairs are synthetic
+     and have no public feed, so they keep the engine chart */
+  function tvSymbol(inst) {
+    if (!inst) return null;
+    if (inst.kind === 'forex') {
+      if (inst.symbol === 'XAUUSD' || inst.symbol === 'XAGUSD') return 'OANDA:' + inst.symbol;
+      if (inst.symbol === 'USDINR' || inst.symbol === 'EURINR' || inst.symbol === 'AEDINR') return 'FX_IDC:' + inst.symbol;
+      return 'FX:' + inst.symbol;
+    }
+    if (inst.kind === 'crypto') return 'BINANCE:' + (inst.bsym || inst.symbol);
+    if (inst.kind === 'india') {
+      if (inst.symbol === 'USDINR') return 'FX_IDC:USDINR';
+      return 'BINANCE:' + (inst.bsym || 'BTCUSDT');
+    }
+    return null;
+  }
+
+  /* TradingView could not be reached (blocked network, offline, CSP): keep
+     the panel usable by painting the engine chart underneath and saying so */
+  function engineChart(reason) {
+    const wrap = $('tvChart');
+    const note = $('tvNote');
+    const canvas = $('chart');
+    state.tv = '';
+    state.tvBlocked = true;
+    if (canvas) canvas.hidden = false;
+    if (wrap) {
+      wrap.hidden = false;
+      wrap.classList.add('fallback');
+    }
+    if (note && reason) {
+      note.hidden = false;
+      note.textContent = reason;
+    }
+    if (reason) $('chartSource').textContent = reason;
+    draw();
+  }
+
+  function mountTV(inst) {
+    const wrap = $('tvChart');
+    const box = $('tvHolder');
+    const canvas = $('chart');
+    if (!wrap || !box || !canvas) return false;
+
+    const sym = tvSymbol(inst);
+    if (!sym) {                              /* OTC -> engine chart */
+      wrap.hidden = true;
+      canvas.hidden = false;
+      state.tv = '';
+      return false;
+    }
+
+    const key = sym + '|' + state.tf;
+    if (state.tv === key) return true;
+
+    state.tv = key;
+    wrap.hidden = false;
+    wrap.classList.remove('fallback');
+    canvas.hidden = true;
+    box.innerHTML = '';
+
+    const note = $('tvNote');
+    if (note) { note.hidden = true; note.textContent = ''; }
+
+    const holder = document.createElement('div');
+    holder.className = 'tradingview-widget-container';
+    holder.style.height = '100%';
+    holder.style.width = '100%';
+    const inner = document.createElement('div');
+    inner.className = 'tradingview-widget-container__widget';
+    inner.style.height = '100%';
+    inner.style.width = '100%';
+    holder.appendChild(inner);
+
+    const script = document.createElement('script');
+    script.type = 'text/javascript';
+    script.async = true;
+    script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
+    script.innerHTML = JSON.stringify({
+      autosize: true,
+      symbol: sym,
+      interval: TV_TF[state.tf] || '1',
+      timezone: 'Asia/Kolkata',
+      theme: 'dark',
+      style: '1',
+      locale: 'en',
+      enable_publishing: false,
+      allow_symbol_change: false,
+      hide_side_toolbar: true,
+      hide_top_toolbar: false,
+      withdateranges: true,
+      details: false,
+      calendar: false,
+      studies: ['Volume@tv-basicstudies'],
+      support_host: 'https://www.tradingview.com',
+    });
+    holder.appendChild(script);
+    box.appendChild(holder);
+
+    $('chartSource').textContent = 'TradingView · ' + sym;
+
+    const started = Date.now();
+    const watch = setInterval(() => {
+      if (wrap.hidden) { clearInterval(watch); return; }
+      if (box.querySelector('iframe')) { clearInterval(watch); return; }
+      if (Date.now() - started > 7000) {
+        clearInterval(watch);
+        engineChart('TradingView unreachable · showing engine chart');
+      }
+    }, 500);
+
+    script.onerror = () => {
+      clearInterval(watch);
+      engineChart('TradingView blocked · showing engine chart');
+    };
+    return true;
+  }
+
+  /* picks the right chart for the current instrument */
+  function applyChart() {
+    const inst = currentInst();
+    if (!inst) return;
+    if (inst.kind === 'otc' || state.tvBlocked) {
+      const wrap = $('tvChart');
+      if (wrap) {
+        wrap.hidden = inst.kind === 'otc';
+        wrap.classList.remove('fallback');
+      }
+      $('chart').hidden = false;
+      state.tv = '';
+      if (state.source) $('chartSource').textContent = state.source;
+      draw();
+      return;
+    }
+    mountTV(inst);
   }
 
   /* ------------------------------------------------------------- series */
@@ -413,7 +559,7 @@
       if (state.candles.length) $('chartHint').hidden = true;
       $('chartSource').textContent = out.source;
       paintRange();
-      draw();
+      applyChart();
       paintOHLC(state.candles.length - 1);
     } catch (e) {
       $('chartHint').textContent = 'feed unavailable — retrying';
@@ -453,6 +599,7 @@
   }
 
   function draw() {
+    if (state.tv) return;
     const cv = $('chart');
     const wrap = $('chartWrap');
     if (!cv || !wrap) return;
@@ -749,18 +896,17 @@
     $('sbDots').innerHTML = Array.from({ length: 5 }, (_, i) => `<i class="${i < agree ? 'on' : ''}"></i>`).join('');
     $('spBeast').hidden = !state.beast;
 
-    const now = opts.at || Date.now();
-    state.entryAt = now;
-    state.expiryAt = now + (TF_MS[state.tf] || 6e4);
-    $('spEntry').textContent = new Date(now).toLocaleString('en-US', {
-      month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit',
-    });
+    const tfMs = TF_MS[state.tf] || 6e4;
+    const sched = CLOCK.plan(inst.id, tfMs, opts.at || Date.now());
+    state.entryAt = sched.entryMs;
+    state.expiryAt = sched.expiryMs;
+    $('spEntry').textContent = CLOCK.istFull(sched.entryMs) + ' IST';
     $('spDur').textContent = TF_LABEL[state.tf] || '1 minute';
     $('spSide').textContent = sig.dir || '—';
 
     const badge = $('spBadge');
     badge.className = 'st-badge';
-    badge.textContent = 'ACTIVE · ' + clock(TF_MS[state.tf] || 6e4);
+    badge.textContent = 'ACTIVE · ' + clock(Math.max(0, sched.expiryMs - Date.now()));
     state.signal = sig;
   }
 
@@ -943,6 +1089,8 @@
     });
 
     $('instSel').addEventListener('change', (e) => {
+      state.tvBlocked = false;
+      state.tv = '';
       state.id = e.target.value;
       paintInstrument();
       ensureSeries(true);

@@ -10,6 +10,15 @@
 
   const { api } = window.OTC;
   const M = window.MARKET;
+  const CLOCK = window.CLOCK || {
+    istTime: (d) => new Date(d).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+    istFull: (d) => new Date(d).toLocaleString('en-US'),
+    istClock: () => '',
+    mmss: (ms) => String(Math.max(0, Math.floor(ms / 1000))),
+    plan: () => ({ entryMs: Date.now(), expiryMs: Date.now() + 60000, pending: false, leftMs: 60000 }),
+    everySecond: (fn) => { fn(); return setInterval(fn, 1000); },
+  };
+  const TF_MS = 60000;
   const $ = (id) => document.getElementById(id);
 
   const SOURCE_KINDS = {
@@ -61,21 +70,30 @@
   }
 
   function hms(d = new Date()) {
+    if (CLOCK.istClock) {
+      const t = CLOCK.istClock(d);
+      if (t) return t;
+    }
     return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
   }
 
   function timeLabel(d = new Date()) {
-    let h = d.getHours();
-    const m = pad(d.getMinutes());
-    const ap = h >= 12 ? 'PM' : 'AM';
-    h = h % 12 || 12;
-    return `${pad(h)}:${m} ${ap}`;
+    return CLOCK.istTime(d);
   }
 
-  function executionTime() {
-    const d = new Date(Date.now() + 60000);
-    d.setSeconds(0, 0);
-    return timeLabel(d);
+  /* every pair trades the candle that is open right now: the entry lands a
+     few seconds into the candle, the trade expires when the candle closes.
+     The schedule comes from the shared clock so the Signals page shows the
+     same entry time and the same remaining seconds for the same pair. */
+  function tradeOf(id) {
+    const plan = CLOCK.plan(id, TF_MS);
+    return {
+      plan,
+      entry: CLOCK.istTime(plan.entryMs),
+      at: CLOCK.istTime(plan.expiryMs),
+      left: CLOCK.mmss(plan.leftMs),
+      frac: Math.max(0, Math.min(1, plan.leftMs / TF_MS)),
+    };
   }
 
   function trendOf(sig) {
@@ -163,6 +181,7 @@
   function cardHTML(sig) {
     const trend = trendOf(sig);
     const tag = KIND_TAG[sig.kind] || ['', ''];
+    const t = tradeOf(sig.id);
     return `<article class="scan-card" data-id="${sig.id}">
       <div class="sc-head">
         <b class="sc-sym">${sig.symbol}</b><i class="sc-tag ${tag[1]}">${tag[0]}</i>
@@ -172,7 +191,12 @@
       <div class="sc-status"><b data-ref="status">WAIT</b><em data-ref="pct"></em></div>
       <div class="sc-rows">
         <div class="sc-kv"><span>Trend</span><b data-ref="trend" class="${trend.cls}">${ICON[trend.icon]}${trend.word}</b></div>
-        <div class="sc-kv"><span>Execution time</span><b class="time" data-ref="time">${ICON.clock}${executionTime()}</b></div>
+        <div class="sc-kv"><span data-ref="l1">Entry · IST</span><b class="time" data-ref="time">${ICON.clock}${t.entry}</b></div>
+        <div class="sc-kv wide">
+          <span data-ref="l2">${sig.active ? (t.plan.pending ? 'Entry in' : 'Expires in') : 'Next scan in'}</span>
+          <b class="cd" data-ref="cd">${t.left}</b>
+          <i class="sc-bar"><i data-ref="bar" style="width:${Math.round(t.frac * 100)}%"></i></i>
+        </div>
       </div>
       <i class="sc-accent"></i>
     </article>`;
@@ -190,10 +214,15 @@
     Array.from(grid.querySelectorAll('.scan-card')).forEach((card) => {
       state.entries.set(card.dataset.id, {
         card,
+        sig: rows.find((r) => r.id === card.dataset.id) || null,
         status: card.querySelector('[data-ref="status"]'),
         pct: card.querySelector('[data-ref="pct"]'),
         trend: card.querySelector('[data-ref="trend"]'),
         time: card.querySelector('[data-ref="time"]'),
+        l1: card.querySelector('[data-ref="l1"]'),
+        l2: card.querySelector('[data-ref="l2"]'),
+        cd: card.querySelector('[data-ref="cd"]'),
+        bar: card.querySelector('[data-ref="bar"]'),
       });
     });
     paintCards(rows);
@@ -202,7 +231,6 @@
   }
 
   function paintCards(rows) {
-    const et = executionTime();
     rows.forEach((s) => {
       const el = state.entries.get(s.id);
       if (!el) return;
@@ -213,11 +241,27 @@
       el.pct.textContent = s.active ? Math.round(s.confidence) + '%' : '';
       el.trend.className = trend.cls;
       el.trend.innerHTML = ICON[trend.icon] + trend.word;
-      el.time.innerHTML = ICON.clock + et;
+      el.sig = s;
     });
+    paintTimes();
     const active = rows.filter((s) => s.active).length;
     const nav = $('navActive');
     if (nav) nav.textContent = String(active);
+  }
+
+  /* re-stamps every card's entry time and counts the seconds down; called
+     once a second so the numbers move in real time */
+  function paintTimes() {
+    state.entries.forEach((el) => {
+      if (!el.sig || !el.time) return;
+      const t = tradeOf(el.sig.id);
+      const active = !!el.sig.active;
+      el.time.innerHTML = ICON.clock + (active ? t.entry : t.at);
+      if (el.l1) el.l1.textContent = active ? 'Entry · IST' : 'Next scan · IST';
+      if (el.l2) el.l2.textContent = active ? (t.plan.pending ? 'Entry in' : 'Expires in') : 'Next scan in';
+      if (el.cd) el.cd.textContent = t.left;
+      if (el.bar) el.bar.style.width = Math.round(t.frac * 100) + '%';
+    });
   }
 
   function update() {
@@ -245,9 +289,10 @@
     try { sig = M.signalFor(inst); } catch { sig = null; }
     const trend = sig ? trendOf(sig).word : 'Sideways';
     const conf = sig ? Math.round(sig.confidence) : 0;
+    const t = tradeOf(id);
     const line = sig && sig.active
-      ? `${inst.symbol} ${sig.dir} ${conf}% · ${trend} · entry ${executionTime()}`
-      : `${inst.symbol} WAIT · ${trend} · next scan ${executionTime()}`;
+      ? `${inst.symbol} ${sig.dir} ${conf}% · ${trend} · entry ${t.entry} IST · expires in ${t.left}`
+      : `${inst.symbol} WAIT · ${trend} · next scan ${t.at} IST`;
     const done = () => toast(`<b>Copied.</b> ${line}`, 'ok');
     if (navigator.clipboard?.writeText) {
       navigator.clipboard.writeText(line).then(done).catch(fallback);
@@ -335,6 +380,8 @@
     }, 1000);
     setInterval(update, 5000);
     setInterval(paintPush, 30000);
+    /* entries and countdowns tick every second, independent of the 5 s rescan */
+    CLOCK.everySecond(paintTimes);
   }
 
   function init() {
