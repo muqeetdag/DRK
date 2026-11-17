@@ -42,6 +42,30 @@ git add docs && git commit -m "Rebuild static site" && git push
 # then bump the SHA constant in shell/index.html and redeploy it on Vercel
 ```
 
+## Market clock (entry time + expiry)
+
+`assets/clock.js` is the single source of truth for time. Every instrument
+trades the candle that is open right now: the entry lands a few seconds into
+the candle (staggered per pair) and the trade expires when that candle closes.
+Because the schedule is derived from the pair id and the clock, the Live
+Scanner and the Signals page always show the same entry stamp and the same
+remaining seconds for the same instrument. Every stamp is rendered in IST
+(`Asia/Kolkata`), so nothing shows the visitor's raw local clock.
+
+Scanner cards read: `Entry · IST 04:32 PM` / `Expires in 00:41` with a progress
+bar, or `Next scan · IST` / `Next scan in` for stand-by pairs. Signals shows
+`Take entry at Nov 17, 2026, 04:32 PM IST` with a live `ACTIVE · 00:56` badge.
+
+## Charts
+
+Forex, crypto and INR instruments render the official **TradingView Advanced
+Chart** widget (`s3.tradingview.com`), mapped to the real symbol:
+`FX:EURUSD`, `OANDA:XAUUSD`, `BINANCE:BTCUSDT`, `FX_IDC:USDINR`. The widget
+follows the timeframe pills, uses the dark theme and the IST timezone. OTC
+pairs are synthetic and have no public feed, so they keep the engine canvas
+chart. If TradingView cannot be reached the panel falls back to the engine
+chart automatically and says so in the footer.
+
 ## Live Scanner
 
 `/scanner` is the dense scanner grid: every pair as a card with its status
