@@ -81,18 +81,22 @@
     return CLOCK.istTime(d);
   }
 
-  /* every pair trades the candle that is open right now: the entry lands a
-     few seconds into the candle, the trade expires when the candle closes.
-     The schedule comes from the shared clock so the Signals page shows the
-     same entry time and the same remaining seconds for the same pair. */
+  /* every pair runs its own one-minute trade window: the entry prints a few
+     seconds after the candle opens (staggered per pair) and the trade closes
+     exactly one minute later. The schedule comes from the shared clock, so
+     the Signals page shows the same entry stamp and the same seconds left. */
   function tradeOf(id) {
     const plan = CLOCK.plan(id, TF_MS);
+    const scanLeft = Math.max(0, plan.nextScanMs - Date.now());
     return {
       plan,
+      pending: plan.pending,
       entry: CLOCK.istTime(plan.entryMs),
-      at: CLOCK.istTime(plan.expiryMs),
-      left: CLOCK.mmss(plan.leftMs),
-      frac: Math.max(0, Math.min(1, plan.leftMs / TF_MS)),
+      next: CLOCK.istTime(plan.nextScanMs),
+      left: CLOCK.mmss(plan.pending ? plan.toEntryMs : plan.toExpiryMs),
+      scanLeft: CLOCK.mmss(scanLeft),
+      frac: plan.pending ? 1 : Math.max(0, Math.min(1, plan.toExpiryMs / plan.windowMs)),
+      scanFrac: Math.max(0, Math.min(1, scanLeft / plan.windowMs)),
     };
   }
 
@@ -193,9 +197,9 @@
         <div class="sc-kv"><span>Trend</span><b data-ref="trend" class="${trend.cls}">${ICON[trend.icon]}${trend.word}</b></div>
         <div class="sc-kv"><span data-ref="l1">Entry · IST</span><b class="time" data-ref="time">${ICON.clock}${t.entry}</b></div>
         <div class="sc-kv wide">
-          <span data-ref="l2">${sig.active ? (t.plan.pending ? 'Entry in' : 'Expires in') : 'Next scan in'}</span>
-          <b class="cd" data-ref="cd">${t.left}</b>
-          <i class="sc-bar"><i data-ref="bar" style="width:${Math.round(t.frac * 100)}%"></i></i>
+          <span data-ref="l2">${sig.active ? (t.pending ? 'Entry in' : 'Expires in') : 'Next scan in'}</span>
+          <b class="cd" data-ref="cd">${sig.active ? t.left : t.scanLeft}</b>
+          <i class="sc-bar"><i data-ref="bar" style="width:${Math.round((sig.active ? t.frac : t.scanFrac) * 100)}%"></i></i>
         </div>
       </div>
       <i class="sc-accent"></i>
@@ -256,11 +260,19 @@
       if (!el.sig || !el.time) return;
       const t = tradeOf(el.sig.id);
       const active = !!el.sig.active;
-      el.time.innerHTML = ICON.clock + (active ? t.entry : t.at);
-      if (el.l1) el.l1.textContent = active ? 'Entry · IST' : 'Next scan · IST';
-      if (el.l2) el.l2.textContent = active ? (t.plan.pending ? 'Entry in' : 'Expires in') : 'Next scan in';
-      if (el.cd) el.cd.textContent = t.left;
-      if (el.bar) el.bar.style.width = Math.round(t.frac * 100) + '%';
+      if (active) {
+        el.time.innerHTML = ICON.clock + t.entry;
+        if (el.l1) el.l1.textContent = 'Entry · IST';
+        if (el.l2) el.l2.textContent = t.pending ? 'Entry in' : 'Expires in';
+        if (el.cd) el.cd.textContent = t.left;
+        if (el.bar) el.bar.style.width = Math.round(t.frac * 100) + '%';
+      } else {
+        el.time.innerHTML = ICON.clock + t.next;
+        if (el.l1) el.l1.textContent = 'Next scan · IST';
+        if (el.l2) el.l2.textContent = 'Next scan in';
+        if (el.cd) el.cd.textContent = t.scanLeft;
+        if (el.bar) el.bar.style.width = Math.round(t.scanFrac * 100) + '%';
+      }
     });
   }
 
@@ -291,8 +303,8 @@
     const conf = sig ? Math.round(sig.confidence) : 0;
     const t = tradeOf(id);
     const line = sig && sig.active
-      ? `${inst.symbol} ${sig.dir} ${conf}% · ${trend} · entry ${t.entry} IST · expires in ${t.left}`
-      : `${inst.symbol} WAIT · ${trend} · next scan ${t.at} IST`;
+      ? `${inst.symbol} ${sig.dir} ${conf}% · ${trend} · entry ${t.entry} IST · ${t.left} left`
+      : `${inst.symbol} WAIT · ${trend} · next scan ${t.next} IST`;
     const done = () => toast(`<b>Copied.</b> ${line}`, 'ok');
     if (navigator.clipboard?.writeText) {
       navigator.clipboard.writeText(line).then(done).catch(fallback);

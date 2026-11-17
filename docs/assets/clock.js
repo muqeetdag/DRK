@@ -61,30 +61,41 @@
   /**
    * Trade schedule for one instrument on one timeframe.
    *
-   * Every candle is a trade: entry lands a few seconds inside the candle
-   * (staggered per instrument so the grid is not perfectly in lockstep)
-   * and the trade expires when the candle closes.
+   * Every trade is a fixed window: the entry lands a few seconds after the
+   * candle opens (staggered per instrument, so 118 pairs do not all count
+   * down in lockstep) and the trade expires exactly `tf` after its entry.
+   *
+   * Returns the current window plus the countdowns the UI needs:
+   *   pending   - the entry has not printed yet
+   *   toEntryMs - time until the entry prints
+   *   toExpiryMs- time until the trade closes
+   *   nextScanMs- the next scheduled scan (used by stand-by cards)
    */
-  function plan(id, tfMs, nowMs) {
+  function plan(id, tfMs, nowMs, opts) {
     var tf = tfMs && tfMs > 0 ? tfMs : 60000;
     var now = nowMs == null ? Date.now() : nowMs;
+    var fresh = !!(opts && opts.fresh);
     var bucket = Math.floor(now / tf) * tf;
-    var maxOff = Math.max(3, Math.min(40, Math.floor((tf / 1000) * 0.3)));
+    var maxOff = Math.max(3, Math.min(45, Math.floor((tf / 1000) * 0.55)));
     var offsetSec = 2 + (hash(id + '@' + bucket) % Math.max(1, maxOff - 2));
+
     var entryMs = bucket + offsetSec * 1000;
-    var expiryMs = bucket + tf;
-    if (expiryMs <= now) {
+    var expiryMs = entryMs + tf;
+
+    if (expiryMs <= now || (fresh && expiryMs - now < tf * 0.18)) {
       bucket += tf;
       entryMs = bucket + offsetSec * 1000;
-      expiryMs = bucket + tf;
+      expiryMs = entryMs + tf;
     }
+
     return {
       entryMs: entryMs,
       expiryMs: expiryMs,
       pending: now < entryMs,
-      leftMs: Math.max(0, expiryMs - now),
-      leftSec: Math.max(0, Math.ceil((expiryMs - now) / 1000)),
-      afterEntryMs: now < entryMs ? (expiryMs - entryMs) : Math.max(0, expiryMs - now),
+      toEntryMs: Math.max(0, entryMs - now),
+      toExpiryMs: Math.max(0, expiryMs - now),
+      nextScanMs: Math.ceil(now / tf) * tf,
+      windowMs: tf,
     };
   }
 

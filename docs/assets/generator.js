@@ -900,13 +900,16 @@
     const sched = CLOCK.plan(inst.id, tfMs, opts.at || Date.now());
     state.entryAt = sched.entryMs;
     state.expiryAt = sched.expiryMs;
+    state.tfMs = tfMs;
     $('spEntry').textContent = CLOCK.istFull(sched.entryMs) + ' IST';
     $('spDur').textContent = TF_LABEL[state.tf] || '1 minute';
     $('spSide').textContent = sig.dir || '—';
 
     const badge = $('spBadge');
     badge.className = 'st-badge';
-    badge.textContent = 'ACTIVE · ' + clock(Math.max(0, sched.expiryMs - Date.now()));
+    badge.className = 'st-badge';
+    badge.textContent = (sched.pending ? 'ENTRY IN · ' : 'ACTIVE · ') +
+      clock(sched.pending ? sched.toEntryMs : sched.toExpiryMs);
     state.signal = sig;
   }
 
@@ -918,15 +921,21 @@
 
   function tickExpiry() {
     const badge = $('spBadge');
-    if (!badge || !state.expiryAt) return;
-    const left = state.expiryAt - Date.now();
-    if (left > 0) {
-      badge.className = 'st-badge';
-      badge.textContent = 'ACTIVE · ' + clock(left);
-    } else {
-      badge.className = 'st-badge expired';
-      badge.textContent = 'EXPIRED';
+    const inst = currentInst();
+    if (!badge || !inst || !state.signal) return;
+    const tfMs = state.tfMs || TF_MS[state.tf] || 6e4;
+    /* the trade rolls onto the next window once it closes, so the card always
+       matches the Live Scanner for the same pair */
+    const plan = CLOCK.plan(inst.id, tfMs, Date.now());
+    if (plan.entryMs !== state.entryAt) {
+      state.entryAt = plan.entryMs;
+      state.expiryAt = plan.expiryMs;
+      const entry = $('spEntry');
+      if (entry) entry.textContent = CLOCK.istFull(plan.entryMs) + ' IST';
     }
+    badge.className = 'st-badge';
+    badge.textContent = (plan.pending ? 'ENTRY IN · ' : 'ACTIVE · ') +
+      clock(plan.pending ? plan.toEntryMs : plan.toExpiryMs);
   }
 
   /* ------------------------------------------------------------- history */
