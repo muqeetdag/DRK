@@ -53,7 +53,7 @@
 (function () {
   "use strict";
 
-  var SHA = "__SHA__";
+  var SHA = "6293469522ed133ba3951508dc9459bc9fad2846";
   var BASES = [
     "https://cdn.jsdelivr.net/gh/muqeetdag/DRK@" + SHA + "/docs/",
     "https://raw.githubusercontent.com/muqeetdag/DRK/" + SHA + "/docs/"
@@ -98,6 +98,7 @@
 
   function rewriteJS(code) {
     return code
+      .replace(/(['"])\/(terminal|checkout|terms|index)\.html\1/g, "$1?p=$2$1")
       .replace(/'terminal\.html'/g, "'?p=terminal'")
       .replace(/'checkout\.html'/g, "'?p=checkout'")
       .replace(/'terms\.html'/g, "'?p=terms'")

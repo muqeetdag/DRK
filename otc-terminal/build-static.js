@@ -52,6 +52,15 @@ function processFile(file) {
     }
   }
 
+  // Inline scripts inside the HTML page (e.g. the checkout activate handler)
+  // must use the same relative routes as the external scripts.
+  if (ext === '.html') {
+    const next = text
+      .replace(/'\/(terminal|checkout|terms|index)\.html'/g, "'$1.html'")
+      .replace(/location\.href = '\/'/g, "location.href = './'");
+    if (next !== text) { text = next; changed = true; }
+  }
+
   // Project sites (e.g. user.github.io/repo/) are served from a sub-path, so
   // every asset and route reference must be relative.
   if (ext === '.html') {
