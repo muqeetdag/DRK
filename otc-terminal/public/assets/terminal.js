@@ -41,7 +41,11 @@
   /* ---------------------------------------------------------------- utils */
   function fmtPrice(px, digits) {
     if (px == null || Number.isNaN(px)) return '—';
-    const d = px < 0.01 ? 8 : px < 1 ? 5 : digits;
+    const d = px < 0.01 ? 8
+      : px < 1 ? 5
+        : px < 100 ? digits
+          : px < 1000 ? Math.min(digits, 4)
+            : px < 10000 ? Math.min(digits, 3) : Math.min(digits, 2);
     return px.toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
   }
   const pad = (n) => String(n).padStart(2, '0');
@@ -165,13 +169,11 @@
     const arrow = s.dir === 'BUY'
       ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18L18 6"/><path d="M9 6h9v9"/></svg>'
       : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6l14 12"/><path d="M18 9v9H9"/></svg>';
-    const kindLabel = s.kind === 'otc' ? 'OTC MARKET'
-      : s.kind === 'crypto' ? 'CRYPTO · SPOT'
-        : s.kind === 'india' ? 'INDIA · INR' : 'FOREX · SPOT';
+    const kindLabel = `${s.tag || 'OTC'} · ${s.name || ''}`;
     const chg = s.chg != null ? `<span class="chg ${s.chg >= 0 ? 'chg-up' : 'chg-dn'}">${s.chg >= 0 ? '+' : ''}${s.chg.toFixed(2)}%</span>` : '';
     const live = s.kind === 'otc'
-      ? '<i class="mk-dot otc"></i>OTC'
-      : '<i class="live-dot" style="width:5px;height:5px"></i>LIVE';
+      ? '<i class="mk-dot otc"></i>'
+      : '<i class="live-dot" style="width:5px;height:5px"></i>';
     return `
       <button class="${cls.join(' ')}" data-id="${s.id}" data-dir="${s.dir}" ${locked ? 'data-locked="1"' : ''}>
         <div class="sc-top">
@@ -306,7 +308,7 @@
     state.selected = id;
     document.querySelectorAll('.sig-card').forEach((el) => el.classList.toggle('selected', el.dataset.id === id));
     $('ddSym').textContent = inst.pair;
-    $('ddSub').textContent = (inst.kind === 'otc' ? 'OTC MARKET · SYNTHETIC' : inst.tag) + ' · ' + inst.name;
+    $('ddSub').textContent = (inst.tagLong || inst.tag) + ' · ' + inst.name;
     $('ddPrice').textContent = fmtPrice(sig.price, inst.digits);
     $('ddPrice').dataset.digits = inst.digits;
     const chg = $('ddChg');

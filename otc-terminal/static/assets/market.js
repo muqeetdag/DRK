@@ -40,8 +40,8 @@ window.MARKET = (function () {
     'AUDUSD', 'EURUSD', 'USDINR', 'USDMXN', 'GBPJPY', 'EURGBP', 'NZDUSD', 'AUDCHF',
     'USDZAR', 'USDCAD', 'GBPNZD', 'GBPUSD', 'EURJPY', 'USDCHF', 'AUDJPY', 'AUDCAD',
     'CADCHF', 'CHFJPY', 'EURCHF', 'EURAUD', 'EURCAD', 'EURNZD', 'GBPCHF', 'GBPAUD',
-    'GBPCAD', 'AUDNZD', 'NZDCAD', 'NZDCHF', 'NZDJPY', 'CADJPY', 'USDTRY', 'USDPLN',
-    'USDSEK', 'USDNOK', 'USDDKK', 'USDHUF', 'USDCZK', 'USDSGD', 'USDHKD', 'USDTHB', 'USDBRL',
+    'GBPCAD', 'AUDNZD', 'NZDCAD', 'NZDCHF', 'NZDJPY', 'CADJPY', 'XAUUSD', 'XAGUSD',
+    'USDCNY', 'USDPKR', 'USDAED', 'USDBDT', 'USDIDR', 'USDSGD', 'USDHKD', 'USDTHB', 'USDBRL',
   ];
 
   // Real forex pairs served by the ECB / currency-api feeds.
@@ -86,6 +86,35 @@ window.MARKET = (function () {
   ];
 
   const INDIA_COINS = ['BTC', 'ETH', 'SOL', 'XRP', 'BNB', 'DOGE', 'ADA', 'MATIC' ];
+
+  // Full currency names so no card is just cryptic letters.
+  const CUR_NAMES = {
+    USD: 'US Dollar', EUR: 'Euro', GBP: 'British Pound', JPY: 'Japanese Yen',
+    INR: 'Indian Rupee', AUD: 'Australian Dollar', CAD: 'Canadian Dollar',
+    CHF: 'Swiss Franc', NZD: 'New Zealand Dollar', MXN: 'Mexican Peso',
+    ZAR: 'South African Rand', TRY: 'Turkish Lira', CNY: 'Chinese Yuan',
+    SGD: 'Singapore Dollar', HKD: 'Hong Kong Dollar', BRL: 'Brazilian Real',
+    KRW: 'Korean Won', THB: 'Thai Baht', PHP: 'Philippine Peso', AED: 'UAE Dirham',
+    PKR: 'Pakistani Rupee', IDR: 'Indonesian Rupiah', BDT: 'Bangladeshi Taka',
+    PLN: 'Polish Zloty', SEK: 'Swedish Krona', NOK: 'Norwegian Krone',
+    DKK: 'Danish Krone', HUF: 'Hungarian Forint', CZK: 'Czech Koruna',
+    XAU: 'Gold', XAG: 'Silver',
+  };
+  const curName = (code) => CUR_NAMES[code] || code;
+  const pairName = (b, q) => `${curName(b)} / ${curName(q)}`;
+
+  // Reference levels for the OTC model so every card starts at a believable price.
+  const OTC_BASE = {
+    AUDUSD: 0.6602, EURUSD: 1.1024, USDINR: 94.11, USDMXN: 18.21, GBPJPY: 210.4,
+    EURGBP: 0.8342, NZDUSD: 0.6114, AUDCHF: 0.5816, USDZAR: 18.11, USDCAD: 1.3921,
+    GBPNZD: 2.1608, GBPUSD: 1.3212, EURJPY: 175.3, USDCHF: 0.8814, AUDJPY: 104.9,
+    AUDCAD: 0.9191, CADCHF: 0.6331, CHFJPY: 181.2, EURCHF: 0.9718, EURAUD: 1.6698,
+    EURCAD: 1.5345, EURNZD: 1.8032, GBPCHF: 1.1646, GBPAUD: 2.0013, GBPCAD: 1.8392,
+    AUDNZD: 1.0798, NZDCAD: 0.8512, NZDCHF: 0.5388, NZDJPY: 97.2, CADJPY: 114.2,
+    XAUUSD: 2384.6, XAGUSD: 28.74, USDCNY: 7.2412, USDPKR: 278.2, USDAED: 3.6725,
+    USDBDT: 122.4, USDIDR: 15840, USDSGD: 1.3402, USDHKD: 7.7821, USDTHB: 34.61,
+    USDBRL: 5.6231,
+  };
 
   const DECIMALS = {
     JPY: 3, INR: 4, HUF: 2, CZK: 4, HKD: 3, SGD: 4, THB: 4, PHP: 4, KRW: 2,
@@ -160,7 +189,8 @@ window.MARKET = (function () {
       const [b, q] = splitPair(p);
       list.push({
         id: 'OTC:' + p, symbol: p, pair: fmtPair(p), kind: 'otc',
-        name: `${b}/${q} OTC`, tag: 'OTC MARKET', digits: DECIMALS[q] || 5,
+        name: pairName(b, q), tag: 'OTC', tagLong: 'OTC MARKET',
+        digits: b === 'XAU' ? 2 : b === 'XAG' ? 3 : (DECIMALS[q] || 5),
         seed: 0.35 + rnd('otc' + p) * 0.6, synthetic: true,
       });
     });
@@ -169,7 +199,7 @@ window.MARKET = (function () {
       const [b, q] = splitPair(p);
       list.push({
         id: 'FX:' + p, symbol: p, pair: fmtPair(p), kind: 'forex',
-        name: `${b}/${q}`, tag: 'FOREX', digits: DECIMALS[q] || 5,
+        name: pairName(b, q), tag: 'FX', tagLong: 'FOREX SPOT', digits: DECIMALS[q] || 5,
         base: b, quote: q,
       });
     });
@@ -177,21 +207,22 @@ window.MARKET = (function () {
     CRYPTO.forEach(([sym, bsym, cgid, name]) => {
       list.push({
         id: 'CRYPTO:' + sym, symbol: sym + 'USDT', pair: sym + '/USDT', kind: 'crypto',
-        name: `${name}`, tag: 'CRYPTO', digits: 2, bsym, cgid, coin: sym,
+        name: `${name} / USDT`, tag: 'CRYPTO', tagLong: 'CRYPTO SPOT', digits: 2, bsym, cgid, coin: sym,
       });
     });
 
     CRYPTO.filter(([sym]) => INDIA_COINS.includes(sym)).forEach(([sym, bsym, cgid, name]) => {
       list.push({
         id: 'INDIA:' + sym, symbol: sym + 'INR', pair: sym + '/INR', kind: 'india',
-        name: `${name} (INR)`, tag: 'INDIA · INR', digits: 0, bsym, cgid, coin: sym,
+        name: `${name} / Rupee`, tag: 'INR', tagLong: 'INDIA · INR', digits: 0, bsym, cgid, coin: sym,
       });
     });
 
     // INR reference pair lives in the India tab too.
     list.push({
       id: 'INDIA:USDINR', symbol: 'USDINR', pair: 'USD/INR', kind: 'india',
-      name: 'US Dollar / Rupee', tag: 'INDIA · INR', digits: 3, base: 'USD', quote: 'INR',
+      name: 'US Dollar / Indian Rupee', tag: 'INR', tagLong: 'INDIA · INR', digits: 3,
+      base: 'USD', quote: 'INR',
     });
 
     state.instruments = list;
@@ -350,9 +381,9 @@ window.MARKET = (function () {
   function initOtc() {
     OTC_PAIRS.forEach((p) => {
       const inst = state.byId['OTC:' + p];
-      const digits = DECIMALS[p.slice(3)] || 5;
-      const base = p.startsWith('USD') ? (inst.seed * 40 + 1) : (inst.seed * 1.6 + 0.5);
-      const px = p === 'USDINR' ? 88 + inst.seed * 3 : base;
+      const quoteCode = p.slice(3);
+      const digits = p.startsWith('XAU') ? 2 : p.startsWith('XAG') ? 3 : (DECIMALS[quoteCode] || 5);
+      const px = OTC_BASE[p] || (inst.seed * 1.6 + 0.5);
       const s = state.series[inst.id] || (state.series[inst.id] = {});
       const c = [];
       let o = px;
@@ -368,6 +399,7 @@ window.MARKET = (function () {
       s.SYN = c;
       inst.px = c[c.length - 1].c;
       inst.digits = digits;
+      inst.name = pairName(p.slice(0, 3), quoteCode);
       inst.chg = ((inst.px - c[0].c) / c[0].c) * 100;
       inst.high = Math.max(...c.slice(-80).map((k) => k.h));
       inst.low = Math.min(...c.slice(-80).map((k) => k.l));

@@ -190,7 +190,12 @@
 .sc-card.buy .sc-match, .sig-card.buy .sc-match { border-color: rgba(34, 197, 94, .35); background: rgba(34, 197, 94, .12); color: #bbf7d0; }
 .sig-card.sell .sc-match { border-color: rgba(239, 68, 68, .35); background: rgba(239, 68, 68, .12); color: #fecaca; }
 
-.sc-meta { display: flex; align-items: center; gap: 5px; margin-top: 3px; font-family: var(--mono); font-size: 8px; letter-spacing: .1em; color: var(--dim); text-transform: uppercase; }
+.sc-meta {
+  display: flex; align-items: center; gap: 4px; margin-top: 3px; min-width: 0;
+  font-family: var(--mono); font-size: 8px; letter-spacing: .06em; color: var(--dim);
+  text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.sc-meta .mk-dot, .sc-meta .live-dot { flex: none; }
 .sc-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: var(--dim); }
 .sc-price { font-family: var(--mono); font-size: 11.5px; color: #cfcfe6; margin-top: 6px; display: flex; gap: 6px; align-items: baseline; }
 .sc-price .chg { font-size: 10px; }
@@ -223,6 +228,10 @@
   .sc-dir { font-size: 16px; }
   .sc-row { padding: 3px 5px; font-size: 8.5px; }
   .sc-row b { font-size: 9px; }
+  .sc-meta {
+    font-size: 7.2px; letter-spacing: .02em; white-space: normal; line-height: 1.35;
+    align-items: flex-start; min-height: 19px;
+  }
 }
 
 .grid-empty { grid-column: 1 / -1; padding: 46px 20px; text-align: center; color: var(--dim); font-size: 13px; }
