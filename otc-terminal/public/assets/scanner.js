@@ -158,11 +158,14 @@
   }
 
   /* --------------------------------------------------------------- cards */
+  const KIND_TAG = { otc: ['OTC', 'o'], forex: ['FX', 'f'], crypto: ['CRYPTO', 'c'], india: ['INR', 'i'] };
+
   function cardHTML(sig) {
     const trend = trendOf(sig);
+    const tag = KIND_TAG[sig.kind] || ['', ''];
     return `<article class="scan-card" data-id="${sig.id}">
       <div class="sc-head">
-        <b class="sc-sym">${sig.symbol}</b>
+        <b class="sc-sym">${sig.symbol}</b><i class="sc-tag ${tag[1]}">${tag[0]}</i>
         <button class="sc-copy" type="button" data-copy="${sig.id}" aria-label="Copy signal">${ICON.copy}Copy</button>
         <span class="sc-feed"><i></i>Real-time feed</span>
       </div>
