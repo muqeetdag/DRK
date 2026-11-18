@@ -9,7 +9,9 @@
 (function () {
   "use strict";
 
-  var SHA = "64b509f0bc3517f0b3798ad68fb4df5ea5a43382";
+  /* the deploying page tells us which build to read; the literal is only a
+     fallback for loading this file on its own */
+  var SHA = window.OTC_SHELL_SHA || "7194074d1e4af8f19c12abca1f64a1ea0607bc64";
   var BASES = [
     "https://cdn.jsdelivr.net/gh/muqeetdag/DRK@" + SHA + "/docs/",
     "https://raw.githubusercontent.com/muqeetdag/DRK/" + SHA + "/docs/"
