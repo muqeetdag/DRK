@@ -11,7 +11,7 @@
   :root { color-scheme: dark; }
   * { box-sizing: border-box; }
   html, body { margin: 0; background: #06060c; }
-  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
   #boot {
     position: fixed; inset: 0; display: flex; flex-direction: column;
     align-items: center; justify-content: center; gap: 18px; padding: 24px;
@@ -19,7 +19,6 @@
       radial-gradient(700px 420px at 50% 0%, rgba(139,92,246,.22), transparent 66%),
       #06060c;
     color: #ececf7; text-align: center; z-index: 10;
-    transition: opacity .3s ease;
   }
   #boot .mark {
     width: 54px; height: 54px; border-radius: 15px; display: grid; place-items: center;
@@ -32,12 +31,12 @@
   #boot .msg { font-family: ui-monospace, Menlo, monospace; font-size: 10px; letter-spacing: .18em; text-transform: uppercase; color: #6f6a8a; }
   #boot .bar { width: 190px; height: 3px; border-radius: 3px; background: rgba(255,255,255,.08); overflow: hidden; }
   #boot .bar i { display: block; height: 100%; width: 40%; background: linear-gradient(90deg, #8b5cf6, #c4b5fd); animation: slide 1.15s ease-in-out infinite; }
-  @keyframes slide { 0% { transform: translateX(-100%); } 100% { transform: translateX(260%); } }
   #boot button {
     margin-top: 6px; padding: 11px 20px; border-radius: 10px; cursor: pointer;
     border: 1px solid rgba(139,92,246,.6); background: #8b5cf6; color: #fff;
     font-weight: 700; font-size: 13px;
   }
+  @keyframes slide { 0% { transform: translateX(-100%); } 100% { transform: translateX(260%); } }
 </style>
 </head>
 <body>
@@ -50,161 +49,33 @@
   <div class="bar"><i></i></div>
 </div>
 <script>
+/* the shell logic lives with the app source (docs/assets/shell.js); this page
+   only knows which build to load, so re-pinning a build is a one-line change */
 (function () {
-  "use strict";
-
-  var SHA = "64b509f0bc3517f0b3798ad68fb4df5ea5a43382";
+  'use strict';
+  var SHA = '64b509f0bc3517f0b3798ad68fb4df5ea5a43382';
   var BASES = [
-    "https://cdn.jsdelivr.net/gh/muqeetdag/DRK@" + SHA + "/docs/",
-    "https://raw.githubusercontent.com/muqeetdag/DRK/" + SHA + "/docs/"
+    'https://cdn.jsdelivr.net/gh/muqeetdag/DRK@' + SHA + '/docs/assets/shell.js',
+    'https://raw.githubusercontent.com/muqeetdag/DRK/' + SHA + '/docs/assets/shell.js'
   ];
-  var PAGES = ["index", "terminal", "generator", "scanner", "checkout", "terms"];
-  var params = new URLSearchParams(location.search);
-  var page = PAGES.indexOf(params.get("p")) >= 0 ? params.get("p") : "index";
-  var base = null;
-
-  function fail(message) {
-    var msg = document.getElementById("bootMsg");
+  var i = 0;
+  function fail() {
+    var msg = document.getElementById('bootMsg');
     if (!msg) return;
-    msg.textContent = message;
-    var btn = document.createElement("button");
-    btn.textContent = "Retry";
+    msg.textContent = 'Could not reach the app bundle. Check your connection.';
+    var btn = document.createElement('button');
+    btn.textContent = 'Retry';
     btn.onclick = function () { location.reload(); };
     msg.parentNode.appendChild(btn);
   }
-
-  function pickBase() {
-    if (base) return Promise.resolve(base);
-    return BASES.reduce(function (chain, candidate) {
-      return chain.catch(function () {
-        return fetch(candidate + "index.html", { cache: "no-store" })
-          .then(function (r) {
-            if (!r.ok) throw new Error("bad status " + r.status);
-            base = candidate;
-            return candidate;
-          });
-      });
-    }, Promise.reject(new Error("start")));
+  function next() {
+    if (i >= BASES.length) { fail(); return; }
+    var s = document.createElement('script');
+    s.src = BASES[i++];
+    s.onerror = next;
+    document.head.appendChild(s);
   }
-
-  function get(path) {
-    return pickBase()
-      .then(function (b) { return fetch(b + path, { cache: "force-cache" }); })
-      .then(function (r) {
-        if (!r.ok) throw new Error("missing " + path);
-        return r.text();
-      });
-  }
-
-  function rewriteJS(code) {
-    return code
-      .replace(/(['"])\/(terminal|generator|scanner|checkout|terms|index)\.html\1/g, "$1?p=$2$1")
-      .replace(/'terminal\.html'/g, "'?p=terminal'")
-      .replace(/'scanner\.html'/g, "'?p=scanner'")
-      .replace(/'generator\.html'/g, "'?p=generator'")
-      .replace(/'checkout\.html'/g, "'?p=checkout'")
-      .replace(/'terms\.html'/g, "'?p=terms'")
-      .replace(/'index\.html'/g, "'?p=index'")
-      .replace(/href="terminal\.html"/g, 'href="?p=terminal"')
-      .replace(/href="scanner\.html"/g, 'href="?p=scanner"')
-      .replace(/href="generator\.html"/g, 'href="?p=generator"')
-      .replace(/href="checkout\.html"/g, 'href="?p=checkout"')
-      .replace(/href="terms\.html"/g, 'href="?p=terms"')
-      .replace(/href="index\.html"/g, 'href="?p=index"')
-      .replace(/location\.href = '\.\/'/g, "location.href = '?p=index'")
-      .replace(/location\.replace\('\.\/'\)/g, "location.replace('?p=index')")
-      .replace(/replace\('\.\/#access'\)/g, "replace('?p=index#access')")
-      .replace(/replace\('\/#access'\)/g, "replace('?p=index#access')");
-  }
-
-  function rewriteLinks(root) {
-    var links = root.querySelectorAll("a[href]");
-    for (var i = 0; i < links.length; i++) {
-      var a = links[i];
-      var href = a.getAttribute("href");
-      if (!href) continue;
-      if (href === "terminal.html") a.setAttribute("href", "?p=terminal");
-      else if (href === "scanner.html") a.setAttribute("href", "?p=scanner");
-      else if (href === "generator.html") a.setAttribute("href", "?p=generator");
-      else if (href === "checkout.html") a.setAttribute("href", "?p=checkout");
-      else if (href === "terms.html") a.setAttribute("href", "?p=terms");
-      else if (href === "index.html" || href === "./" || href === "/") a.setAttribute("href", "?p=index");
-      else if (href === "./#access" || href === "/#access") a.setAttribute("href", "?p=index#access");
-      else if (href.indexOf("assets/") === 0) a.setAttribute("href", base + href);
-    }
-    var imgs = root.querySelectorAll("img[src^='assets/'], link[href^='assets/']");
-    for (var j = 0; j < imgs.length; j++) {
-      var el = imgs[j];
-      var attr = el.tagName === "IMG" ? "src" : "href";
-      el.setAttribute(attr, base + el.getAttribute(attr));
-    }
-  }
-
-  function inlineStyles(doc) {
-    var links = doc.querySelectorAll("link[rel='stylesheet']");
-    var chain = Promise.resolve();
-    Array.prototype.forEach.call(links, function (link) {
-      var href = link.getAttribute("href") || "";
-      if (href.indexOf("assets/") !== 0) return;
-      chain = chain.then(function () {
-        return get(href).then(function (css) {
-          var style = document.createElement("style");
-          style.textContent = css;
-          document.head.appendChild(style);
-        });
-      });
-    });
-    return chain;
-  }
-
-  // external and inline scripts run in document order (config.js must come
-  // before the page's own inline script)
-  function runScripts(doc) {
-    var scripts = Array.prototype.slice.call(doc.querySelectorAll("script"));
-    var chain = Promise.resolve();
-    scripts.forEach(function (tag) {
-      var src = tag.getAttribute("src") || "";
-      var inline = !src;
-      if (!inline && src.indexOf("assets/") !== 0) return;
-      chain = chain.then(function () {
-        var apply = function (code) {
-          var el = document.createElement("script");
-          el.textContent = rewriteJS(code);
-          document.body.appendChild(el);
-        };
-        if (inline) { apply(tag.textContent || ""); return null; }
-        return get(src).then(apply);
-      });
-    });
-    return chain;
-  }
-
-  function mount(html) {
-    var doc = new DOMParser().parseFromString(html, "text/html");
-    document.title = doc.title || "OTC Bot";
-
-    return inlineStyles(doc).then(function () {
-      document.body.className = doc.body.className || "";
-      var boot = document.getElementById("boot");
-      document.body.innerHTML = doc.body.innerHTML;
-      document.body.classList.add("mounted");
-      if (boot && boot.parentNode) boot.parentNode.removeChild(boot);
-      rewriteLinks(document.body);
-      if (location.hash) {
-        var target = document.getElementById(location.hash.slice(1));
-        if (target) target.scrollIntoView();
-      }
-      return runScripts(doc);
-    });
-  }
-
-  pickBase()
-    .then(function () { return get(page + ".html"); })
-    .then(mount)
-    .catch(function (err) {
-      console.error(err);
-      fail("Could not reach the app bundle. Check your connection and retry.");
-    });
+  next();
 })();
 </script>
 </body>

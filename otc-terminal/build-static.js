@@ -96,6 +96,13 @@ function processFile(file) {
   }
 })(OUT);
 
+/* the CDN boot shell: shell/index.html only carries the pinned SHA, the logic
+   itself ships here so re-pinning a build never rewrites the page */
+fs.copyFileSync(
+  path.join(__dirname, 'shell', 'shell.js'),
+  path.join(OUT, 'assets', 'shell.js')
+);
+
 /* keep the demo out of search results */
 fs.writeFileSync(
   path.join(OUT, 'robots.txt'),
