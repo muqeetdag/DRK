@@ -22,6 +22,15 @@
   var secFmt = new Intl.DateTimeFormat('en-GB', {
     timeZone: TZ, hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false,
   });
+  /* entry stamps carry seconds so they can never be mistaken for the
+     ticking wall clock: "04:32:11 PM" */
+  var stampFmt = new Intl.DateTimeFormat('en-US', {
+    timeZone: TZ, hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true,
+  });
+  var fullStampFmt = new Intl.DateTimeFormat('en-US', {
+    timeZone: TZ, month: 'short', day: 'numeric', year: 'numeric',
+    hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true,
+  });
 
   function hash(str) {
     var h = 2166136261;
@@ -49,6 +58,16 @@
   function istClock(date) {
     var d = date instanceof Date ? date : new Date(date);
     return secFmt.format(d);
+  }
+
+  /** "04:32:11 PM" in IST (entry stamps — includes seconds) */
+  function istStamp(date) {
+    return stampFmt.format(date instanceof Date ? date : new Date(date));
+  }
+
+  /** "Nov 17, 2026, 04:32:11 PM" in IST (full entry stamp) */
+  function istFullStamp(date) {
+    return fullStampFmt.format(date instanceof Date ? date : new Date(date));
   }
 
   /** 56000 -> "00:56", 3725000 -> "1h 02m" */
@@ -111,6 +130,8 @@
     istTime: istTime,
     istFull: istFull,
     istClock: istClock,
+    istStamp: istStamp,
+    istFullStamp: istFullStamp,
     mmss: mmss,
     plan: plan,
     everySecond: everySecond,

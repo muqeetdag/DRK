@@ -222,6 +222,9 @@
 }
 .sc-row b { font-family: var(--mono); font-size: 10px; color: #e4e4f4; font-weight: 600; letter-spacing: .02em; }
 .sc-row .ic { width: 9px; height: 9px; opacity: .6; margin-right: 3px; vertical-align: -1px; }
+.sc-row b.tr-up { color: #4ade80; }
+.sc-row b.tr-dn { color: #f87171; }
+.sc-row b.tr-flat { color: #fbbf24; }
 @media (max-width: 700px) {
   .sig-card { padding: 9px 8px 8px; }
   .sc-sym { font-size: 13px; }

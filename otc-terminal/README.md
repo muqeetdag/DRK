@@ -52,9 +52,15 @@ Scanner and the Signals page always show the same entry stamp and the same
 remaining seconds for the same instrument. Every stamp is rendered in IST
 (`Asia/Kolkata`), so nothing shows the visitor's raw local clock.
 
-Scanner cards read: `Entry · IST 04:32 PM` / `Expires in 00:41` with a progress
-bar, or `Next scan · IST` / `Next scan in` for stand-by pairs. Signals shows
-`Take entry at Nov 17, 2026, 04:32 PM IST` with a live `ACTIVE · 00:56` badge.
+Every entry stamp is printed to the second (`04:32:11 PM`), so a scheduled
+entry can never be mistaken for the ticking wall clock; the seconds differ per
+pair because the entry offset is hashed from the pair id and the candle.
+
+Scanner cards read: `Trend` plus one stamp — `Entry · IST 04:32:11 PM` for live
+pairs and `Next entry · IST 04:33:07 PM` for stand-by pairs. The Signals page
+shows `Take entry at Nov 17, 2026, 04:32:11 PM IST` with a live `ACTIVE · 00:56`
+badge, and the OTC Bot grid (`/terminal`) carries a `Trend` row, `Trade
+Duration` and an IST `Entry Time` for every card.
 
 ## Charts
 

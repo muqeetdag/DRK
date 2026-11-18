@@ -113,8 +113,10 @@
     const clock = $('sessionClock');
     if (clock) {
       const d = new Date();
-      clock.textContent = `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
-        }
+      clock.textContent = window.CLOCK && window.CLOCK.istClock
+        ? window.CLOCK.istClock(d)
+        : `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+    }
     const lu = $('liveUsers');
     if (lu) lu.textContent = liveUsers;
   }
@@ -161,8 +163,23 @@
 
   const ICON_CLOCK = '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v4.8l3 1.8"/></svg>';
   const ICON_ENTRY = '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h11"/><path d="M11 8l4 4-4 4"/><path d="M20 5v14"/></svg>';
+  const ICON_TREND = '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-5 4 3 6-7"/><path d="M17 8h4v4"/></svg>';
+  const ICON_TREND_UP = '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17L19 6"/><path d="M11 6h8v8"/></svg>';
+  const ICON_TREND_DN = '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7l15 11"/><path d="M19 10v8h-8"/></svg>';
+  const ICON_TREND_FLAT = '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h10"/><path d="M10 8l4 4-4 4"/></svg>';
+
+  /* trend comes off the same sequence factor the Live Scanner reads, so both
+     pages describe a pair the same way: >=60 Uptrend, <=40 Downtrend, else
+     Sideways */
+  function trendOf(sig) {
+    const score = sig && sig.factors && sig.factors[0] ? sig.factors[0].score : 50;
+    if (score >= 60) return { word: 'Uptrend', cls: 'tr-up', icon: ICON_TREND_UP };
+    if (score <= 40) return { word: 'Downtrend', cls: 'tr-dn', icon: ICON_TREND_DN };
+    return { word: 'Sideways', cls: 'tr-flat', icon: ICON_TREND_FLAT };
+  }
 
   function cardHTML(s, locked) {
+    const trend = trendOf(s);
     const cls = ['sig-card', s.dir === 'BUY' ? 'buy' : 'sell'];
     if (!s.active) cls.push('standby');
     if (locked) cls.push('locked');
@@ -189,16 +206,27 @@
         <div class="sc-conf"><span>Confidence</span><b data-ref="conf">${s.confidence.toFixed(1)}%</b></div>
         <div class="sc-bar"><i data-ref="bar" style="width:${Math.max(4, s.confidence - 55)}%"></i></div>
         <div class="sc-kv">
+          <div class="sc-row"><span>${ICON_TREND}Trend</span><b data-ref="trend" class="${trend.cls}">${trend.word}</b></div>
           <div class="sc-row"><span>${ICON_CLOCK}Trade Duration</span><b>${state.tf}</b></div>
-          <div class="sc-row"><span>${ICON_ENTRY}Entry Time</span><b data-ref="entry">${timeLabel(entryDate())}</b></div>
+          <div class="sc-row"><span>${ICON_ENTRY}Entry Time</span><b data-ref="entry">${entryStamp(s.id)}</b></div>
         </div>
       </button>`;
   }
 
-  function entryDate() {
-    const now = Date.now();
-    const step = state.tf === '1m' ? 60e3 : parseInt(state.tf, 10) * 60e3;
-    return new Date(Math.ceil(now / step) * step);
+  function tfMs() {
+    return state.tf === '1m' ? 60e3 : parseInt(state.tf, 10) * 60e3;
+  }
+
+  /* each pair prints its entry a few seconds after its candle opens, so the
+     stamp is a fixed per-pair time (04:51:07 PM) rather than the clock */
+  function entryMsFor(id) {
+    const plan = window.CLOCK && window.CLOCK.plan ? window.CLOCK.plan(id, tfMs()) : null;
+    return plan ? plan.entryMs : Math.ceil(Date.now() / tfMs()) * tfMs();
+  }
+
+  function entryStamp(id) {
+    const ms = entryMsFor(id);
+    return window.CLOCK && window.CLOCK.istStamp ? window.CLOCK.istStamp(ms) + ' IST' : timeLabel(new Date(ms));
   }
 
   function currentList() {
@@ -267,7 +295,13 @@
       const bar = el.querySelector('[data-ref="bar"]');
       if (bar) bar.style.width = Math.max(4, s.confidence - 55) + '%';
       const ent = el.querySelector('[data-ref="entry"]');
-      if (ent) ent.textContent = timeLabel(entryDate());
+      if (ent) ent.textContent = entryStamp(s.id);
+      const tr = el.querySelector('[data-ref="trend"]');
+      if (tr) {
+        const trend = trendOf(s);
+        tr.textContent = trend.word;
+        tr.className = trend.cls;
+      }
       const chg = el.querySelector('.chg');
       if (chg && s.chg != null) {
         chg.textContent = `${s.chg >= 0 ? '+' : ''}${s.chg.toFixed(2)}%`;
@@ -553,7 +587,9 @@
     paintCounters();
     const ms = Math.round(performance.now() - t0);
     const active = M.signals(state.kind).filter((s) => s.active).length;
-    $('lastScan').textContent = timeLabel() + ':' + pad(new Date().getSeconds());
+    $('lastScan').textContent = window.CLOCK && window.CLOCK.istStamp
+      ? window.CLOCK.istStamp(new Date())
+      : timeLabel() + ':' + pad(new Date().getSeconds());
     setTimeout(() => btn.classList.remove('spin'), 420);
     toast(`<strong>Scan complete</strong> — ${active} active setups found (${ms} ms).`, 'ok');
   });
@@ -587,7 +623,9 @@
     state.lastSig = '';
     renderGrid();
     paintFeed();
-    $('lastScan').textContent = timeLabel() + ':' + pad(new Date().getSeconds());
+    $('lastScan').textContent = window.CLOCK && window.CLOCK.istStamp
+      ? window.CLOCK.istStamp(new Date())
+      : timeLabel() + ':' + pad(new Date().getSeconds());
   }).catch(() => {});
 
   // fast loop for OTC ticks / live prices
@@ -604,7 +642,9 @@
     state.lastSig = '';
     renderGrid();
     paintCounters();
-    $('lastScan').textContent = timeLabel() + ':' + pad(new Date().getSeconds());
+    $('lastScan').textContent = window.CLOCK && window.CLOCK.istStamp
+      ? window.CLOCK.istStamp(new Date())
+      : timeLabel() + ':' + pad(new Date().getSeconds());
   }, 30000);
 
   // alert on new active signal

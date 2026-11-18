@@ -12,6 +12,7 @@
   const M = window.MARKET;
   const CLOCK = window.CLOCK || {
     istFull: (d) => new Date(d).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
+    istFullStamp: (d) => new Date(d).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' }),
     istTime: (d) => new Date(d).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
     plan: () => ({ entryMs: Date.now(), expiryMs: Date.now() + 60000, pending: false, leftMs: 60000 }),
   };
@@ -901,7 +902,7 @@
     state.entryAt = sched.entryMs;
     state.expiryAt = sched.expiryMs;
     state.tfMs = tfMs;
-    $('spEntry').textContent = CLOCK.istFull(sched.entryMs) + ' IST';
+    $('spEntry').textContent = CLOCK.istFullStamp(sched.entryMs) + ' IST';
     $('spDur').textContent = TF_LABEL[state.tf] || '1 minute';
     $('spSide').textContent = sig.dir || '—';
 
@@ -931,7 +932,7 @@
       state.entryAt = plan.entryMs;
       state.expiryAt = plan.expiryMs;
       const entry = $('spEntry');
-      if (entry) entry.textContent = CLOCK.istFull(plan.entryMs) + ' IST';
+      if (entry) entry.textContent = CLOCK.istFullStamp(plan.entryMs) + ' IST';
     }
     badge.className = 'st-badge';
     badge.textContent = (plan.pending ? 'ENTRY IN · ' : 'ACTIVE · ') +
@@ -1046,7 +1047,7 @@
       `OTC Bot · Beast Mode`,
       `${inst.pair || inst.symbol} · ${state.tf} · ${sig.dir}`,
       `Confidence ${conf}% · ${strengthOf(conf).label}`,
-      `Entry ${new Date(state.entryAt).toLocaleString('en-US')} · ${TF_LABEL[state.tf]}`,
+      `Entry ${CLOCK.istFullStamp(state.entryAt)} IST · ${TF_LABEL[state.tf]}`,
       `Access & support: https://t.me/DRKMUQEETT`,
     ].join('\n');
     const done = () => toast('<b>Analysis copied.</b> Paste it anywhere · @DRKMUQEETT', 'ok');

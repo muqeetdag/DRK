@@ -12,6 +12,7 @@
   const M = window.MARKET;
   const CLOCK = window.CLOCK || {
     istTime: (d) => new Date(d).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+    istStamp: (d) => new Date(d).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
     istFull: (d) => new Date(d).toLocaleString('en-US'),
     istClock: () => '',
     mmss: (ms) => String(Math.max(0, Math.floor(ms / 1000))),
@@ -84,15 +85,21 @@
   /* every pair runs its own one-minute trade window: the entry prints a few
      seconds after the candle opens (staggered per pair) and the trade closes
      exactly one minute later. The schedule comes from the shared clock, so
-     the Signals page shows the same entry stamp and the same seconds left. */
+     the Signals page shows the same entry stamp and the same seconds left.
+     Stamps are printed to the second (04:51:07 PM) so they read as a fixed
+     schedule and never as the ticking clock. */
   function tradeOf(id) {
     const plan = CLOCK.plan(id, TF_MS);
+    /* the pair's next trade window opens on the next candle; its entry prints
+       at the same per-pair offset, so standby cards show a real, staggered
+       stamp instead of the minute boundary */
+    const ahead = CLOCK.plan(id, TF_MS, plan.nextScanMs + 1);
     const scanLeft = Math.max(0, plan.nextScanMs - Date.now());
     return {
       plan,
       pending: plan.pending,
-      entry: CLOCK.istTime(plan.entryMs),
-      next: CLOCK.istTime(plan.nextScanMs),
+      entry: CLOCK.istStamp(plan.entryMs),
+      nextEntry: CLOCK.istStamp(ahead.entryMs),
       left: CLOCK.mmss(plan.pending ? plan.toEntryMs : plan.toExpiryMs),
       scanLeft: CLOCK.mmss(scanLeft),
     };
@@ -254,8 +261,8 @@
         el.time.innerHTML = ICON.clock + t.entry;
         if (el.l1) el.l1.textContent = 'Entry · IST';
       } else {
-        el.time.innerHTML = ICON.clock + t.next;
-        if (el.l1) el.l1.textContent = 'Next scan · IST';
+        el.time.innerHTML = ICON.clock + t.nextEntry;
+        if (el.l1) el.l1.textContent = 'Next entry · IST';
       }
     });
   }
@@ -288,7 +295,7 @@
     const t = tradeOf(id);
     const line = sig && sig.active
       ? `${inst.symbol} ${sig.dir} ${conf}% · ${trend} · entry ${t.entry} IST · ${t.left} left`
-      : `${inst.symbol} WAIT · ${trend} · next scan ${t.next} IST`;
+      : `${inst.symbol} WAIT · ${trend} · next entry ${t.nextEntry} IST`;
     const done = () => toast(`<b>Copied.</b> ${line}`, 'ok');
     if (navigator.clipboard?.writeText) {
       navigator.clipboard.writeText(line).then(done).catch(fallback);
