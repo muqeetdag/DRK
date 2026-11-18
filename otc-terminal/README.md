@@ -52,15 +52,20 @@ Scanner and the Signals page always show the same entry stamp and the same
 remaining seconds for the same instrument. Every stamp is rendered in IST
 (`Asia/Kolkata`), so nothing shows the visitor's raw local clock.
 
-Every entry stamp is printed to the second (`04:32:11 PM`), so a scheduled
-entry can never be mistaken for the ticking wall clock; the seconds differ per
-pair because the entry offset is hashed from the pair id and the candle.
+Pairs rotate over four candles, so at any moment about a quarter of them are
+in a live trade and the rest are waiting on a real future candle — the stamps
+differ across cards instead of repeating the current minute. Stamps are
+minute-precision IST (`04:32 PM`); the live countdown chip carries the seconds.
 
-Scanner cards read: `Trend` plus one stamp — `Entry · IST 04:32:11 PM` for live
-pairs and `Next entry · IST 04:33:07 PM` for stand-by pairs. The Signals page
-shows `Take entry at Nov 17, 2026, 04:32:11 PM IST` with a live `ACTIVE · 00:56`
-badge, and the OTC Bot grid (`/terminal`) carries a `Trend` row, `Trade
-Duration` and an IST `Entry Time` for every card.
+Scanner cards read: `Trend` plus one stamp — `Entry · IST 04:32 PM` for a live
+trade and `Next entry · IST 04:34 PM` for a stand-by pair, with a small
+`mm:ss` chip counting down to the entry or the close. The Signals page shows
+`Take entry at Nov 17, 2026, 04:32 PM IST` with a live `ACTIVE · 00:56` badge,
+and the OTC Bot grid (`/terminal`) carries a `Trend` row (zig-zag arrow),
+`Trade Duration` and an IST `Entry Time` for every card.
+
+Beast mode scans everything but only lists the setups the engine scores at
+99%+ — usually two to four pairs, never a full grid.
 
 ## Charts
 

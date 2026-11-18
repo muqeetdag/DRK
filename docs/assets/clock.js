@@ -80,30 +80,42 @@
   /**
    * Trade schedule for one instrument on one timeframe.
    *
-   * Every trade is a fixed window: the entry lands a few seconds after the
-   * candle opens (staggered per instrument, so 118 pairs do not all count
-   * down in lockstep) and the trade expires exactly `tf` after its entry.
+   * Pairs are spread over a rotation of ROTATION candles, so at any moment
+   * roughly a quarter of them are in a live trade and the rest point at a
+   * genuine future candle — the stamps differ across cards instead of all
+   * repeating the current minute. Inside its candle a pair enters a few
+   * seconds in (hashed offset) and exits one timeframe later, so the
+   * countdown always lands inside the minute.
    *
-   * Returns the current window plus the countdowns the UI needs:
+   * Returns the window that is live (or the one that opens next) plus:
    *   pending   - the entry has not printed yet
    *   toEntryMs - time until the entry prints
    *   toExpiryMs- time until the trade closes
-   *   nextScanMs- the next scheduled scan (used by stand-by cards)
+   *   nextScanMs- when the pair re-arms
    */
+  var ROTATION = 4;
+
   function plan(id, tfMs, nowMs, opts) {
     var tf = tfMs && tfMs > 0 ? tfMs : 60000;
     var now = nowMs == null ? Date.now() : nowMs;
     var fresh = !!(opts && opts.fresh);
-    var bucket = Math.floor(now / tf) * tf;
+    var span = tf * ROTATION;
     var maxOff = Math.max(3, Math.min(45, Math.floor((tf / 1000) * 0.55)));
-    var offsetSec = 2 + (hash(id + '@' + bucket) % Math.max(1, maxOff - 2));
+    var slot = hash(id) % ROTATION;
 
-    var entryMs = bucket + offsetSec * 1000;
+    function entryAt(start) {
+      var offsetSec = 2 + (hash(id + '@' + start) % Math.max(1, maxOff - 2));
+      return start + offsetSec * 1000;
+    }
+
+    var start = Math.floor(now / span) * span + slot * tf;
+    var entryMs = entryAt(start);
     var expiryMs = entryMs + tf;
 
-    if (expiryMs <= now || (fresh && expiryMs - now < tf * 0.18)) {
-      bucket += tf;
-      entryMs = bucket + offsetSec * 1000;
+    // walk forward to the window that is live now, or the next one
+    while (now >= expiryMs || (fresh && expiryMs - now < tf * 0.18)) {
+      start += span;
+      entryMs = entryAt(start);
       expiryMs = entryMs + tf;
     }
 
@@ -113,7 +125,7 @@
       pending: now < entryMs,
       toEntryMs: Math.max(0, entryMs - now),
       toExpiryMs: Math.max(0, expiryMs - now),
-      nextScanMs: Math.ceil(now / tf) * tf,
+      nextScanMs: expiryMs,
       windowMs: tf,
     };
   }

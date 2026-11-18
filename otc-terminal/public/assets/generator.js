@@ -136,8 +136,8 @@
     const el = $('lastPush');
     if (!el) return;
     const d = new Date();
-    el.textContent = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
-      + ', ' + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    el.textContent = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', timeZone: CLOCK.TZ || 'Asia/Kolkata' })
+      + ', ' + (CLOCK.istTime ? CLOCK.istTime(d) : d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }));
   }
 
   function paintClock() {
@@ -902,7 +902,7 @@
     state.entryAt = sched.entryMs;
     state.expiryAt = sched.expiryMs;
     state.tfMs = tfMs;
-    $('spEntry').textContent = CLOCK.istFullStamp(sched.entryMs) + ' IST';
+    $('spEntry').textContent = CLOCK.istFull(sched.entryMs) + ' IST';
     $('spDur').textContent = TF_LABEL[state.tf] || '1 minute';
     $('spSide').textContent = sig.dir || '—';
 
@@ -932,7 +932,7 @@
       state.entryAt = plan.entryMs;
       state.expiryAt = plan.expiryMs;
       const entry = $('spEntry');
-      if (entry) entry.textContent = CLOCK.istFullStamp(plan.entryMs) + ' IST';
+      if (entry) entry.textContent = CLOCK.istFull(plan.entryMs) + ' IST';
     }
     badge.className = 'st-badge';
     badge.textContent = (plan.pending ? 'ENTRY IN · ' : 'ACTIVE · ') +
@@ -1047,7 +1047,7 @@
       `OTC Bot · Beast Mode`,
       `${inst.pair || inst.symbol} · ${state.tf} · ${sig.dir}`,
       `Confidence ${conf}% · ${strengthOf(conf).label}`,
-      `Entry ${CLOCK.istFullStamp(state.entryAt)} IST · ${TF_LABEL[state.tf]}`,
+      `Entry ${CLOCK.istFull(state.entryAt)} IST · ${TF_LABEL[state.tf]}`,
       `Access & support: https://t.me/DRKMUQEETT`,
     ].join('\n');
     const done = () => toast('<b>Analysis copied.</b> Paste it anywhere · @DRKMUQEETT', 'ok');

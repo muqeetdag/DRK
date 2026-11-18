@@ -164,15 +164,18 @@
   const ICON_CLOCK = '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v4.8l3 1.8"/></svg>';
   const ICON_ENTRY = '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h11"/><path d="M11 8l4 4-4 4"/><path d="M20 5v14"/></svg>';
   const ICON_TREND = '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-5 4 3 6-7"/><path d="M17 8h4v4"/></svg>';
-  const ICON_TREND_UP = '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17L19 6"/><path d="M11 6h8v8"/></svg>';
-  const ICON_TREND_DN = '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7l15 11"/><path d="M19 10v8h-8"/></svg>';
-  const ICON_TREND_FLAT = '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h10"/><path d="M10 8l4 4-4 4"/></svg>';
+  const ICON_TREND_UP = '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2 19l4-5 3 3 4-7 3 3 5-7"/><path d="M16 4h5v5"/></svg>';
+  const ICON_TREND_DN = '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5l4 5 3-3 4 7 3-3 5 7"/><path d="M16 20h5v-5"/></svg>';
+  const ICON_TREND_FLAT = '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h4l3-3 3 3 3-3 3 3h4"/></svg>';
 
   /* trend comes off the same sequence factor the Live Scanner reads, so both
      pages describe a pair the same way: >=60 Uptrend, <=40 Downtrend, else
      Sideways */
   function trendOf(sig) {
-    const score = sig && sig.factors && sig.factors[0] ? sig.factors[0].score : 50;
+    const list = (sig && sig.factors) || [];
+    const f = list.find((x) => /sequence|trend/i.test(x.name)) || list[0];
+    let score = f ? f.score : 50;
+    if (sig && sig.active) score = sig.dir === 'BUY' ? Math.max(score, 62) : Math.min(score, 38);
     if (score >= 60) return { word: 'Uptrend', cls: 'tr-up', icon: ICON_TREND_UP };
     if (score <= 40) return { word: 'Downtrend', cls: 'tr-dn', icon: ICON_TREND_DN };
     return { word: 'Sideways', cls: 'tr-flat', icon: ICON_TREND_FLAT };
@@ -201,12 +204,11 @@
           <span class="sc-match" data-ref="match">${s.match}%</span>
         </div>
         <div class="sc-meta">${live}<span class="dot"></span>${kindLabel}</div>
-        <div class="sc-price"><span data-ref="price">${fmtPrice(s.price, s.digits)}</span>${chg}</div>
         <div class="sc-dir">${s.active ? s.dir : 'STANDBY'} ${s.active ? arrow : ''}</div>
         <div class="sc-conf"><span>Confidence</span><b data-ref="conf">${s.confidence.toFixed(1)}%</b></div>
         <div class="sc-bar"><i data-ref="bar" style="width:${Math.max(4, s.confidence - 55)}%"></i></div>
         <div class="sc-kv">
-          <div class="sc-row"><span>${ICON_TREND}Trend</span><b data-ref="trend" class="${trend.cls}">${trend.word}</b></div>
+          <div class="sc-row"><span>${ICON_TREND}Trend</span><b data-ref="trend" class="${trend.cls}">${trend.word}<i class="tr-ic" data-ref="trendicon">${trend.icon}</i></b></div>
           <div class="sc-row"><span>${ICON_CLOCK}Trade Duration</span><b>${state.tf}</b></div>
           <div class="sc-row"><span>${ICON_ENTRY}Entry Time</span><b data-ref="entry">${entryStamp(s.id)}</b></div>
         </div>
@@ -224,9 +226,11 @@
     return plan ? plan.entryMs : Math.ceil(Date.now() / tfMs()) * tfMs();
   }
 
+  /* live cards print the entry of the candle they are trading, standby cards
+     the candle they open next — never the ticking clock */
   function entryStamp(id) {
     const ms = entryMsFor(id);
-    return window.CLOCK && window.CLOCK.istStamp ? window.CLOCK.istStamp(ms) + ' IST' : timeLabel(new Date(ms));
+    return window.CLOCK && window.CLOCK.istTime ? window.CLOCK.istTime(ms) + ' IST' : timeLabel(new Date(ms));
   }
 
   function currentList() {
@@ -299,8 +303,8 @@
       const tr = el.querySelector('[data-ref="trend"]');
       if (tr) {
         const trend = trendOf(s);
-        tr.textContent = trend.word;
         tr.className = trend.cls;
+        tr.innerHTML = trend.word + '<i class="tr-ic">' + trend.icon + '</i>';
       }
       const chg = el.querySelector('.chg');
       if (chg && s.chg != null) {
@@ -587,9 +591,9 @@
     paintCounters();
     const ms = Math.round(performance.now() - t0);
     const active = M.signals(state.kind).filter((s) => s.active).length;
-    $('lastScan').textContent = window.CLOCK && window.CLOCK.istStamp
-      ? window.CLOCK.istStamp(new Date())
-      : timeLabel() + ':' + pad(new Date().getSeconds());
+    $('lastScan').textContent = window.CLOCK && window.CLOCK.istTime
+      ? window.CLOCK.istTime(new Date())
+      : timeLabel();
     setTimeout(() => btn.classList.remove('spin'), 420);
     toast(`<strong>Scan complete</strong> — ${active} active setups found (${ms} ms).`, 'ok');
   });
@@ -623,9 +627,9 @@
     state.lastSig = '';
     renderGrid();
     paintFeed();
-    $('lastScan').textContent = window.CLOCK && window.CLOCK.istStamp
-      ? window.CLOCK.istStamp(new Date())
-      : timeLabel() + ':' + pad(new Date().getSeconds());
+    $('lastScan').textContent = window.CLOCK && window.CLOCK.istTime
+      ? window.CLOCK.istTime(new Date())
+      : timeLabel();
   }).catch(() => {});
 
   // fast loop for OTC ticks / live prices
@@ -642,9 +646,9 @@
     state.lastSig = '';
     renderGrid();
     paintCounters();
-    $('lastScan').textContent = window.CLOCK && window.CLOCK.istStamp
-      ? window.CLOCK.istStamp(new Date())
-      : timeLabel() + ':' + pad(new Date().getSeconds());
+    $('lastScan').textContent = window.CLOCK && window.CLOCK.istTime
+      ? window.CLOCK.istTime(new Date())
+      : timeLabel();
   }, 30000);
 
   // alert on new active signal

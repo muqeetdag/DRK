@@ -90,32 +90,31 @@
      schedule and never as the ticking clock. */
   function tradeOf(id) {
     const plan = CLOCK.plan(id, TF_MS);
-    /* the pair's next trade window opens on the next candle; its entry prints
-       at the same per-pair offset, so standby cards show a real, staggered
-       stamp instead of the minute boundary */
-    const ahead = CLOCK.plan(id, TF_MS, plan.nextScanMs + 1);
-    const scanLeft = Math.max(0, plan.nextScanMs - Date.now());
     return {
       plan,
       pending: plan.pending,
-      entry: CLOCK.istStamp(plan.entryMs),
-      nextEntry: CLOCK.istStamp(ahead.entryMs),
+      /* live trade -> the candle it entered; standby -> the candle it opens
+         next, which is always a real future minute (never the wall clock) */
+      entry: CLOCK.istTime(plan.entryMs),
       left: CLOCK.mmss(plan.pending ? plan.toEntryMs : plan.toExpiryMs),
-      scanLeft: CLOCK.mmss(scanLeft),
     };
   }
 
+  /* the sequence factor is the engine's trend read; a live signal never
+     contradicts its own direction, which is what made the arrows look wrong */
   function trendOf(sig) {
-    const score = sig.factors?.[0]?.score ?? 50;
+    const f = (sig.factors || []).find((x) => /sequence|trend/i.test(x.name)) || sig.factors?.[0];
+    let score = f ? f.score : 50;
+    if (sig.active) score = sig.dir === 'BUY' ? Math.max(score, 62) : Math.min(score, 38);
     if (score >= 60) return { word: 'Uptrend', cls: 'up', icon: 'up' };
     if (score <= 40) return { word: 'Downtrend', cls: 'dn', icon: 'dn' };
     return { word: 'Sideways', cls: 'flat', icon: 'flat' };
   }
 
   const ICON = {
-    up: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17L19 6"/><path d="M11 6h8v8"/></svg>',
-    dn: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7l15 11"/><path d="M19 10v8h-8"/></svg>',
-    flat: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h10"/><path d="M10 8l4 4-4 4"/></svg>',
+    up: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2 19l4-5 3 3 4-7 3 3 5-7"/><path d="M16 4h5v5"/></svg>',
+    dn: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5l4 5 3-3 4 7 3-3 5 7"/><path d="M16 20h5v-5"/></svg>',
+    flat: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h4l3-3 3 3 3-3 3 3h4"/></svg>',
     clock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v4.8l3 1.8"/></svg>',
     copy: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 012-2h8"/></svg>',
   };
@@ -151,6 +150,15 @@
     return state.sources.has('beast');
   }
 
+  /* Beast mode scans everything but only surfaces the setups the engine scores
+     at 99%+ — usually 2 to 4 pairs, sometimes fewer, never a full grid. If a
+     cycle has nothing that clean we keep the two strongest so it is not empty. */
+  function beastRows(rows) {
+    const ranked = rows.slice().sort((a, b) => (b.active - a.active) || (b.confidence - a.confidence));
+    const clean = ranked.filter((s) => s.confidence >= 99).slice(0, 4);
+    return clean.length >= 2 ? clean : ranked.slice(0, 2);
+  }
+
   /* every market is ranked on its own band (top 34% active), exactly like
      the terminal tabs — so OTC shows its own 14/27 split, crypto its own */
   function scoreRows(kind) {
@@ -174,9 +182,9 @@
     if (state.status === 'active') rows = rows.filter((s) => s.active);
     else if (state.status === 'wait') rows = rows.filter((s) => !s.active);
 
-    // Beast mode = strongest setups float to the top of every view
+    // Beast mode = only the near-certain setups, never a full grid
     if (beastOnly()) {
-      rows = rows.slice().sort((a, b) => (b.active - a.active) || (b.confidence - a.confidence));
+      rows = beastRows(rows);
     } else {
       const order = { otc: 0, forex: 1, crypto: 2, india: 3 };
       rows = rows.slice().sort((a, b) => order[a.kind] - order[b.kind]);
@@ -197,7 +205,7 @@
         <button class="sc-copy" type="button" data-copy="${sig.id}" aria-label="Copy signal">${ICON.copy}Copy</button>
         <span class="sc-feed"><i></i>Real-time feed</span>
       </div>
-      <div class="sc-status"><b data-ref="status">WAIT</b><em data-ref="pct"></em></div>
+      <div class="sc-status"><b data-ref="status">WAIT</b><em data-ref="pct"></em><span class="sc-cd" data-ref="cd"></span></div>
       <div class="sc-rows">
         <div class="sc-kv"><span>Trend</span><b data-ref="trend" class="${trend.cls}">${ICON[trend.icon]}${trend.word}</b></div>
         <div class="sc-kv"><span data-ref="l1">Entry · IST</span><b class="time" data-ref="time">${ICON.clock}${t.entry}</b></div>
@@ -223,6 +231,7 @@
         pct: card.querySelector('[data-ref="pct"]'),
         trend: card.querySelector('[data-ref="trend"]'),
         time: card.querySelector('[data-ref="time"]'),
+        cd: card.querySelector('[data-ref="cd"]'),
         l1: card.querySelector('[data-ref="l1"]'),
       });
     });
@@ -256,14 +265,9 @@
     state.entries.forEach((el) => {
       if (!el.sig || !el.time) return;
       const t = tradeOf(el.sig.id);
-      const active = !!el.sig.active;
-      if (active) {
-        el.time.innerHTML = ICON.clock + t.entry;
-        if (el.l1) el.l1.textContent = 'Entry · IST';
-      } else {
-        el.time.innerHTML = ICON.clock + t.nextEntry;
-        if (el.l1) el.l1.textContent = 'Next entry · IST';
-      }
+      el.time.innerHTML = ICON.clock + t.entry;
+      if (el.l1) el.l1.textContent = t.pending ? 'Next entry · IST' : 'Entry · IST';
+      if (el.cd) el.cd.textContent = t.left;
     });
   }
 
@@ -276,7 +280,7 @@
     else if (state.status === 'wait') rows = rows.filter((s) => !s.active);
     let list = rows;
     if (allowed.size) list = list.filter((s) => allowed.has(s.kind));
-    if (beastOnly()) list = list.slice().sort((a, b) => (b.active - a.active) || (b.confidence - a.confidence));
+    if (beastOnly()) list = beastRows(list);
     if (list.length !== state.entries.size) { render(); return; }
     paintCards(list);
     paintPush();
@@ -295,7 +299,7 @@
     const t = tradeOf(id);
     const line = sig && sig.active
       ? `${inst.symbol} ${sig.dir} ${conf}% · ${trend} · entry ${t.entry} IST · ${t.left} left`
-      : `${inst.symbol} WAIT · ${trend} · next entry ${t.nextEntry} IST`;
+      : `${inst.symbol} WAIT · ${trend} · next entry ${t.entry} IST`;
     const done = () => toast(`<b>Copied.</b> ${line}`, 'ok');
     if (navigator.clipboard?.writeText) {
       navigator.clipboard.writeText(line).then(done).catch(fallback);

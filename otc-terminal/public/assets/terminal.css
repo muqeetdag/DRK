@@ -220,7 +220,9 @@
   border: 1px solid rgba(255, 255, 255, .045);
   font-size: 9.5px; color: var(--muted);
 }
-.sc-row b { font-family: var(--mono); font-size: 10px; color: #e4e4f4; font-weight: 600; letter-spacing: .02em; }
+.sc-row b { display: inline-flex; align-items: center; gap: 4px; font-family: var(--mono); font-size: 10px; color: #e4e4f4; font-weight: 600; letter-spacing: .02em; }
+.sc-row b .tr-ic { display: inline-flex; align-items: center; }
+.sc-row b .tr-ic svg { width: 12px; height: 12px; }
 .sc-row .ic { width: 9px; height: 9px; opacity: .6; margin-right: 3px; vertical-align: -1px; }
 .sc-row b.tr-up { color: #4ade80; }
 .sc-row b.tr-dn { color: #f87171; }
