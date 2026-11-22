@@ -100,6 +100,30 @@ Temurin JRE (`jdk4py` on PyPI), a static `aapt2` (`aaptjs3` on npm),
 `android.jar` + `d8` + `apksigner` + ECJ (`@drxiaozhi/minapk` on npm) and
 Pillow (PyPI). Output is signed with **v1+v2+v3** schemes and verified.
 
+## Verified in a virtual phone (no emulator needed)
+
+`nyx/.vphone` is a self-contained Android runtime (framework stubs + real
+measure/layout/draw + Canvas-to-PNG) that loads the **shipped APK** and drives
+it like a user. It has caught real bugs that a static check never would:
+FrameLayout children stacked at `0,0`, a `MATCH_PARENT` collapse caused by the
+wrong ScrollView child spec, missing `forceUniformWidth`, a 0px-high
+HorizontalScrollView, un-distributed weighted margins, and a stale status chip
+after a toggle flip.
+
+```bash
+cd nyx/.vphone
+bash run.sh          # 73 checks, writes artifacts/*.png
+```
+
+The suite boots, onboards, opens every console tab, scrolls, flips toggles,
+opens dialogs, changes the palette, presses HOME/BACK, survives a restart and
+survives a device without Instagram/LSPosed. Every screenshot in
+`artifacts/` is rendered by the app's own view tree.
+
+> Caveat: `hook/*` classes are only class-loaded, never executed — there is no
+> Instagram process to hook here. Everything in `app/` (console, onboarding,
+> prefs, theme, media vault) is really executed.
+
 For CI, copy `.github-workflow/build-apk.yml` to `.github/workflows/` in the
 repository root (needs a token with the `workflow` scope) — it builds the APK
 on every push and attaches it to a GitHub release.

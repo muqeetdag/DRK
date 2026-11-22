@@ -5,3 +5,9 @@ keystore/
 *.idsig
 *.jks
 __pycache__/
+
+# virtual-phone test harness runtime output
+.vphone/fw/out/
+.vphone/app/out/
+.vphone/run/
+.vphone/crash-last.txt

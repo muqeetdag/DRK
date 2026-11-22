@@ -72,7 +72,7 @@ public class MainActivity extends Activity {
     private final Handler ui = new Handler(Looper.getMainLooper());
     private SharedPreferences prefs;
     private Themes.Palette theme;
-    private FrameLayout content;
+    private LinearLayout content;
     private LinearLayout tabBar;
     private int tab = TAB_HOME;
     private int density;
@@ -181,7 +181,10 @@ public class MainActivity extends Activity {
         column.setFitsSystemWindows(true);
         root.addView(column, new FrameLayout.LayoutParams(-1, -1));
 
-        content = new FrameLayout(this);
+        // Must be a vertical LinearLayout: a FrameLayout stacks every child at 0,0,
+        // which made the whole console render on top of itself.
+        content = new LinearLayout(this);
+        ((LinearLayout) content).setOrientation(LinearLayout.VERTICAL);
         ScrollView scroll = new ScrollView(this);
         scroll.setFillViewport(true);
         scroll.addView(content, new ScrollView.LayoutParams(-1, -2));
@@ -225,6 +228,25 @@ public class MainActivity extends Activity {
         paintTabs();
     }
 
+    /**
+     * Repaints the top of the current page (status chip). Kept cheap on purpose:
+     * the toggles themselves update in place, only the derived counters are rebuilt.
+     */
+    private void refreshHeader() {
+        try {
+            if (statusChipHost == null || content == null) return;
+            int index = content.indexOfChild(statusChipHost);
+            if (index < 0) return;
+            View fresh = statusChip();
+            content.removeViewAt(index);
+            content.addView(fresh, index);
+            statusChipHost = fresh;
+        } catch (Throwable ignored) {
+        }
+    }
+
+    private View statusChipHost;
+
     private void paintTabs() {
         for (int i = 0; i < tabBar.getChildCount(); i++) {
             View child = tabBar.getChildAt(i);
@@ -244,6 +266,7 @@ public class MainActivity extends Activity {
         tab = which;
         paintTabs();
         content.removeAllViews();
+        statusChipHost = null;
         content.setPadding(dp(18), dp(10), dp(18), dp(24));
         switch (which) {
             case TAB_HOME: buildTweaks(); break;
@@ -255,7 +278,8 @@ public class MainActivity extends Activity {
 
     private void buildHome() {
         content.addView(header());
-        content.addView(statusChip());
+        statusChipHost = statusChip();
+        content.addView(statusChipHost);
         content.addView(sectionLabel("INSTAGRAM SHELL"));
         content.addView(toggleRow(Prefs.FLOATING_NAV, "Floating dock",
                 "Detached translucent nav pill with live glow ring", "◈"));
@@ -288,7 +312,8 @@ public class MainActivity extends Activity {
      */
     private void buildTweaks() {
         content.addView(header());
-        content.addView(statusChip());
+        statusChipHost = statusChip();
+        content.addView(statusChipHost);
         content.addView(setupCard());
 
         content.addView(groupCard("INSTAGRAM LOOK", "◈", new String[]{
@@ -790,7 +815,10 @@ public class MainActivity extends Activity {
             toggle.animateTo(next);
             icon.setTextColor(next ? theme.accent : theme.muted);
             icon.setBackground(rounded(Themes.alpha(next ? theme.accent : theme.line, 34), 14, 0, 0));
-            });
+            // The armed counter and the mode card depend on the toggles; repaint the
+            // page so the screen never shows stale state after a flip.
+            refreshHeader();
+        });
         toggle.setOnClickListener(v -> row.performClick());
         row.setLayoutParams(lp);
         return row;
@@ -1035,7 +1063,9 @@ public class MainActivity extends Activity {
             wrap.addView(sig);
         }
         TextView meta = new TextView(this);
-        meta.setText(Brand.NAME + " · " + Brand.FLAVOR + " · " + Brand.CHANNEL);
+        // Show the palette actually in use, not the build-time flavor name.
+        meta.setText(Brand.NAME + " · " + (theme == null ? Brand.FLAVOR : theme.id)
+                + " · " + Brand.CHANNEL);
         meta.setTextSize(9.5f);
         meta.setLetterSpacing(0.08f);
         meta.setTextColor(theme.muted);

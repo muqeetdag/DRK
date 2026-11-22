@@ -56,6 +56,8 @@ def load_config(path: str) -> dict:
         "keyAlias": str(cfg.get("keyAlias", "nyx")),
         "storePassword": str(cfg.get("storePassword", "nyx-white-label")),
     }
+    # 6-digit only: the template prepends FF. A bare 6-digit value written straight
+    # into an int constant silently becomes a fully transparent colour.
     if not re.match(r"^#[0-9a-fA-F]{6}$", out["accent"]):
         fail(f"accent must be #RRGGBB, got {out['accent']!r}")
     if not re.match(r"^#[0-9a-fA-F]{6}$", out["secondary"]):

@@ -210,7 +210,9 @@ public class OnboardingActivity extends Activity {
         tg.setTextColor(theme.secondary);
         tg.setPadding(dp(16), dp(9), dp(16), dp(9));
         GradientDrawable ring = new GradientDrawable();
-        ring.setCornerRadius(dp(100));
+        // A pill radius larger than half the height renders as a circle/ellipse on
+        // Android; using the measured height keeps it a rounded rectangle.
+        ring.setCornerRadius(dp(11));
         ring.setColor(Color.TRANSPARENT);
         ring.setStroke(dp(1), theme.line);
         tg.setBackground(ring);
