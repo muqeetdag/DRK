@@ -1,7 +1,11 @@
 package de.robv.android.xposed;
 
-/** Compile-time stub of the Xposed API (provided at runtime by LSPosed). */
+/** Virtual-phone runtime double of the Xposed API. */
 public final class XposedHelpers {
+
+    public static void setStaticObjectField(Class<?> clazz, String fieldName, Object value) {}
+    public static Object getStaticObjectField(Class<?> clazz, String fieldName) { return null; }
+
     public static XC_MethodHook.Unhook findAndHookMethod(String className, ClassLoader classLoader,
                                                           String methodName, Object... parameterTypesAndCallback) {
         return new XC_MethodHook.Unhook();

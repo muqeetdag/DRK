@@ -893,9 +893,9 @@ public class MainActivity extends Activity {
                     "4 · Install the patched Instagram, then open it."}
                 : new String[]{
                     "1 · LSPosed installed and active (Magisk / KernelSU / APatch).",
-                    "2 · Modules → enable " + Brand.NAME + ".",
-                    "3 · Scope → tick Instagram only.",
-                    "4 · Force-stop Instagram, then reopen it."};
+                    "2 · Modules → " + Brand.NAME + " → turn its master switch ON. While it is off the module never loads, whatever the scope says.",
+                    "3 · Scope → Instagram shows \"Requested by this module\" (also Threads). Tick it; the module's own row stays greyed as \"Always in scope\".",
+                    "4 · Force-stop Instagram (Settings → Apps → Force stop), then reopen it."};
 
         for (String step : steps) {
             TextView line = new TextView(this);
@@ -957,6 +957,14 @@ public class MainActivity extends Activity {
         return card;
     }
 
+    /**
+     * Explains what is still missing, in the order LSPosed enforces it.
+     *
+     * The order matters: a module whose master switch is OFF never loads, so
+     * nothing else — scope, force-stop, preferences — can matter yet. That is
+     * the state most "the module is not requested / nothing applies" reports
+     * are actually in, so it is checked first and named explicitly.
+     */
     private String verifyAttachment(boolean igInstalled, boolean manager) {
         if (!igInstalled) return "Instagram is not installed on this device";
         boolean modeRoot = SafePrefs.installMode(this) == SafePrefs.MODE_ROOT;
@@ -967,12 +975,13 @@ public class MainActivity extends Activity {
             SafePrefs.set(this, "attach_verified", true);
             return "Hook bridge present ✓ — force-stop Instagram once so it loads the module";
         }
-        // The console process itself is never hooked; this is expected. Give the
-        // user the only reliable on-device signal we have.
         SafePrefs.set(this, "attach_verified", false);
-        return modeRoot
-                ? "Linked in LSPosed? Then open Instagram — if the dock shows, you are done."
-                : "Patched Instagram installed? Open it — if the dock shows, you are done.";
+        if (!modeRoot) {
+            return "Patched Instagram installed? Open it — if the dock shows, you are done.";
+        }
+        return "Not linked yet. In LSPosed: (1) Modules → " + Brand.NAME
+                + " master switch ON, (2) open its Scope — Instagram must read \"Requested by this module\" and be ticked,"
+                + " (3) force-stop Instagram, (4) reopen it. Skip step 1 and the module stays inactive no matter what the scope says.";
     }
 
     private View statusChip() {

@@ -8,9 +8,9 @@ NYX="$(dirname "$HERE")"
 JAVA_HOME_DIR="${NYX}/.build/tools/jre"
 JAVA="${JAVA_HOME_DIR}/bin/java"
 ECJ="${NYX}/.build/tools/ecj.jar"
-APK="${NYX}/dist/nyx-1.3.0-obsidian.apk"
-APP_SRC="${NYX}/.build/work/app-src/src"
-GEN="${NYX}/.build/work/gen"
+APK="${NYX}/dist/${NYX_APK:-nyx-1.3.1-obsidian-root.apk}"
+APP_SRC="${NYX}/.build/work-root/app-src/src"
+GEN="${NYX}/.build/work-root/gen"
 
 if [ ! -x "$JAVA" ] || [ ! -f "$ECJ" ]; then
   echo "toolchain missing — run 'bash ../build.sh' once first" >&2

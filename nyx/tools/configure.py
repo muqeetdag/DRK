@@ -67,13 +67,14 @@ def load_config(path: str) -> dict:
     return out
 
 
-# The hosts we hook. Instagram first (its own app), then its secondary processes
-# are covered by the same package, plus the module's own package so LSPosed can
-# report "this module is loaded into its own app, which is how it reports that it
-# is active" - exactly the row InstaEclipse shows.
+# The hosts we hook. Instagram is the primary host; Threads shares the same
+# medias/Clips internals and is what users expect a companion module to name.
+# The module's own package is last: managers derive a legacy module's self-hook
+# row from the declared scope, and naming it explicitly keeps that row present.
 DEFAULT_SCOPE = [
     "com.instagram.android",
     "com.instagram.android",
+    "com.instagram.barcelona",
     "io.nyx.app",
 ]
 

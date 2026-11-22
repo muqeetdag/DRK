@@ -209,17 +209,18 @@ print("nyx-"+c["version"]+"-"+c["flavor"]+suffix+".apk")
 
 # ------------------------------------------------------------------ variants
 #
-# Two distinct APKs, because the two install routes need different things:
+# root (default, the only deliverable)
+#   → a real LSPosed module. Declares Instagram, Threads and its own package in
+#     `xposedscope`, which is what makes LSPosed show Instagram with
+#     "Requested by this module" and autotick it.
 #
-#  root      → a real LSPosed module. Declares both Instagram and its own
-#              package in `xposedscope`, which is what makes LSPosed list the
-#              module as "Requested by this module" for both apps.
-#  non-root  → the same module for LSPatch. Package id is different so both can
-#              live on one phone, and the scope still names Instagram (the
-#              patched APK keeps that package id).
+# nonroot (opt-in, not built by default)
+#   → the same module for LSPatch, package id suffixed so both can coexist.
+#     Build with NYX_VARIANTS="root nonroot".
 #
 # Each variant gets its own work dir, keystore and output name.
-VARIANTS="${NYX_VARIANTS:-root nonroot}"
+VARIANTS="${NYX_VARIANTS:-root}"
+
 PKG_SUFFIX_ROOT=""
 PKG_SUFFIX_NONROOT=".lspatch"
 SCOPE_SUFFIX_ROOT=""
@@ -252,8 +253,9 @@ src, dst, suffix, label = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
 cfg = json.load(open(src))
 cfg["packageSuffix"] = suffix
 cfg["variantLabel"] = label
-# Non-root builds keep the same display name; the suffix lives only in the id.
-cfg.setdefault("scope", ["com.instagram.android", "io.nyx.app"])
+# Scope is whatever white-label.json declares; configure.py supplies the
+# default host list when the config leaves it out. Never hardcode it here, or a
+# host added to the default (Threads) silently disappears from the built APK.
 json.dump(cfg, open(dst, "w"), indent=2)
 PYEOF
 

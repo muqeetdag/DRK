@@ -9,7 +9,7 @@ set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 NYX="$(dirname "$HERE")"
 JAVA="${NYX}/.build/tools/jre/bin/java"
-APK="${NYX}/dist/${NYX_APK:-nyx-1.3.0-obsidian-root.apk}"
+APK="${NYX}/dist/${NYX_APK:-nyx-1.3.1-obsidian-root.apk}"
 APIS="${APIS:-21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36}"
 
 cd "$HERE"
