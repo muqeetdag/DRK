@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Nyx" parent="@android:style/Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/nyx_void</item>
+        <item name="android:colorBackground">@color/nyx_void</item>
+        <item name="android:colorPrimary">@color/nyx_accent</item>
+        <item name="android:colorAccent">@color/nyx_accent</item>
+        <item name="android:navigationBarColor">@color/nyx_void</item>
+        <item name="android:statusBarColor">@color/nyx_void</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+        <item name="android:windowNoTitle">true</item>
+    </style>
+
+    <style name="Nyx.Dialog" parent="@android:style/Theme.Material.Dialog.NoActionBar">
+        <item name="android:windowBackground">@drawable/nyx_dialog_bg</item>
+        <item name="android:colorAccent">@color/nyx_accent</item>
+    </style>
+</resources>

@@ -1,0 +1,22 @@
+{
+  "appName": "SOLAR",
+  "tagline": "Burn brighter.",
+  "flavor": "solarflare",
+  "version": "1.0.0",
+  "versionCode": 100,
+  "accent": "#FFB347",
+  "secondary": "#FF3DAB",
+  "glyph": "bolt",
+  "signature": "Every scroll is a sunrise.",
+  "links": { "telegram": "", "github": "https://github.com/muqeetdag/DRK" },
+  "defaults": {
+    "floatingNav": true,
+    "reelsDownloader": true,
+    "storiesDownloader": true,
+    "feedDownloader": true,
+    "downloadFolder": "SOLAR"
+  },
+  "releaseChannel": "stable",
+  "keyAlias": "solar",
+  "storePassword": "solar-white-label"
+}

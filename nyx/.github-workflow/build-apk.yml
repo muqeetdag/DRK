@@ -1,0 +1,52 @@
+# Copy this file to .github/workflows/build-apk.yml in the repository root,
+# then commit it from a machine whose token has the "workflow" scope.
+name: build-apk
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      config:
+        description: Path to the white-label config
+        default: nyx/white-label.json
+
+permissions:
+  contents: write
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Build signed APK
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq zip unzip curl python3-pip
+          chmod +x nyx/build.sh
+          NYX_CONFIG="${{ github.event.inputs.config || 'nyx/white-label.json' }}" bash nyx/build.sh
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nyx-apk
+          path: nyx/dist/*.apk
+
+      - name: Attach to release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION=$(python3 -c 'import json;print(json.load(open("nyx/white-label.json"))["version"])')
+          TAG="nyx-v${VERSION}"
+          gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" \
+            --title "NYX ${VERSION}" --notes "White-label signed APK (sideload ready)."
+          gh release upload "$TAG" nyx/dist/*.apk --clobber
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nyx-keystore
+          path: nyx/keystore/
+          retention-days: 30

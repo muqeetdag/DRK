@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="nyx_void">#FF06070B</color>
+    <color name="nyx_accent">__ACCENT__</color>
+    <color name="nyx_secondary">__SECONDARY__</color>
+
+    <string-array name="xposed_scope">
+        <item>com.instagram.android</item>
+    </string-array>
+</resources>

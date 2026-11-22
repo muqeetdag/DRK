@@ -1,0 +1,26 @@
+{
+  "appName": "NYX",
+  "tagline": "Instagram, reimagined.",
+  "flavor": "obsidian",
+  "version": "1.0.0",
+  "versionCode": 100,
+  "accent": "#7C5CFF",
+  "secondary": "#22D3EE",
+  "iconStyle": "glyph",
+  "glyph": "orbit",
+  "signature": "Nights outlive empires.",
+  "links": {
+    "telegram": "",
+    "github": "https://github.com/muqeetdag/DRK"
+  },
+  "defaults": {
+    "floatingNav": true,
+    "reelsDownloader": true,
+    "storiesDownloader": true,
+    "feedDownloader": true,
+    "downloadFolder": "NYX"
+  },
+  "releaseChannel": "stable",
+  "keyAlias": "nyx",
+  "storePassword": "nyx-white-label"
+}

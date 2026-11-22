@@ -1,0 +1,22 @@
+{
+  "appName": "VERDANT",
+  "tagline": "Grow in the dark.",
+  "flavor": "verdant",
+  "version": "1.0.0",
+  "versionCode": 100,
+  "accent": "#B6FF3D",
+  "secondary": "#22D3EE",
+  "glyph": "prism",
+  "signature": "Photosynthesis for the feed.",
+  "links": { "telegram": "", "github": "https://github.com/muqeetdag/DRK" },
+  "defaults": {
+    "floatingNav": true,
+    "reelsDownloader": true,
+    "storiesDownloader": true,
+    "feedDownloader": true,
+    "downloadFolder": "VERDANT"
+  },
+  "releaseChannel": "stable",
+  "keyAlias": "verdant",
+  "storePassword": "verdant-white-label"
+}

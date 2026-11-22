@@ -1,0 +1,22 @@
+{
+  "appName": "AURORA",
+  "tagline": "Light beyond the feed.",
+  "flavor": "aurora",
+  "version": "1.0.0",
+  "versionCode": 100,
+  "accent": "#2EF2C4",
+  "secondary": "#7C5CFF",
+  "glyph": "wave",
+  "signature": "Cold light, warm edges.",
+  "links": { "telegram": "", "github": "https://github.com/muqeetdag/DRK" },
+  "defaults": {
+    "floatingNav": true,
+    "reelsDownloader": true,
+    "storiesDownloader": true,
+    "feedDownloader": true,
+    "downloadFolder": "AURORA"
+  },
+  "releaseChannel": "stable",
+  "keyAlias": "aurora",
+  "storePassword": "aurora-white-label"
+}

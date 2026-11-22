@@ -1,0 +1,8 @@
+# build artefacts
+.build/
+dist/
+keystore/
+apk-out/
+*.idsig
+*.jks
+__pycache__/
