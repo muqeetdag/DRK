@@ -120,6 +120,30 @@ opens dialogs, changes the palette, presses HOME/BACK, survives a restart and
 survives a device without Instagram/LSPosed. Every screenshot in
 `artifacts/` is rendered by the app's own view tree.
 
+### Android version matrix
+
+`matrix.sh` boots the same APK on every Android version from 5.0 to 16 and runs
+the full 73-check suite each time:
+
+```bash
+cd nyx/.vphone
+bash matrix.sh                                   # 16 API levels
+APIS="21 26 36" bash matrix.sh                   # a subset
+```
+
+Current result: **16/16 API levels, 73 passed / 0 failed each.**
+
+Why this matters — the crash loop users reported was a build-flag bug, not a
+logic bug:
+
+| Problem | Effect | Fix |
+|---|---|---|
+| `--no-desugaring` left 101 `call_site` + 66 `method_handle` entries in the dex | ART &lt; API 26 aborts the class with `NoClassDefFoundError` at load time | desugaring always on; `tools/check_dex.py` fails the build if a 038 section survives |
+| `minSdkVersion 26` | Android 5/6/7 refused to install the APK at all | `MIN_SDK=21` |
+| `android:windowLightStatusBar` in the base style | API 21/22 fail to inflate the theme | moved to `values-v23` |
+| `Theme.Material` as the only parent | some 5.x OEM ROMs ship without it | base theme is `DeviceDefault`, `values-v21` upgrades to Material |
+| uncaught handler called `killProcess()` | crash hidden from the system, relaunch hit the same state | log, then delegate to the platform handler |
+
 > Caveat: `hook/*` classes are only class-loaded, never executed — there is no
 > Instagram process to hook here. Everything in `app/` (console, onboarding,
 > prefs, theme, media vault) is really executed.

@@ -1,5 +1,7 @@
 package io.nyx.app.hook;
 
+import io.nyx.app.core.SafeUi;
+
 import android.app.Activity;
 import android.content.Context;
 import android.graphics.drawable.GradientDrawable;
@@ -52,7 +54,7 @@ final class MediaKeeperButton {
             bubble.setStroke((int) density, theme.line);
             button.setBackground(new RippleDrawable(
                     ColorStateList.valueOf(ThemesMirror.alpha(theme.accent, 70)), bubble, null));
-            button.setElevation(size * 0.12f);
+            SafeUi.elevation(button, size * 0.12f);
 
             ViewGroup.LayoutParams lp;
             if (host instanceof LinearLayout) {
@@ -149,7 +151,7 @@ final class MediaKeeperButton {
             TextView label = new TextView(activity);
             label.setText(io.nyx.app.core.Brand.NAME.toUpperCase());
             label.setTextSize(8f);
-            label.setLetterSpacing(0.24f);
+            SafeUi.letterSpacing(label, 0.24f);
             label.setTextColor(ThemesMirror.alpha(theme.text, 140));
             label.setPadding((int) (14 * density), 0, 0, 0);
             bar.addView(label);

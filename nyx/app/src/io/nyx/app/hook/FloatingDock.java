@@ -1,5 +1,7 @@
 package io.nyx.app.hook;
 
+import io.nyx.app.core.SafeUi;
+
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
@@ -62,7 +64,7 @@ final class FloatingDock implements View.OnClickListener {
             if (decor.findViewWithTag(Ids.TAG_DOCK) != null) return;
             overlay = new FrameLayout(activity);
             overlay.setTag(Ids.TAG_DOCK);
-            overlay.setElevation(dp(10));
+            SafeUi.elevation(overlay, dp(10));
             FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(-1, -2);
             lp.gravity = Gravity.BOTTOM;
             lp.bottomMargin = dp(16);
@@ -107,7 +109,7 @@ final class FloatingDock implements View.OnClickListener {
             item.setTextSize(central ? 21f : 8.5f);
             item.setTextColor(central ? theme.bg : (i == current ? theme.accent : theme.muted));
             item.setLineSpacing(dp(2), 1f);
-            item.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+            SafeUi.typeface(item, "sans-serif-medium", Typeface.NORMAL);
             item.setTag(i);
             item.setOnClickListener(this);
             if (central) {

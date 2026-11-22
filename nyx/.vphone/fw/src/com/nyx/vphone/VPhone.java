@@ -49,14 +49,18 @@ public final class VPhone {
     private static android.content.res.Resources resources;
 
     public static void main(String[] args) throws Exception {
-        String apk = args.length > 0 ? args[0] : "../dist/nyx-1.1.0-obsidian.apk";
+        String apk = args.length > 0 ? args[0] : "../dist/nyx-1.2.0-obsidian.apk";
         String outDirArg = args.length > 1 ? args[1] : "artifacts";
+        // -Dvphone.sdk=21 boots the virtual phone as Android 5.0 instead of 14.
+        int sdk = Integer.getInteger("vphone.sdk", 34);
+        android.os.Build.VERSION.setSdk(sdk);
         work = new File(System.getProperty("user.dir"));
         appDir = new File(work, "run");
         File screens = new File(outDirArg);
         screens.mkdirs();
 
-        log("virtual phone boot  apk=" + new File(apk).getAbsolutePath());
+        log("virtual phone boot  android=" + android.os.Build.VERSION.RELEASE
+                + " (API " + sdk + ")  apk=" + new File(apk).getAbsolutePath());
         bootRuntime(apk);
 
         // ---------------------------------------------------------------- suite

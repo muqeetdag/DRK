@@ -25,7 +25,9 @@ DIST="$ROOT/dist"
 CONFIG="${NYX_CONFIG:-$ROOT/white-label.json}"
 [ -f "$CONFIG" ] || CONFIG="$ROOT/white-label.example.json"
 
-MIN_SDK=26
+# Android 5.0 (API 21) and up. Anything higher silently refuses to install on
+# older phones, which is exactly the "it crashes on my device" report.
+MIN_SDK=21
 TARGET_SDK=35
 JAVA_OPTS_JAR=(-Xmx900m)
 
@@ -133,13 +135,25 @@ build() {
     -d "$WORK/classes" \
     $(find "$SRC" "$WORK/gen" "$ROOT/tools/xposed-stubs" -name '*.java')
 
-  log "D8 dex (min-api $MIN_SDK, release mode)"
+  log "D8 dex (min-api $MIN_SDK, release mode, full desugaring)"
   mkdir -p "$WORK/dex"
+  # Desugaring MUST stay on. With --no-desugaring the Java 8 lambdas compiled by
+  # ECJ remain `invoke-custom` instructions, and Dalvik / ART below API 26 aborts
+  # the class with NoClassDefFoundError at load time. That is the crash-loop
+  # users hit on older phones. D8 rewrites them to synthetic classes here.
   "$JAVA" "${JAVA_OPTS_JAR[@]}" -cp "$TOOLS/d8.jar" com.android.tools.r8.D8 \
     --lib "$TOOLS/android-compile.jar" \
-    --min-api "$MIN_SDK" --release --no-desugaring \
+    --min-api "$MIN_SDK" --release \
     --output "$WORK/dex" \
     $(find "$WORK/classes" -name '*.class')
+
+  # Fail the build if any CPU-version-incompatible opcode survived.
+  "$JAVA" -cp "$TOOLS/d8.jar" com.android.tools.r8.D8 --version >/dev/null 2>&1 || true
+  if python3 "$ROOT/tools/check_dex.py" "$WORK/dex/classes.dex" "$MIN_SDK"; then
+    log "dex opcode check passed (no invoke-custom for min-api $MIN_SDK)"
+  else
+    die "dex contains opcodes that crash on API < 26"
+  fi
 
   log "Package APK"
   cp "$WORK/base.apk" "$WORK/unsigned.apk"

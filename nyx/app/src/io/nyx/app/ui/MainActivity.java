@@ -48,6 +48,7 @@ import io.nyx.app.core.GenSettings;
 import io.nyx.app.core.Haptics;
 import io.nyx.app.core.MediaStoreX;
 import io.nyx.app.core.Prefs;
+import io.nyx.app.core.SafeUi;
 import io.nyx.app.core.SafePrefs;
 import io.nyx.app.core.CrashLog;
 import io.nyx.app.core.Themes;
@@ -80,15 +81,19 @@ public class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle state) {
         super.onCreate(state);
+        // Record the failure, then hand control back to the platform handler.
+        // Calling killProcess() here hid the crash from the system and made the
+        // next launch hit the same broken state again (the "keeps stopping" loop).
+        final Thread.UncaughtExceptionHandler previous =
+                Thread.getDefaultUncaughtExceptionHandler();
         Thread.setDefaultUncaughtExceptionHandler((thread, error) -> {
             try {
                 CrashLog.write(this, error);
                 SafePrefs.repair(this);
             } catch (Throwable ignored) {
             }
-            try {
-                android.os.Process.killProcess(android.os.Process.myPid());
-            } catch (Throwable ignored) {
+            if (previous != null) {
+                previous.uncaughtException(thread, error);
             }
         });
         try {
@@ -117,6 +122,7 @@ public class MainActivity extends Activity {
         Prefs.seedIfEmpty(this);
         prefs = Prefs.open(this);
         theme = Themes.current(this);
+        density = (int) getResources().getDisplayMetrics().density;
         styleSystemBars();
         buildShell();
         show(TAB_HOME);
@@ -163,10 +169,10 @@ public class MainActivity extends Activity {
 
     private void styleSystemBars() {
         Window window = getWindow();
-        window.setStatusBarColor(theme.bg);
-        window.setNavigationBarColor(theme.bg);
-        window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
-        window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+        SafeUi.statusBar(window, theme.bg);
+        SafeUi.windowFlags(window,
+                WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS,
+                WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
     }
 
     // ------------------------------------------------------------- shell
@@ -212,7 +218,7 @@ public class MainActivity extends Activity {
             TextView label = new TextView(this);
             label.setText(labels[i]);
             label.setTextSize(9);
-            label.setLetterSpacing(0.12f);
+            SafeUi.letterSpacing(label, 0.12f);
             label.setGravity(Gravity.CENTER);
             label.setPadding(0, dp(3), 0, 0);
             item.addView(glyph);
@@ -367,7 +373,7 @@ public class MainActivity extends Activity {
         TextView label = new TextView(this);
         label.setText(title);
         label.setTextSize(10);
-        label.setLetterSpacing(0.2f);
+        SafeUi.letterSpacing(label, 0.2f);
         label.setTextColor(theme.muted);
         label.setPadding(dp(8), 0, 0, 0);
         head.addView(label);
@@ -509,14 +515,14 @@ public class MainActivity extends Activity {
         TextView made = new TextView(this);
         made.setText("APP MADE BY");
         made.setTextSize(9.5f);
-        made.setLetterSpacing(0.24f);
+        SafeUi.letterSpacing(made, 0.24f);
         made.setTextColor(Themes.alpha(theme.text, 170));
         card.addView(made);
 
         TextView handle = new TextView(this);
         handle.setText(TextUtils.isEmpty(Brand.CREDIT_HANDLE) ? "@DRKMUQEETT" : Brand.CREDIT_HANDLE);
         handle.setTextSize(26);
-        handle.setTypeface(Typeface.create("sans-serif-black", Typeface.BOLD));
+        SafeUi.typeface(handle, "sans-serif-black", Typeface.BOLD);
         handle.setTextColor(theme.text);
         card.addView(handle);
 
@@ -530,7 +536,7 @@ public class MainActivity extends Activity {
         TextView tg = new TextView(this);
         tg.setText("DIRECT CONTACT · TELEGRAM ↗");
         tg.setTextSize(10.5f);
-        tg.setLetterSpacing(0.12f);
+        SafeUi.letterSpacing(tg, 0.12f);
         tg.setGravity(Gravity.CENTER);
         tg.setTypeface(Typeface.DEFAULT_BOLD);
         tg.setTextColor(theme.bg);
@@ -567,8 +573,8 @@ public class MainActivity extends Activity {
         TextView name = new TextView(this);
         name.setText(Brand.NAME);
         name.setTextSize(30);
-        name.setLetterSpacing(-0.04f);
-        name.setTypeface(Typeface.create("sans-serif-black", Typeface.BOLD));
+        SafeUi.letterSpacing(name, -0.04f);
+        SafeUi.typeface(name, "sans-serif-black", Typeface.BOLD);
         name.setTextColor(theme.text);
         text.addView(name);
         TextView tag = new TextView(this);
@@ -582,7 +588,7 @@ public class MainActivity extends Activity {
         TextView version = new TextView(this);
         version.setText("v" + Brand.VERSION);
         version.setTextSize(10);
-        version.setLetterSpacing(0.1f);
+        SafeUi.letterSpacing(version, 0.1f);
         version.setTextColor(theme.accent);
         version.setPadding(dp(10), dp(6), dp(10), dp(6));
         version.setBackground(rounded(Themes.alpha(theme.accent, 24), 100, 0, 0));
@@ -611,7 +617,7 @@ public class MainActivity extends Activity {
         head.setText((mode == SafePrefs.MODE_NON_ROOT ? "NON-ROOT · LSPATCH" : "ROOT · LSPOSED")
                 + "   " + (verified ? "· LINKED ✓" : "· SETUP PENDING"));
         head.setTextSize(10);
-        head.setLetterSpacing(0.14f);
+        SafeUi.letterSpacing(head, 0.14f);
         head.setTypeface(Typeface.DEFAULT_BOLD);
         head.setTextColor(verified ? theme.secondary : theme.accent);
         card.addView(head);
@@ -645,7 +651,7 @@ public class MainActivity extends Activity {
         TextView verify = new TextView(this);
         verify.setText("VERIFY LINK");
         verify.setTextSize(10.5f);
-        verify.setLetterSpacing(0.12f);
+        SafeUi.letterSpacing(verify, 0.12f);
         verify.setGravity(Gravity.CENTER);
         verify.setTypeface(Typeface.DEFAULT_BOLD);
         verify.setPadding(0, dp(11), 0, dp(11));
@@ -661,7 +667,7 @@ public class MainActivity extends Activity {
         TextView switchMode = new TextView(this);
         switchMode.setText("SWITCH MODE");
         switchMode.setTextSize(10.5f);
-        switchMode.setLetterSpacing(0.12f);
+        SafeUi.letterSpacing(switchMode, 0.12f);
         switchMode.setGravity(Gravity.CENTER);
         switchMode.setPadding(0, dp(11), 0, dp(11));
         switchMode.setTextColor(theme.text);
@@ -741,7 +747,7 @@ public class MainActivity extends Activity {
         TextView sync = new TextView(this);
         sync.setText("SYNC");
         sync.setTextSize(9);
-        sync.setLetterSpacing(0.16f);
+        SafeUi.letterSpacing(sync, 0.16f);
         sync.setTextColor(theme.bg);
         sync.setPadding(dp(12), dp(7), dp(12), dp(7));
         sync.setBackground(rounded(theme.accent, 100, 0, 0));
@@ -764,7 +770,7 @@ public class MainActivity extends Activity {
         TextView label = new TextView(this);
         label.setText(title);
         label.setTextSize(10);
-        label.setLetterSpacing(0.22f);
+        SafeUi.letterSpacing(label, 0.22f);
         label.setTextColor(theme.muted);
         label.setPadding(dp(4), dp(22), 0, dp(8));
         return label;
@@ -944,7 +950,7 @@ public class MainActivity extends Activity {
         TextView meta = new TextView(this);
         meta.setText(palette.id.toUpperCase() + (palette.glow ? " · GLOW" : " · MATTE"));
         meta.setTextSize(9.5f);
-        meta.setLetterSpacing(0.14f);
+        SafeUi.letterSpacing(meta, 0.14f);
         meta.setTextColor(palette.muted);
         meta.setPadding(0, dp(3), 0, 0);
         text.addView(meta);
@@ -972,7 +978,7 @@ public class MainActivity extends Activity {
         TextView title = new TextView(this);
         title.setText(label);
         title.setTextSize(10);
-        title.setLetterSpacing(0.18f);
+        SafeUi.letterSpacing(title, 0.18f);
         title.setTextColor(theme.muted);
         wrap.addView(title);
 
@@ -1010,13 +1016,13 @@ public class MainActivity extends Activity {
         TextView v = new TextView(this);
         v.setText(value);
         v.setTextSize(24);
-        v.setTypeface(Typeface.create("sans-serif-black", Typeface.BOLD));
+        SafeUi.typeface(v, "sans-serif-black", Typeface.BOLD);
         v.setTextColor(color);
         card.addView(v);
         TextView l = new TextView(this);
         l.setText(label);
         l.setTextSize(9.5f);
-        l.setLetterSpacing(0.2f);
+        SafeUi.letterSpacing(l, 0.2f);
         l.setTextColor(theme.muted);
         l.setPadding(0, dp(3), 0, 0);
         card.addView(l);
@@ -1036,8 +1042,8 @@ public class MainActivity extends Activity {
         TextView t = new TextView(this);
         t.setText(title);
         t.setTextSize(24);
-        t.setLetterSpacing(-0.02f);
-        t.setTypeface(Typeface.create("sans-serif-black", Typeface.BOLD));
+        SafeUi.letterSpacing(t, -0.02f);
+        SafeUi.typeface(t, "sans-serif-black", Typeface.BOLD);
         t.setTextColor(theme.text);
         wrap.addView(t);
         TextView s = new TextView(this);
@@ -1067,7 +1073,7 @@ public class MainActivity extends Activity {
         meta.setText(Brand.NAME + " · " + (theme == null ? Brand.FLAVOR : theme.id)
                 + " · " + Brand.CHANNEL);
         meta.setTextSize(9.5f);
-        meta.setLetterSpacing(0.08f);
+        SafeUi.letterSpacing(meta, 0.08f);
         meta.setTextColor(theme.muted);
         meta.setGravity(Gravity.CENTER);
         meta.setPadding(0, dp(6), 0, 0);
@@ -1119,7 +1125,7 @@ public class MainActivity extends Activity {
         TextView title = new TextView(this);
         title.setText("ATTACH " + Brand.NAME.toUpperCase());
         title.setTextSize(16);
-        title.setLetterSpacing(0.08f);
+        SafeUi.letterSpacing(title, 0.08f);
         title.setTypeface(Typeface.DEFAULT_BOLD);
         title.setTextColor(theme.text);
         wrap.addView(title);
@@ -1143,7 +1149,7 @@ public class MainActivity extends Activity {
         TextView close = new TextView(this);
         close.setText("GOT IT");
         close.setTextSize(11);
-        close.setLetterSpacing(0.16f);
+        SafeUi.letterSpacing(close, 0.16f);
         close.setGravity(Gravity.CENTER);
         close.setPadding(0, dp(14), 0, dp(14));
         close.setTextColor(theme.bg);
@@ -1168,7 +1174,7 @@ public class MainActivity extends Activity {
         TextView title = new TextView(this);
         title.setText("RELEASE NOTES");
         title.setTextSize(16);
-        title.setLetterSpacing(0.08f);
+        SafeUi.letterSpacing(title, 0.08f);
         title.setTypeface(Typeface.DEFAULT_BOLD);
         title.setTextColor(theme.text);
         wrap.addView(title);
@@ -1216,7 +1222,7 @@ public class MainActivity extends Activity {
         TextView head = new TextView(this);
         head.setText(title);
         head.setTextSize(13);
-        head.setLetterSpacing(0.1f);
+        SafeUi.letterSpacing(head, 0.1f);
         head.setTextColor(theme.accent);
         wrap.addView(head);
         TextView text = new TextView(this);
@@ -1279,7 +1285,7 @@ public class MainActivity extends Activity {
         TextView title = new TextView(this);
         title.setText("VAULT FOLDER");
         title.setTextSize(14);
-        title.setLetterSpacing(0.1f);
+        SafeUi.letterSpacing(title, 0.1f);
         title.setTextColor(theme.text);
         wrap.addView(title);
         final EditText input = new EditText(this);
@@ -1294,7 +1300,7 @@ public class MainActivity extends Activity {
         save.setText("SAVE");
         save.setGravity(Gravity.CENTER);
         save.setTextSize(11);
-        save.setLetterSpacing(0.16f);
+        SafeUi.letterSpacing(save, 0.16f);
         save.setPadding(0, dp(14), 0, dp(14));
         save.setTextColor(theme.bg);
         save.setBackground(rounded(theme.accent, 14, 0, 0));

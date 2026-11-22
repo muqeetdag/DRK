@@ -1,5 +1,7 @@
 package io.nyx.app.ui;
 
+import io.nyx.app.core.SafeUi;
+
 import android.app.Activity;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
@@ -39,8 +41,7 @@ public class OnboardingActivity extends Activity {
         try {
             density = (int) getResources().getDisplayMetrics().density;
             theme = Themes.current(this);
-            getWindow().setStatusBarColor(theme.bg);
-            getWindow().setNavigationBarColor(theme.bg);
+            SafeUi.statusBar(getWindow(), theme.bg);
             setContentView(build());
         } catch (Throwable t) {
             // last-resort: never let onboarding itself crash
@@ -68,15 +69,15 @@ public class OnboardingActivity extends Activity {
         TextView kicker = new TextView(this);
         kicker.setText("WELCOME TO");
         kicker.setTextSize(10);
-        kicker.setLetterSpacing(0.3f);
+        SafeUi.letterSpacing(kicker, 0.3f);
         kicker.setTextColor(theme.accent);
         body.addView(kicker);
 
         TextView title = new TextView(this);
         title.setText(Brand.NAME);
         title.setTextSize(44);
-        title.setLetterSpacing(-0.05f);
-        title.setTypeface(Typeface.create("sans-serif-black", Typeface.BOLD));
+        SafeUi.letterSpacing(title, -0.05f);
+        SafeUi.typeface(title, "sans-serif-black", Typeface.BOLD);
         title.setTextColor(theme.text);
         title.setPadding(0, dp(4), 0, 0);
         body.addView(title);
@@ -152,7 +153,7 @@ public class OnboardingActivity extends Activity {
         TextView cta = new TextView(this);
         cta.setText("CONTINUE  →");
         cta.setTextSize(11);
-        cta.setLetterSpacing(0.16f);
+        SafeUi.letterSpacing(cta, 0.16f);
         cta.setGravity(Gravity.CENTER);
         cta.setTypeface(Typeface.DEFAULT_BOLD);
         cta.setPadding(0, dp(12), 0, dp(12));
@@ -181,7 +182,7 @@ public class OnboardingActivity extends Activity {
         TextView made = new TextView(this);
         made.setText("APP MADE BY");
         made.setTextSize(9.5f);
-        made.setLetterSpacing(0.24f);
+        SafeUi.letterSpacing(made, 0.24f);
         made.setTextColor(theme.muted);
         made.setGravity(Gravity.CENTER);
         wrap.addView(made);
@@ -189,7 +190,7 @@ public class OnboardingActivity extends Activity {
         TextView handle = new TextView(this);
         handle.setText(TextUtils.isEmpty(Brand.CREDIT_HANDLE) ? "@DRKMUQEETT" : Brand.CREDIT_HANDLE);
         handle.setTextSize(20);
-        handle.setTypeface(Typeface.create("sans-serif-black", Typeface.BOLD));
+        SafeUi.typeface(handle, "sans-serif-black", Typeface.BOLD);
         handle.setTextColor(theme.text);
         handle.setGravity(Gravity.CENTER);
         handle.setPadding(0, dp(6), 0, 0);
@@ -205,7 +206,7 @@ public class OnboardingActivity extends Activity {
         TextView tg = new TextView(this);
         tg.setText("OPEN TELEGRAM ↗");
         tg.setTextSize(10);
-        tg.setLetterSpacing(0.14f);
+        SafeUi.letterSpacing(tg, 0.14f);
         tg.setGravity(Gravity.CENTER);
         tg.setTextColor(theme.secondary);
         tg.setPadding(dp(16), dp(9), dp(16), dp(9));
