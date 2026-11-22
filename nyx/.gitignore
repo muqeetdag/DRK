@@ -12,3 +12,4 @@ __pycache__/
 .vphone/run/
 .vphone/crash-last.txt
 .vphone/artifacts-api*/
+.vphone/artifacts-*/

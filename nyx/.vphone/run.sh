@@ -8,7 +8,7 @@ NYX="$(dirname "$HERE")"
 JAVA_HOME_DIR="${NYX}/.build/tools/jre"
 JAVA="${JAVA_HOME_DIR}/bin/java"
 ECJ="${NYX}/.build/tools/ecj.jar"
-APK="${NYX}/dist/nyx-1.2.0-obsidian.apk"
+APK="${NYX}/dist/nyx-1.3.0-obsidian.apk"
 APP_SRC="${NYX}/.build/work/app-src/src"
 GEN="${NYX}/.build/work/gen"
 

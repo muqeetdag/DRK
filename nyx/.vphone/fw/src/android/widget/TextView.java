@@ -190,6 +190,8 @@ public class TextView extends View {
 
     public void setMovementMethod(Object method) {}
 
+    public void setTextIsSelectable(boolean selectable) {}
+
     public void setTransformationMethod(Object method) {}
 
     public void setMarqueeRepeatLimit(int limit) {}

@@ -4,7 +4,10 @@
     <color name="nyx_accent">__ACCENT__</color>
     <color name="nyx_secondary">__SECONDARY__</color>
 
+    <!-- Every host package this module declares. LSPosed shows each of these in
+         its scope list as "Requested by this module"; listing the module's own
+         package as well is what makes the module show up as active. -->
     <string-array name="xposed_scope">
-        <item>com.instagram.android</item>
+__SCOPE_ITEMS__
     </string-array>
 </resources>

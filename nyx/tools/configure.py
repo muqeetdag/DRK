@@ -52,6 +52,8 @@ def load_config(path: str) -> dict:
             "feedDownloader": bool(cfg.get("defaults", {}).get("feedDownloader", True)),
             "downloadFolder": str(cfg.get("defaults", {}).get("downloadFolder", "NYX"))[:32],
         },
+        "scope": [str(pkg) for pkg in cfg.get("scope", DEFAULT_SCOPE) if pkg],
+        "installMode": str(cfg.get("installMode", "both")),
         "releaseChannel": str(cfg.get("releaseChannel", "stable")),
         "keyAlias": str(cfg.get("keyAlias", "nyx")),
         "storePassword": str(cfg.get("storePassword", "nyx-white-label")),
@@ -63,6 +65,40 @@ def load_config(path: str) -> dict:
     if not re.match(r"^#[0-9a-fA-F]{6}$", out["secondary"]):
         fail(f"secondary must be #RRGGBB, got {out['secondary']!r}")
     return out
+
+
+# The hosts we hook. Instagram first (its own app), then its secondary processes
+# are covered by the same package, plus the module's own package so LSPosed can
+# report "this module is loaded into its own app, which is how it reports that it
+# is active" - exactly the row InstaEclipse shows.
+DEFAULT_SCOPE = [
+    "com.instagram.android",
+    "com.instagram.android",
+    "io.nyx.app",
+]
+
+
+def scope_packages(cfg: dict) -> list[str]:
+    """De-duplicated, order-preserving host list."""
+    seen = set()
+    out = []
+    for pkg in cfg["scope"]:
+        if pkg not in seen:
+            seen.add(pkg)
+            out.append(pkg)
+    return out
+
+
+def scope_items(cfg: dict) -> str:
+    return "\n".join(f"        <item>{pkg}</item>" for pkg in scope_packages(cfg))
+
+
+def scope_java(cfg: dict) -> str:
+    """A Java array literal for the hook side."""
+    pkgs = scope_packages(cfg)
+    if not pkgs:
+        pkgs = ["com.instagram.android"]
+    return ", ".join(f'"{pkg}"' for pkg in pkgs)
 
 
 TOKEN_RE = re.compile(r"__([A-Z0-9_]+)__")
@@ -91,6 +127,10 @@ def tokens_for(cfg: dict) -> dict:
         "DEF_FEED": "true" if d["feedDownloader"] else "false",
         "DEF_FOLDER": d["downloadFolder"],
         "CHANNEL": cfg["releaseChannel"],
+        "SCOPE_ITEMS": scope_items(cfg),
+        "SCOPE_JAVA": scope_java(cfg),
+        "INSTALL_MODE": cfg["installMode"],
+        "PKG_SUFFIX": cfg.get("packageSuffix", ""),
     }
 
 
@@ -176,15 +216,36 @@ public final class GenSettings {{
 
 
 def main() -> None:
-    args = [a for a in sys.argv[1:] if a != "--apply"]
-    if len(args) != 2:
-        print("usage: configure.py <white-label.json> <repo-root> [--apply]", file=sys.stderr)
-        sys.exit(2)
-    apply_tokens = "--apply" in sys.argv
-    config_path, repo = args[0], args[1]
-    cfg = load_config(config_path)
+    argv = sys.argv[1:]
+    apply_tokens = "--apply" in argv
+    package_suffix = ""
+    label = ""
+    cleaned = []
+    index = 0
+    while index < len(argv):
+        arg = argv[index]
+        if arg == "--apply":
+            index += 1
+            continue
+        if arg in ("--package-suffix", "--label"):
+            value = argv[index + 1] if index + 1 < len(argv) else ""
+            if arg == "--package-suffix":
+                package_suffix = value
+            else:
+                label = value
+            index += 2
+            continue
+        cleaned.append(arg)
+        index += 1
 
-    work = os.path.join(repo, ".build", "work")
+    if len(cleaned) != 2:
+        print("usage: configure.py <white-label.json> <repo-root> [--apply] "
+              "[--package-suffix .lspatch] [--label nonroot]", file=sys.stderr)
+        sys.exit(2)
+    config_path, repo = cleaned[0], cleaned[1]
+    cfg = load_config(config_path)
+    # The repo argument is the variant work dir: .build/work-<variant>.
+    work = repo if "work-" in os.path.basename(repo) else os.path.join(repo, ".build", "work")
     os.makedirs(work, exist_ok=True)
     with open(os.path.join(work, "config.json"), "w", encoding="utf-8") as fh:
         json.dump(cfg, fh, indent=2)
@@ -209,6 +270,45 @@ def main() -> None:
                 count += 1
 
     print(f"  tokens applied to {count} files")
+
+    # ---------------------------------------------------------- variant naming
+    manifest = os.path.join(app_src, "AndroidManifest.xml")
+    if package_suffix:
+        with open(manifest, encoding="utf-8") as fh:
+            text = fh.read()
+        text = re.sub(r'package="io\.nyx\.app"',
+                      f'package="io.nyx.app{package_suffix}"', text, count=1)
+        # The module's own package must be in the scope list for LSPosed to
+        # report it as active - mirror the new id.
+        scope_path = os.path.join(app_src, "res", "values", "colors.xml")
+        with open(scope_path, encoding="utf-8") as fh:
+            scope = fh.read()
+        scope = scope.replace("<item>io.nyx.app</item>",
+                              f"<item>io.nyx.app{package_suffix}</item>")
+        with open(scope_path, "w", encoding="utf-8") as fh:
+            fh.write(scope)
+        with open(manifest, "w", encoding="utf-8") as fh:
+            fh.write(text)
+        # aapt2 generates R.java under the manifest package, so every source
+        # import of io.nyx.app.R must follow the new id.
+        for base, _dirs, files in os.walk(app_src):
+            for name in files:
+                if not name.endswith(".java"):
+                    continue
+                path = os.path.join(base, name)
+                with open(path, encoding="utf-8") as fh:
+                    source = fh.read()
+                if "import io.nyx.app.R;" in source:
+                    source = source.replace(
+                        "import io.nyx.app.R;",
+                        f"import io.nyx.app{package_suffix}.R;")
+                    with open(path, "w", encoding="utf-8") as fh:
+                        fh.write(source)
+        print(f"  package id -> io.nyx.app{package_suffix}")
+
+    cfg["outputLabel"] = label
+    with open(os.path.join(work, "config.json"), "w", encoding="utf-8") as fh:
+        json.dump(cfg, fh, indent=2)
 
 
 if __name__ == "__main__":

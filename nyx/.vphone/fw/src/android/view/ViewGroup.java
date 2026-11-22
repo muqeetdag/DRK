@@ -291,6 +291,8 @@ public abstract class ViewGroup extends View implements ViewParent {
     public static class MarginLayoutParams extends LayoutParams {
         public int leftMargin, topMargin, rightMargin, bottomMargin;
         public int marginStart, marginEnd;
+        /** FrameLayout (and others) express alignment here. */
+        public int gravity;
 
         public MarginLayoutParams(Context c, android.util.AttributeSet attrs) { super(c, attrs); }
 

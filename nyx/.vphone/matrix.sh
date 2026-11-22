@@ -9,7 +9,7 @@ set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 NYX="$(dirname "$HERE")"
 JAVA="${NYX}/.build/tools/jre/bin/java"
-APK="${NYX}/dist/nyx-1.2.0-obsidian.apk"
+APK="${NYX}/dist/${NYX_APK:-nyx-1.3.0-obsidian-root.apk}"
 APIS="${APIS:-21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36}"
 
 cd "$HERE"
@@ -24,7 +24,7 @@ printf '%-6s %-10s %s\n' "API" "ANDROID" "RESULT"
 for api in $APIS; do
   rm -rf run
   out="$("$JAVA" -Dvphone.sdk="$api" -Djava.awt.headless=true \
-        -cp fw/out:app/out com.nyx.vphone.VPhone "$APK" "artifacts-api$api" 2>&1)"
+        -cp fw/out:app/out com.nyx.vphone.VPhone "$APK" "artifacts-${NYX_TAG:-root}-api$api" 2>&1)"
   release="$(printf '%s' "$out" | sed -n 's/.*android=\([^ ]*\) (API.*/\1/p' | head -1)"
   summary="$(printf '%s' "$out" | tail -1)"
   if printf '%s' "$summary" | grep -qE '^0 failed$|,[[:space:]]*0 failed$'; then

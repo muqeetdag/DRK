@@ -247,7 +247,7 @@ public final class VPhone {
     private static void persistence(File screens) {
         guard("toggles write through and stay consistent", () -> {
             Activity activity = ActivityHolder.get(screens);
-            View toggle = findFirstToggle(activity.getContentRoot());
+            View toggle = findFeatureToggle(activity.getContentRoot(), activity.getContentRoot());
             check("found a toggle to flip", toggle != null);
             if (toggle == null) return;
             String before = snapshotPrefs();
@@ -628,6 +628,47 @@ public final class VPhone {
             }
         }
         return null;
+    }
+
+    /**
+     * The first switch that belongs to a feature row (not a section master card).
+     * Feature rows sit inside a vertical group whose parent is the page column;
+     * master cards are the only ones whose label reads "Enable all of it".
+     */
+    private static View findFeatureToggle(View view, View root) {
+        java.util.List<View> switches = new java.util.ArrayList<>();
+        collectSwitches(view, switches);
+        for (View candidate : switches) {
+            View parent = candidate.getParent() instanceof View ? (View) candidate.getParent() : null;
+            boolean isMaster = false;
+            if (parent instanceof ViewGroup) {
+                ViewGroup row = (ViewGroup) parent;
+                for (int i = 0; i < row.getChildCount(); i++) {
+                    View child = row.getChildAt(i);
+                    if (child instanceof TextView && child != candidate) {
+                        CharSequence text = ((TextView) child).getText();
+                        if (text != null && text.toString().toLowerCase().contains("enable all")) {
+                            isMaster = true;
+                        }
+                    }
+                }
+            }
+            if (!isMaster) return candidate;
+        }
+        return switches.isEmpty() ? null : switches.get(0);
+    }
+
+    private static void collectSwitches(View view, java.util.List<View> out) {
+        if (view == null) return;
+        if (view.hasOnClickListeners() && view.getClass().getSimpleName().contains("Switch")) {
+            out.add(view);
+        }
+        if (view instanceof ViewGroup) {
+            ViewGroup group = (ViewGroup) view;
+            for (int i = 0; i < group.getChildCount(); i++) {
+                collectSwitches(group.getChildAt(i), out);
+            }
+        }
     }
 
     private static View findFirstToggle(View view) {

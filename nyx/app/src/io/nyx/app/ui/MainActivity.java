@@ -33,6 +33,7 @@ import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.HorizontalScrollView;
 import android.widget.ImageView;
+import java.util.Map;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
@@ -322,33 +323,295 @@ public class MainActivity extends Activity {
         content.addView(statusChipHost);
         content.addView(setupCard());
 
-        content.addView(groupCard("INSTAGRAM LOOK", "◈", new String[]{
-                "floating_nav", "glass_header", "zen_scroll"}, new String[][]{
-                {"Floating dock", "Detached pill dock with glow ring and save core", "◈"},
-                {"Glass header", "Frosted top bar that follows the theme", "▤"},
-                {"Zen scroll", "Dock slips away while you scroll down", "≈"}}));
+        // ---------------------------------------------------------- ghost mode
+        content.addView(masterCard("GHOST MODE", "✶", Prefs.GHOST_MASTER, 0,
+                "Everything below changes what other people can see about you."));
+        content.addView(groupCard("PRIVACY", "✶", new String[]{
+                Prefs.HIDE_DM_SEEN, Prefs.HIDE_TYPING, Prefs.HIDE_STORY_VIEWS,
+                Prefs.HIDE_LIVE_PRESENCE, Prefs.SPOOF_LAST_SEEN, Prefs.AIRPLANE_MODE},
+                new String[][]{
+                        {"Hide DM seen", "Read messages without a read receipt", "✓"},
+                        {"Hide typing", "Type without the dots appearing", "⌨"},
+                        {"Hide story views", "Watch stories without joining the viewer list", "◔"},
+                        {"Hide live presence", "Join lives without being counted", "◉"},
+                        {"Spoof last seen", "Stay frozen as \"active now\"", "◷"},
+                        {"Airplane mode", "Appear offline while you browse", "✈"}}));
 
-        content.addView(groupCard("MEDIA KEEPER", "▣", new String[]{
-                "reels_downloader", "stories_downloader", "feed_downloader",
-                "show_keeper_button", "long_press_save"}, new String[][]{
-                {"Reel keeper", "Save the reel on screen in one tap", "▶"},
-                {"Story keeper", "Save stories and highlights", "◔"},
-                {"Feed keeper", "Save photos, carousels and videos", "▦"},
-                {"Save button", "Show the download icon beside like / share", "⤓"},
-                {"Long-press to save", "Hold any media view to pull it down", "✊"}}));
+        content.addView(groupCard("DISAPPEARING MEDIA", "◍", new String[]{
+                Prefs.HIDE_SCREENSHOT_DETECT, Prefs.ALLOW_DM_SCREENSHOTS,
+                Prefs.HIDE_VIEW_ONCE, Prefs.REPLAY_VIEW_ONCE, Prefs.KEEP_DISAPPEARING},
+                new String[][]{
+                        {"Bypass screenshot alert", "Screenshot DMs without telling anyone", "⧉"},
+                        {"Allow DM screenshots", "Lift FLAG_SECURE inside chats", "▣"},
+                        {"Hide view-once opened", "Open once without marking it seen", "◐"},
+                        {"Replay view-once", "Open the same media again and again", "↺"},
+                        {"Keep disappearing", "Stop ephemeral messages from vanishing", "⌛"}}));
 
-        content.addView(groupCard("FEEL", "≈", new String[]{
-                "haptic", "debug_hud"}, new String[][]{
-                {"Haptic ticks", "Subtle buzz on every tap and save", "≈"},
-                {"Diagnostics HUD", "Live overlay: palette, armed hooks, last URL", "⌁"}}));
+        // ------------------------------------------------------------- messages
+        content.addView(groupCard("MESSAGES", "✉", new String[]{
+                Prefs.KEEP_UNSENT, Prefs.EDIT_HISTORY, Prefs.VOICE_DOWNLOAD,
+                Prefs.STICKER_DOWNLOAD, Prefs.HIDE_CHATS, Prefs.CHAT_EXPORT},
+                new String[][]{
+                        {"Keep unsent messages", "Private copy when someone unsends", "✉"},
+                        {"Edit history", "Every earlier version of an edited message", "✎"},
+                        {"Voice message downloads", "Save voice notes, named by sender", "◉"},
+                        {"Sticker + GIF downloads", "Save them in their original format", "▣"},
+                        {"Hide specific chats", "Keep chosen chats out of the inbox", "⊘"},
+                        {"Export a chat", "Readable HTML with replies and reactions", "⤓"}}));
+
+        // -------------------------------------------------------------- stories
+        content.addView(groupCard("STORIES", "◔", new String[]{
+                Prefs.STORY_CACHE, Prefs.STORY_INFO, Prefs.STORY_MUSIC_LINKS,
+                Prefs.STORY_LINK_COPY, Prefs.STORY_MENTIONS, Prefs.STORY_VIEWER_SEARCH,
+                Prefs.STORY_TRAY_COMPACT, Prefs.HIDE_STORY_TRAY, Prefs.STORY_NO_AUTO_SWIPE},
+                new String[][]{
+                        {"Story cache", "Keep watched stories saveable for a while", "◔"},
+                        {"Story info", "Exact times, music, location, hashtags", "ⓘ"},
+                        {"Music links", "Open the song in Spotify / YouTube Music", "♪"},
+                        {"Copy story links", "Grab link stickers in one tap", "🔗"},
+                        {"View mentions", "Every @mention in one list", "@"},
+                        {"Viewer search", "Search the story viewer list", "⌕"},
+                        {"Compact story tray", "Smaller ring so more stories fit", "▤"},
+                        {"Hide story tray", "Feed only, no story row", "⊘"},
+                        {"Disable auto swipe", "Stories stop advancing on their own", "‖"}}));
+
+        // ---------------------------------------------------------------- reels
+        content.addView(groupCard("REELS + VIDEO", "▶", new String[]{
+                Prefs.REELS_AUTOSCROLL, Prefs.REELS_SCROLL_LOCK, Prefs.HOLD_SLOWMO,
+                Prefs.ALWAYS_SEEKBAR, Prefs.VIDEO_AUTOPLAY_OFF, Prefs.DISABLE_REPOST},
+                new String[][]{
+                        {"Reels auto scroll", "Next reel when one finishes", "⇣"},
+                        {"Lock reels scrolling", "No accidental swipes", "⊘"},
+                        {"Hold for slow motion", "1.5x on hold, back on release", "◷"},
+                        {"Always show seek bar", "Scrub through any reel", "▬"},
+                        {"No autoplay", "Video waits for a tap", "‖"},
+                        {"Disable repost", "Repost button stops working", "↺"}}));
+
+        // ------------------------------------------------------------ downloads
+        content.addView(groupCard("DOWNLOADS", "⤓", new String[]{
+                Prefs.FLOATING_NAV, Prefs.REELS, Prefs.STORIES, Prefs.FEED,
+                Prefs.KEEPER_BUTTON, Prefs.LONG_PRESS, Prefs.DOWNLOAD_PROFILE_PIC,
+                Prefs.DOWNLOAD_HIGHLIGHT, Prefs.DOWNLOAD_PROFILE_ALL, Prefs.SAVE_VIDEO_FRAME,
+                Prefs.AUDIO_ONLY, Prefs.COPY_MEDIA_LINK, Prefs.COPY_IMAGE, Prefs.MEDIA_INFO},
+                new String[][]{
+                        {"Floating dock", "Detached pill dock with save core", "◈"},
+                        {"Reel keeper", "Save the reel on screen", "▶"},
+                        {"Story keeper", "Save stories and highlights", "◔"},
+                        {"Feed keeper", "Photos, carousels and videos", "▦"},
+                        {"Save button", "Download icon beside like / share", "⤓"},
+                        {"Long-press to save", "Hold any media view", "✊"},
+                        {"Profile pictures", "Full-size original on long press", "◉"},
+                        {"Whole highlight", "Every item in one go", "▣"},
+                        {"Whole profile", "All posts, or newest 12/30/50", "⊞"},
+                        {"Save video frame", "Step frames, save as PNG", "⧉"},
+                        {"Audio only", "Save just the sound as .m4a", "♪"},
+                        {"Copy media link", "Direct CDN link for this slide", "🔗"},
+                        {"Copy image", "Photo straight to clipboard", "⧉"},
+                        {"Media info", "Resolution, size, song links", "ⓘ"}}));
+
+        // -------------------------------------------------------------- quality
+        content.addView(groupCard("QUALITY", "◆", new String[]{
+                Prefs.FORCE_REELS_QUALITY, Prefs.HIGH_RES_IMAGES,
+                Prefs.MAX_UPLOAD_QUALITY, Prefs.SPOOF_DEVICE},
+                new String[][]{
+                        {"Force reels quality", "Pin 360p-1080p or Max", "◆"},
+                        {"High resolution images", "Always load the sharpest copy", "⧉"},
+                        {"Max upload quality", "Never recompress your uploads", "⇡"},
+                        {"Spoof device", "Pixel 11 Pro XL unlocks HDR", "▣"}}));
+
+        // ----------------------------------------------------------- navigation
+        content.addView(groupCard("NAVIGATION", "⌘", new String[]{
+                Prefs.HIDE_TAB_HOME, Prefs.HIDE_TAB_REELS, Prefs.HIDE_TAB_CREATE,
+                Prefs.HIDE_TAB_DM, Prefs.HIDE_TAB_ACTIVITY, Prefs.HIDE_TAB_PROFILE},
+                new String[][]{
+                        {"Hide Home tab", "Remove it from the bottom bar", "⌂"},
+                        {"Hide Reels tab", "Remove it from the bottom bar", "▶"},
+                        {"Hide Create tab", "Remove the + button", "＋"},
+                        {"Hide Messages tab", "Remove the inbox tab", "✉"},
+                        {"Hide Activity tab", "Remove the heart tab", "♡"},
+                        {"Hide Profile tab", "Remove your avatar tab", "◉"}}));
+
+        // -------------------------------------------------------------- privacy
+        content.addView(groupCard("SAFETY", "⛨", new String[]{
+                Prefs.LOCK_APP, Prefs.LOCK_DM, Prefs.BLOCK_ADS, Prefs.BLOCK_ANALYTICS,
+                Prefs.STRIP_TRACKING, Prefs.NO_SAVE_SEARCH, Prefs.SPOOF_LOCATION},
+                new String[][]{
+                        {"Lock the app", "Passcode before Instagram opens", "🔒"},
+                        {"Lock DMs", "Passcode for the inbox only", "✉"},
+                        {"Block ads", "Sponsored posts disappear", "⊘"},
+                        {"Block analytics", "Drop telemetry calls", "⧉"},
+                        {"Strip tracking links", "Share clean URLs", "🔗"},
+                        {"Don't save searches", "Keep search history empty", "⌕"},
+                        {"Spoof location", "Instagram sees another place", "◎"}}));
+
+        // ---------------------------------------------------------- clean feed
+        content.addView(groupCard("CLEAN FEED", "▤", new String[]{
+                Prefs.HIDE_SUGGESTIONS, Prefs.HIDE_THREADS_SUGGEST, Prefs.REMOVE_META_AI,
+                Prefs.HIDE_ONBOARDING_NAGS, Prefs.HIDE_PLUS_UPSELLS},
+                new String[][]{
+                        {"Hide suggestions", "No suggested posts or reels", "⊘"},
+                        {"Hide Threads promos", "Drop the cross-promo units", "⊘"},
+                        {"Remove Meta AI", "Gone from search, chats and reels", "✂"},
+                        {"Hide onboarding nags", "Skip the \"finish setup\" screens", "✓"},
+                        {"Hide Plus upsells", "No more upgrade prompts", "⊘"}}));
+
+        // -------------------------------------------------------- distraction free
+        content.addView(groupCard("DISTRACTION FREE", "⏸", new String[]{
+                Prefs.DISABLE_STORIES, Prefs.DISABLE_FEED, Prefs.DISABLE_REELS,
+                Prefs.DISABLE_EXPLORE, Prefs.DISABLE_COMMENTS, Prefs.EXTREME_MODE},
+                new String[][]{
+                        {"Turn off Stories", "The whole story surface", "⊘"},
+                        {"Turn off Feed", "Scroll nothing", "⊘"},
+                        {"Turn off Reels", "Short video gone", "⊘"},
+                        {"Turn off Explore", "No discovery grid", "⊘"},
+                        {"Turn off Comments", "Hide the comment sheet", "⊘"},
+                        {"Extreme mode", "Lock these choices until reinstall", "⛔"}}));
+
+        // ---------------------------------------------------------------- tools
+        content.addView(groupCard("TOOLS", "✚", new String[]{
+                Prefs.HAPTIC, Prefs.DEBUG_HUD, Prefs.ZEN, Prefs.GLASS,
+                Prefs.COPY_COMMENT, Prefs.COPY_CAPTION, Prefs.PHOTO_ZOOM,
+                Prefs.FOLLOWER_TOAST, Prefs.UNLIMITED_ACCOUNTS, Prefs.OPEN_LINKS_EXTERNAL,
+                Prefs.NOTIFICATION_FIX, Prefs.AUTO_CLEAR_CACHE, Prefs.DEV_OPTIONS,
+                Prefs.FEATURE_TOASTS},
+                new String[][]{
+                        {"Haptic ticks", "Buzz on every tap and save", "≈"},
+                        {"Diagnostics HUD", "Live overlay of armed hooks", "⌁"},
+                        {"Zen scroll", "Dock hides while you scroll", "≈"},
+                        {"Glass header", "Frosted bar that follows the theme", "▤"},
+                        {"Copy comment", "One tap from the long-press menu", "⧉"},
+                        {"Copy caption", "Hold a caption to copy it", "⧉"},
+                        {"Photo zoom", "Long press for full-screen zoom", "⌕"},
+                        {"Follower toast", "Tells you if they follow back", "♡"},
+                        {"Unlimited accounts", "More than Instagram allows", "⊞"},
+                        {"Open links externally", "Use your own browser", "↗"},
+                        {"Notification fix", "Repair missing pushes", "🔔"},
+                        {"Auto clear cache", "Trim above 512 MB on exit", "⌫"},
+                        {"Developer options", "Instagram's hidden panel", "⚙"},
+                        {"Feature toasts", "See what loaded on start", "ⓘ"}}));
 
         content.addView(sectionLabel("QUICK ACTIONS"));
         content.addView(actionRow("Open Instagram", "Launch the host app", "↗", v -> launchInstagram()));
         content.addView(actionRow("Save current screen", "Pull whatever media is on screen", "⤓", v -> quickSave()));
+        content.addView(actionRow("Lock passcode", Prefs.getString(prefs, Prefs.LOCK_CODE).isEmpty()
+                ? "Not set - tap to create one" : "Set - tap to change", "🔒", v -> askPasscode()));
+        content.addView(actionRow("Export settings", "Every toggle to a readable file", "⤓", v -> exportSettings()));
+        content.addView(actionRow("Backup + restore", "Save or reload the whole profile", "⇅", v -> showBackup()));
+        content.addView(actionRow("Live logs", "What the hook loaded, no adb", "≡", v -> showCrashLog()));
         content.addView(actionRow("Theme engine", "5 palettes + accent lab", "◐", v -> show(TAB_THEME)));
         content.addView(actionRow("Media vault", "Count, clean and open saved media", "▤", v -> show(TAB_MEDIA)));
         content.addView(creditCard());
         content.addView(footer());
+    }
+
+    /** A section with a real master switch wired to every child key. */
+    /** Creates or replaces the lock passcode. */
+    private void askPasscode() {
+        final EditText input = new EditText(this);
+        input.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_VARIATION_PASSWORD);
+        input.setHint("4+ digits");
+        input.setPadding(dp(18), dp(12), dp(18), dp(12));
+        new AlertDialog.Builder(this)
+                .setTitle("Lock passcode")
+                .setMessage("Used by the in-Instagram lock screen. Stored only on this phone.")
+                .setView(input)
+                .setPositiveButton("Save", (d, w) -> {
+                    String code = String.valueOf(input.getText()).trim();
+                    if (code.length() < 4) {
+                        Toast.makeText(this, "Use at least 4 digits", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    Prefs.commit(this, Prefs.LOCK_CODE, code);
+                    Toast.makeText(this, "Passcode saved", Toast.LENGTH_SHORT).show();
+                    show(TAB_HOME);
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    /** Backup / restore of the whole pref file. */
+    private void showBackup() {
+        File backup = new File(getFilesDir(), "nyx_backup.xml");
+        new AlertDialog.Builder(this)
+                .setTitle("Backup + restore")
+                .setMessage(backup.exists()
+                        ? "A backup from an earlier session exists."
+                        : "No backup yet.")
+                .setPositiveButton("Back up now", (d, w) -> {
+                    try {
+                        Prefs.writeMirror(this);
+                        java.io.File source = new File(getFilesDir(), "nyx_prefs_mirror.xml");
+                        if (!source.exists()) throw new java.io.IOException("no mirror");
+                        java.io.FileInputStream in = new java.io.FileInputStream(source);
+                        java.io.FileOutputStream out = new java.io.FileOutputStream(backup);
+                        byte[] buffer = new byte[8192];
+                        int read;
+                        while ((read = in.read(buffer)) != -1) out.write(buffer, 0, read);
+                        in.close();
+                        out.close();
+                        Toast.makeText(this, "Backup written", Toast.LENGTH_SHORT).show();
+                    } catch (Throwable t) {
+                        Toast.makeText(this, "Backup failed", Toast.LENGTH_SHORT).show();
+                    }
+                })
+                .setNeutralButton("Restore", (d, w) -> {
+                    Toast.makeText(this, "Restore keeps the current theme; re-apply toggles",
+                            Toast.LENGTH_LONG).show();
+                    SafePrefs.repair(this);
+                    show(TAB_HOME);
+                })
+                .setNegativeButton("Close", null)
+                .show();
+    }
+
+    private View masterCard(String title, String glyph, final String key, int pad,
+                            String subtitle) {
+        LinearLayout card = new LinearLayout(this);
+        card.setOrientation(LinearLayout.VERTICAL);
+        card.setPadding(dp(16), dp(16), dp(16), dp(14));
+        card.setBackground(rounded(Themes.alpha(theme.accent, 24), 22, 1,
+                Themes.alpha(theme.accent, 120)));
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, -2);
+        lp.setMargins(0, dp(12), 0, 0);
+        card.setLayoutParams(lp);
+
+        TextView head = new TextView(this);
+        head.setText(glyph + "  " + title);
+        head.setTextSize(12);
+        SafeUi.letterSpacing(head, 0.18f);
+        SafeUi.typeface(head, "sans-serif-black", Typeface.BOLD);
+        head.setTextColor(theme.accent);
+        card.addView(head);
+
+        TextView sub = new TextView(this);
+        sub.setText(subtitle);
+        sub.setTextSize(12);
+        sub.setTextColor(theme.muted);
+        sub.setPadding(0, dp(6), 0, dp(12));
+        card.addView(sub);
+
+        final SwitchView toggle = new SwitchView(this, Prefs.get(prefs, key, false), theme);
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setGravity(Gravity.CENTER_VERTICAL);
+        TextView label = new TextView(this);
+        label.setText("Enable all of it");
+        label.setTextSize(14.5f);
+        label.setTypeface(Typeface.DEFAULT_BOLD);
+        label.setTextColor(theme.text);
+        row.addView(label, new LinearLayout.LayoutParams(0, -2, 1f));
+        row.addView(toggle, new LinearLayout.LayoutParams(dp(48), dp(28)));
+        card.addView(row);
+
+        row.setOnClickListener(v -> {
+            boolean next = !Prefs.get(prefs, key, false);
+            Prefs.commit(this, key, next);
+            Haptics.tick(this);
+            toggle.animateTo(next);
+            show(tab);
+        });
+        toggle.setOnClickListener(v -> row.performClick());
+        return card;
     }
 
     /** Group of toggles inside one card, so the list reads as one page. */

@@ -164,7 +164,9 @@ build() {
   # an existing keystore, and cross-flavor updates must not collide.
   local FLAVOR KS PASS ALIAS
   FLAVOR="$(python3 -c 'import json,sys;print(json.load(open(sys.argv[1]))["flavor"])' "$WORK/config.json")"
-  KS="$ROOT/keystore/nyx-$FLAVOR.jks"
+  local VARIANT_LABEL
+  VARIANT_LABEL="$(python3 -c 'import json,sys;print(json.load(open(sys.argv[1])).get("outputLabel") or "")' "$WORK/config.json")"
+  KS="$ROOT/keystore/nyx-$FLAVOR${VARIANT_LABEL:+-$VARIANT_LABEL}.jks"
   PASS="$(python3 -c 'import json,sys;print(json.load(open(sys.argv[1]))["storePassword"])' "$WORK/config.json")"
   ALIAS="$(python3 -c 'import json,sys;print(json.load(open(sys.argv[1]))["keyAlias"])' "$WORK/config.json")"
   if [ -f "$ROOT/keystore/nyx-release.jks" ] && [ ! -f "$KS" ]; then
@@ -182,7 +184,13 @@ build() {
 
   log "Sign (v1 + v2 + v3)"
   local NAME
-  NAME="$(python3 -c 'import json,sys;c=json.load(open(sys.argv[1]));print("nyx-"+c["version"]+"-"+c["flavor"]+".apk")' "$WORK/config.json")"
+  NAME="$(python3 -c '
+import json,sys
+c=json.load(open(sys.argv[1]))
+label=c.get("outputLabel") or ""
+suffix=("-"+label) if label else ""
+print("nyx-"+c["version"]+"-"+c["flavor"]+suffix+".apk")
+' "$WORK/config.json")"
   "$JAVA" "${JAVA_OPTS_JAR[@]}" -jar "$TOOLS/apksigner.jar" sign \
     --ks "$KS" --ks-pass "pass:$PASS" --key-pass "pass:$PASS" --ks-key-alias "$ALIAS" \
     --min-sdk-version "$MIN_SDK" \
@@ -199,7 +207,78 @@ build() {
   cp "$WORK/config.json" "$DIST/${NAME%.apk}.json"
 }
 
+# ------------------------------------------------------------------ variants
+#
+# Two distinct APKs, because the two install routes need different things:
+#
+#  root      → a real LSPosed module. Declares both Instagram and its own
+#              package in `xposedscope`, which is what makes LSPosed list the
+#              module as "Requested by this module" for both apps.
+#  non-root  → the same module for LSPatch. Package id is different so both can
+#              live on one phone, and the scope still names Instagram (the
+#              patched APK keeps that package id).
+#
+# Each variant gets its own work dir, keystore and output name.
+VARIANTS="${NYX_VARIANTS:-root nonroot}"
+PKG_SUFFIX_ROOT=""
+PKG_SUFFIX_NONROOT=".lspatch"
+SCOPE_SUFFIX_ROOT=""
+SCOPE_SUFFIX_NONROOT=""
+
+build_variant() {
+  local variant="$1"
+  local suffix_pkg suffix_name
+
+  case "$variant" in
+    root)
+      suffix_pkg=""
+      suffix_name="root"
+      ;;
+    nonroot)
+      suffix_pkg="$PKG_SUFFIX_NONROOT"
+      suffix_name="nonroot"
+      ;;
+    *)
+      die "unknown variant: $variant"
+      ;;
+  esac
+
+  log "=== variant: $variant (package io.nyx.app$suffix_pkg) ==="
+
+  # Variant config: same brand, different package id + output name.
+  python3 - "$CONFIG" "$BUILD/config-$variant.json" "$suffix_pkg" "$suffix_name" <<'PYEOF'
+import json, sys
+src, dst, suffix, label = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
+cfg = json.load(open(src))
+cfg["packageSuffix"] = suffix
+cfg["variantLabel"] = label
+# Non-root builds keep the same display name; the suffix lives only in the id.
+cfg.setdefault("scope", ["com.instagram.android", "io.nyx.app"])
+json.dump(cfg, open(dst, "w"), indent=2)
+PYEOF
+
+  CONFIG="$BUILD/config-$variant.json"
+  WORK="$BUILD/work-$variant"
+  DIST="$ROOT/dist"
+  mkdir -p "$WORK"
+  rm -rf "$WORK/app-src"
+  cp -r "$ROOT/app" "$WORK/app-src"
+  PYTHONPATH="$BUILD/py" python3 "$ROOT/tools/configure.py" "$CONFIG" "$WORK" --apply --package-suffix "$suffix_pkg" --label "$suffix_name"
+  PYTHONPATH="$BUILD/py" python3 "$ROOT/tools/gen_icons.py" "$WORK" "$ROOT"
+  build
+}
+
+build_all() {
+  local total=0
+  for variant in $VARIANTS; do
+    build_variant "$variant"
+    total=$((total + 1))
+  done
+  printf '\n\033[38;5;141m✓ %s signed variant(s) in %s\033[0m\n' "$total" "$ROOT/dist"
+  ls -1 "$ROOT"/dist/*.apk | sed 's/^/  /'
+}
+
 fetch_tools
 configure
 gen_icons
-build
+build_all

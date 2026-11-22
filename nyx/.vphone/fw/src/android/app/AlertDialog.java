@@ -13,7 +13,7 @@ public class AlertDialog extends Dialog {
 
     public void setMessage(CharSequence message) {}
 
-    public void setButton(int whichButton, CharSequence text, OnClickListener listener) {}
+    public void setButton(int whichButton, CharSequence text, android.content.DialogInterface.OnClickListener listener) {}
 
     public void setView(View view) { setContentView(view); }
 
@@ -21,11 +21,12 @@ public class AlertDialog extends Dialog {
     public static final int BUTTON_NEGATIVE = -2;
     public static final int BUTTON_NEUTRAL = -3;
 
-    public interface OnClickListener {
-        void onClick(DialogInterface dialog, int which);
+    /** Kept for source compatibility; the real listener is in android.content. */
+    public interface OnClickListener extends android.content.DialogInterface.OnClickListener {
     }
 
-    public interface DialogInterface {
+    /** @deprecated real type lives in android.content */
+    public interface LegacyDialogInterface {
         void cancel();
         void dismiss();
     }
@@ -37,9 +38,9 @@ public class AlertDialog extends Dialog {
         private CharSequence message;
         private View view;
         private CharSequence positiveText;
-        private OnClickListener positiveListener;
+        private android.content.DialogInterface.OnClickListener positiveListener;
         private CharSequence negativeText;
-        private OnClickListener negativeListener;
+        private android.content.DialogInterface.OnClickListener negativeListener;
         private boolean cancelable = true;
 
         public Builder(Context context) { this.context = context; }
@@ -60,27 +61,27 @@ public class AlertDialog extends Dialog {
 
         public Builder setCancelable(boolean cancelable) { this.cancelable = cancelable; return this; }
 
-        public Builder setPositiveButton(CharSequence text, OnClickListener listener) {
+        public Builder setPositiveButton(CharSequence text, android.content.DialogInterface.OnClickListener listener) {
             this.positiveText = text;
             this.positiveListener = listener;
             return this;
         }
 
-        public Builder setPositiveButton(int textId, OnClickListener listener) {
+        public Builder setPositiveButton(int textId, android.content.DialogInterface.OnClickListener listener) {
             return setPositiveButton(context.getString(textId), listener);
         }
 
-        public Builder setNegativeButton(CharSequence text, OnClickListener listener) {
+        public Builder setNegativeButton(CharSequence text, android.content.DialogInterface.OnClickListener listener) {
             this.negativeText = text;
             this.negativeListener = listener;
             return this;
         }
 
-        public Builder setNegativeButton(int textId, OnClickListener listener) {
+        public Builder setNegativeButton(int textId, android.content.DialogInterface.OnClickListener listener) {
             return setNegativeButton(context.getString(textId), listener);
         }
 
-        public Builder setNeutralButton(CharSequence text, OnClickListener listener) { return this; }
+        public Builder setNeutralButton(CharSequence text, android.content.DialogInterface.OnClickListener listener) { return this; }
 
         public Builder setOnDismissListener(OnDismissListener listener) { return this; }
 
@@ -88,15 +89,15 @@ public class AlertDialog extends Dialog {
 
         public Builder setIcon(int iconId) { return this; }
 
-        public Builder setItems(CharSequence[] items, OnClickListener listener) { return this; }
+        public Builder setItems(CharSequence[] items, android.content.DialogInterface.OnClickListener listener) { return this; }
 
         public Builder setSingleChoiceItems(CharSequence[] items, int checkedItem,
-                                           OnClickListener listener) { return this; }
+                                           android.content.DialogInterface.OnClickListener listener) { return this; }
 
         public Builder setMultiChoiceItems(CharSequence[] items, boolean[] checked,
                                           Object listener) { return this; }
 
-        public Builder setAdapter(Object adapter, OnClickListener listener) { return this; }
+        public Builder setAdapter(Object adapter, android.content.DialogInterface.OnClickListener listener) { return this; }
 
         public Builder setCustomTitle(View customTitle) { return this; }
 

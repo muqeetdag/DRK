@@ -145,6 +145,22 @@ public final class PrefsReader {
         filesDir = dir;
     }
 
+    /** Absolute path of the module's files/ dir, or null before it is resolved. */
+    public static String filesDir() {
+        return filesDir;
+    }
+
+    /** Raw parsed mirror, for features that need to enumerate keys. */
+    public static java.util.Map<String, Object> snapshot() {
+        try {
+            fromMirror("__warm__");
+        } catch (Throwable ignored) {
+        }
+        synchronized (mirror) {
+            return new HashMap<>(mirror);
+        }
+    }
+
     private static File mirrorFile() {
         if (filesDir == null) return null;
         return new File(filesDir, MIRROR);

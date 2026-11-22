@@ -54,7 +54,26 @@ final class InstagramAttach {
         if (started) return;
         started = true;
         hookActivity();
+        armFeatureEngines();
         HookBridge.log("attach layer armed (activity-scoped)");
+    }
+
+    /**
+     * Installs every feature engine. Each one is independent and wrapped, so a
+     * failed install costs that single feature - never the app. Order matters
+     * only for readability; nothing here depends on anything else having armed.
+     */
+    private void armFeatureEngines() {
+        HookBridge.safeRun("ghost mode", () -> GhostMode.install(loader));
+        HookBridge.safeRun("feed cleaner", () -> FeedCleaner.install(loader));
+        HookBridge.safeRun("media tools", () -> MediaTools.install(loader));
+        HookBridge.safeRun("app lock", () -> AppLock.install(loader));
+        HookBridge.safeRun("message tools", () -> MessageTools.install(loader));
+        HookBridge.safeRun("playback tools", () -> PlaybackTools.install(loader));
+        HookBridge.safeRun("story tools", () -> StoryTools.install(loader));
+        HookBridge.safeRun("misc tools", () -> MiscTools.install(loader));
+        HookBridge.log("feature engines armed (failures so far: "
+                + HookBridge.failures() + ")");
     }
 
     // ------------------------------------------------------- activity layer

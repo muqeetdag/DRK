@@ -4,6 +4,14 @@ import java.io.File;
 
 /** URI with the builders the app needs. */
 public class Uri {
+    public static String encode(String value) {
+        try {
+            return java.net.URLEncoder.encode(value, "UTF-8");
+        } catch (Throwable t) {
+            return value;
+        }
+    }
+
 
     private final String raw;
 

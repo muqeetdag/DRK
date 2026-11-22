@@ -114,6 +114,11 @@ public class FrameLayout extends ViewGroup {
         public LayoutParams(Context c, android.util.AttributeSet attrs) { super(c, attrs); }
         public LayoutParams(int width, int height) { super(width, height); }
 
+        public LayoutParams(int width, int height, int gravity) {
+            super(width, height);
+            this.gravity = gravity;
+        }
+
         public LayoutParams(android.view.View.LayoutParams source) { super(source); }
     }
 }
