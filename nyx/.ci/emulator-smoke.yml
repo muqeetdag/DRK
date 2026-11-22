@@ -1,0 +1,63 @@
+# Copy to .github/workflows/emulator-smoke.yml (needs a token with the workflow scope).
+# Boots a real Android emulator (KVM on GitHub's ubuntu runners), installs the two
+# APKs and verifies the console + onboarding actually start without crashing.
+name: emulator-smoke
+
+on: [workflow_dispatch]
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules && sudo udevadm trigger --name-match=kvm
+
+      - name: Boot emulator and install APKs
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 30
+          target: default
+          arch: x86_64
+          disable-animations: true
+          script: |
+            adb wait-for-device
+            adb install -r nyx/apk-out/NYX-1.0.0-obsidian.apk
+            adb install -r nyx/apk-out/AURORA-1.0.0-aurora.apk
+
+            # onboarding must appear first
+            adb shell am start -n io.nyx.app/.ui.OnboardingActivity
+            sleep 6
+            adb shell dumpsys activity activities | grep -m1 mResumedActivity
+
+            # tap the "ROOTED" card's CONTINUE button, then the console must render
+            adb shell input tap 540 1180
+            sleep 6
+            adb shell dumpsys activity activities | grep -m1 mResumedActivity
+
+            # scroll every tab and toggle a switch
+            for i in 1 2 3 4; do adb shell input swipe 540 1600 540 400 200; sleep 1; done
+            adb shell input tap 675 2050   # THEME tab
+            sleep 2
+            adb shell input tap 200 1450   # a palette card
+            sleep 2
+            adb shell input tap 945 2050   # SYSTEM tab
+            sleep 2
+
+            # no crash in logcat, and the process is still alive
+            adb shell pidof io.nyx.app
+            ! adb logcat -d | grep -E "FATAL EXCEPTION.*io\.nyx\.app"
+            adb logcat -d | grep -i "nyx" | tail -40 || true
+
+      - name: Upload crash artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: logcat
+          path: logcat.txt
+          if-no-files-found: ignore

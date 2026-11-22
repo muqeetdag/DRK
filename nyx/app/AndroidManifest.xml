@@ -32,7 +32,7 @@
         android:theme="@style/Nyx">
 
         <activity
-            android:name=".ui.MainActivity"
+            android:name=".ui.OnboardingActivity"
             android:exported="true"
             android:configChanges="orientation|screenSize|keyboardHidden|uiMode"
             android:theme="@style/Nyx">
@@ -41,6 +41,14 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <activity
+            android:name=".ui.MainActivity"
+            android:exported="true"
+            android:excludeFromRecents="false"
+            android:launchMode="singleTop"
+            android:configChanges="orientation|screenSize|keyboardHidden|uiMode"
+            android:theme="@style/Nyx" />
 
         <!-- LSPosed scope: Instagram only -->
         <meta-data

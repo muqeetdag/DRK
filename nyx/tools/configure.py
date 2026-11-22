@@ -39,6 +39,8 @@ def load_config(path: str) -> dict:
         "iconStyle": str(cfg.get("iconStyle", "glyph")),
         "glyph": str(cfg.get("glyph", "orbit")),
         "signature": str(cfg.get("signature", ""))[:120],
+        "creditDev": str(cfg.get("credits", {}).get("developer", "DRK")),
+        "creditHandle": str(cfg.get("credits", {}).get("telegram", "@DRKMUQEETT")),
         "links": {
             "telegram": str(cfg.get("links", {}).get("telegram", "")),
             "github": str(cfg.get("links", {}).get("github", "")),
@@ -75,6 +77,8 @@ def tokens_for(cfg: dict) -> dict:
         "ACCENT": cfg["accent"],
         "SECONDARY": cfg["secondary"],
         "SIGNATURE": cfg["signature"],
+        "CREDIT_DEV": cfg["creditDev"].replace('"', "'"),
+        "CREDIT_HANDLE": cfg["creditHandle"].replace('"', "'"),
         "ACCENT_HEX": cfg["accent"][1:].upper(),
         "SECONDARY_HEX": cfg["secondary"][1:].upper(),
         "TELEGRAM": cfg["links"]["telegram"],

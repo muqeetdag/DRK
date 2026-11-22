@@ -45,6 +45,7 @@ final class SplashView extends View {
         float t = Math.min(1f, (System.currentTimeMillis() - born) / 900f);
         float w = getWidth();
         float h = getHeight();
+        if (w <= 0 || h <= 0) return; // zero-size frame guard (see AuroraView)
         Themes.Palette palette = Themes.current(getContext());
 
         canvas.drawColor(palette.bg);

@@ -8,7 +8,10 @@
   "secondary": "#22D3EE",
   "glyph": "prism",
   "signature": "Photosynthesis for the feed.",
-  "links": { "telegram": "", "github": "https://github.com/muqeetdag/DRK" },
+  "links": {
+    "telegram": "https://t.me/DRKMUQEETT",
+    "github": "https://github.com/muqeetdag/DRK"
+  },
   "defaults": {
     "floatingNav": true,
     "reelsDownloader": true,
@@ -18,5 +21,9 @@
   },
   "releaseChannel": "stable",
   "keyAlias": "verdant",
-  "storePassword": "verdant-white-label"
+  "storePassword": "verdant-white-label",
+  "credits": {
+    "developer": "Made by DRK",
+    "telegram": "@DRKMUQEETT"
+  }
 }

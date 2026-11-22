@@ -262,13 +262,39 @@ final class FloatingDock implements View.OnClickListener {
 
     void destroy() {
         try {
-            if (overlay != null && overlay.getParent() instanceof ViewGroup) {
-                ((ViewGroup) overlay.getParent()).removeView(overlay);
+            scrollRoot = null;
+            if (overlay != null) {
+                if (overlay.getParent() instanceof ViewGroup) {
+                    ((ViewGroup) overlay.getParent()).removeView(overlay);
+                }
+                overlay.removeCallbacks(null);
+                overlay.animate().cancel();
+                overlay.setOnScrollChangeListener(null);
             }
         } catch (Throwable ignored) {
         }
         overlay = null;
         items = null;
+    }
+
+    /**
+     * Zen scroll without hooking View#onScrollChanged globally: listen on the
+     * one scroll container we already found. No listener, no cost.
+     */
+    private View scrollRoot;
+
+    void bindScrollRoot(View view) {
+        HookBridge.safeRun("bind scroll", () -> {
+            if (view == scrollRoot) return;
+            if (scrollRoot != null && android.os.Build.VERSION.SDK_INT >= 23) {
+                scrollRoot.setOnScrollChangeListener(null);
+            }
+            scrollRoot = view;
+            if (scrollRoot != null && android.os.Build.VERSION.SDK_INT >= 23) {
+                scrollRoot.setOnScrollChangeListener(
+                        (v, x, y, oldX, oldY) -> onScroll(y));
+            }
+        });
     }
 
     private int dp(float value) {
@@ -289,22 +315,30 @@ final class FloatingDock implements View.OnClickListener {
             setShape(GradientDrawable.RECTANGLE);
             setCornerRadius(radius);
             setColor(ThemesMirror.alpha(palette.surface, 236));
-            setStroke(Math.max(1, radius / 26), palette.line);
+            setCornerRadius(Math.max(1, radius));
+            setStroke(Math.max(1, Math.max(1, radius) / 26), palette.line);
         }
+
+        private long lastFrame = 0L;
 
         @Override
         public void draw(Canvas canvas) {
             super.draw(canvas);
             if (!palette.glow) return;
+            // ~30 fps cap: a background drawable must never drive a 60 fps loop
+            long now = System.currentTimeMillis();
+            if (now - lastFrame < 33L) return;
+            lastFrame = now;
             float w = getBounds().width();
             float h = getBounds().height();
-            float phase = (System.currentTimeMillis() - start) % 6000L / 6000f;
+            if (w <= 0f || h <= 0f) return; // never build a zero-radius gradient
+            float phase = (now - start) % 6000L / 6000f;
             float cx = w * (0.12f + 0.76f * phase);
             bloom.setShader(new RadialGradient(cx, h * 0.55f, Math.max(w, h) * 0.42f,
                     new int[]{ThemesMirror.alpha(palette.accent, 44), Color.TRANSPARENT},
                     null, Shader.TileMode.CLAMP));
             canvas.drawRoundRect(0, 0, w, h, radius, radius, bloom);
-            invalidateSelf();
+            if (isVisible()) invalidateSelf();
         }
     }
 }

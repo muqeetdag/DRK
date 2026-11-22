@@ -10,7 +10,7 @@
   "glyph": "orbit",
   "signature": "Nights outlive empires.",
   "links": {
-    "telegram": "https://t.me/",
+    "telegram": "https://t.me/DRKMUQEETT",
     "github": "https://github.com/muqeetdag/DRK"
   },
   "defaults": {
@@ -22,8 +22,18 @@
     "hapticFeedback": true,
     "telemetry": false
   },
-  "themes": ["obsidian", "void", "synthwave", "neon", "monochrome"],
+  "themes": [
+    "obsidian",
+    "void",
+    "synthwave",
+    "neon",
+    "monochrome"
+  ],
   "releaseChannel": "stable",
   "keyAlias": "nyx",
-  "storePassword": "nyx-white-label"
+  "storePassword": "nyx-white-label",
+  "credits": {
+    "developer": "Made by DRK",
+    "telegram": "@DRKMUQEETT"
+  }
 }

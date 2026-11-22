@@ -8,7 +8,10 @@
   "secondary": "#FF3DAB",
   "glyph": "bolt",
   "signature": "Every scroll is a sunrise.",
-  "links": { "telegram": "", "github": "https://github.com/muqeetdag/DRK" },
+  "links": {
+    "telegram": "https://t.me/DRKMUQEETT",
+    "github": "https://github.com/muqeetdag/DRK"
+  },
   "defaults": {
     "floatingNav": true,
     "reelsDownloader": true,
@@ -18,5 +21,9 @@
   },
   "releaseChannel": "stable",
   "keyAlias": "solar",
-  "storePassword": "solar-white-label"
+  "storePassword": "solar-white-label",
+  "credits": {
+    "developer": "Made by DRK",
+    "telegram": "@DRKMUQEETT"
+  }
 }

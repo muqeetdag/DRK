@@ -22,6 +22,7 @@ public final class Prefs {
     public static final String FEED = "feed_downloader";
     public static final String LONG_PRESS = "long_press_save";
     public static final String DEBUG_HUD = "debug_hud";
+    public static final String KEEPER_BUTTON = "show_keeper_button";
     public static final String ZEN = "zen_scroll";
     public static final String GLASS = "glass_header";
     public static final String HAPTIC = "haptic";
@@ -33,7 +34,7 @@ public final class Prefs {
 
     public static final List<String> FEATURE_KEYS = Arrays.asList(
             FLOATING_NAV, REELS, STORIES, FEED, LONG_PRESS,
-            ZEN, GLASS, HAPTIC, DEBUG_HUD);
+            ZEN, GLASS, HAPTIC, DEBUG_HUD, KEEPER_BUTTON);
 
     private Prefs() {}
 
@@ -63,6 +64,7 @@ public final class Prefs {
         e.putBoolean(FEED, GenSettings.FEED);
         e.putBoolean(LONG_PRESS, true);
         e.putBoolean(DEBUG_HUD, false);
+        e.putBoolean(KEEPER_BUTTON, true);
         e.putBoolean(ZEN, false);
         e.putBoolean(GLASS, true);
         e.putBoolean(HAPTIC, true);

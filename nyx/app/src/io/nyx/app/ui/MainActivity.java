@@ -48,6 +48,8 @@ import io.nyx.app.core.GenSettings;
 import io.nyx.app.core.Haptics;
 import io.nyx.app.core.MediaStoreX;
 import io.nyx.app.core.Prefs;
+import io.nyx.app.core.SafePrefs;
+import io.nyx.app.core.CrashLog;
 import io.nyx.app.core.Themes;
 
 /**
@@ -57,10 +59,14 @@ import io.nyx.app.core.Themes;
  */
 public class MainActivity extends Activity {
 
+    public static final String EXTRA_FROM_ONBOARDING = "nyx.from_onboarding";
+    public static final String EXTRA_SKIP_ONBOARDING = "nyx.skip_onboarding";
+
     private static final int TAB_HOME = 0;
     private static final int TAB_THEME = 1;
     private static final int TAB_MEDIA = 2;
     private static final int TAB_SYSTEM = 3;
+    private static final int TAB_TWEAKS = 4;
     private static final String IG = "com.instagram.android";
 
     private final Handler ui = new Handler(Looper.getMainLooper());
@@ -74,6 +80,54 @@ public class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle state) {
         super.onCreate(state);
+        Thread.setDefaultUncaughtExceptionHandler((thread, error) -> {
+            try {
+                CrashLog.write(this, error);
+                SafePrefs.repair(this);
+            } catch (Throwable ignored) {
+            }
+            try {
+                android.os.Process.killProcess(android.os.Process.myPid());
+            } catch (Throwable ignored) {
+            }
+        });
+        try {
+            boot(state);
+        } catch (Throwable error) {
+            CrashLog.write(this, error);
+            try {
+                SafePrefs.repair(this);
+                bootFresh();
+            } catch (Throwable fatal) {
+                Toast.makeText(this, "Console reset after an error. Reopen the app.",
+                        Toast.LENGTH_LONG).show();
+                finish();
+            }
+        }
+    }
+
+    /** Ask for a mode once, then never nag again. */
+    private boolean needsOnboarding(Bundle state) {
+        if (state != null) return false;
+        if (getIntent() != null && getIntent().getBooleanExtra(EXTRA_SKIP_ONBOARDING, false)) return false;
+        return !SafePrefs.onboarded(this);
+    }
+
+    private void bootFresh() {
+        Prefs.seedIfEmpty(this);
+        prefs = Prefs.open(this);
+        theme = Themes.current(this);
+        styleSystemBars();
+        buildShell();
+        show(TAB_HOME);
+    }
+
+    private void boot(Bundle state) {
+        if (needsOnboarding(state)) {
+            startActivity(new Intent(this, OnboardingActivity.class));
+            finish();
+            return;
+        }
         setContentView(new SplashView(this));
         density = (int) getResources().getDisplayMetrics().density;
         Prefs.seedIfEmpty(this);
@@ -92,15 +146,19 @@ public class MainActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
-        Themes.Palette fresh = Themes.current(this);
-        boolean repaint = fresh.bg != theme.bg || fresh.accent != theme.accent
-                || fresh.secondary != theme.secondary;
-        theme = fresh;
-        if (repaint) {
-            styleSystemBars();
-            buildShell();
+        try {
+            Themes.Palette fresh = Themes.current(this);
+            boolean repaint = theme == null || fresh.bg != theme.bg
+                    || fresh.accent != theme.accent || fresh.secondary != theme.secondary;
+            theme = fresh;
+            if (repaint && content != null) {
+                styleSystemBars();
+                buildShell();
+            }
+            if (content != null) show(tab);
+        } catch (Throwable error) {
+            CrashLog.write(this, error);
         }
-        show(tab);
     }
 
     private void styleSystemBars() {
@@ -137,7 +195,7 @@ public class MainActivity extends Activity {
         barLp.setMargins(dp(14), 0, dp(14), dp(12));
         column.addView(tabBar, barLp);
 
-        String[] labels = {"CONSOLE", "THEME", "MEDIA", "SYSTEM"};
+        String[] labels = {"TWEAKS", "THEME", "MEDIA", "SYSTEM"};
         for (int i = 0; i < labels.length; i++) {
             final int index = i;
             LinearLayout item = new LinearLayout(this);
@@ -188,7 +246,7 @@ public class MainActivity extends Activity {
         content.removeAllViews();
         content.setPadding(dp(18), dp(10), dp(18), dp(24));
         switch (which) {
-            case TAB_HOME: buildHome(); break;
+            case TAB_HOME: buildTweaks(); break;
             case TAB_THEME: buildTheme(); break;
             case TAB_MEDIA: buildMedia(); break;
             default: buildSystem(); break;
@@ -215,10 +273,96 @@ public class MainActivity extends Activity {
         content.addView(toggleRow(Prefs.ZEN, "Zen scroll",
                 "Floating dock slips away while you scroll down", "≈"));
 
+        content.addView(sectionLabel("ATTACHMENT"));
+        content.addView(setupCard());
+
         content.addView(sectionLabel("RITUAL"));
         content.addView(actionRow("Open Instagram", "Launch the patched host", "↗", v -> launchInstagram()));
         content.addView(actionRow("Attach module", "Copy the LSPosed setup steps", "⧉", v -> showSetup()));
         content.addView(footer());
+    }
+
+    /**
+     * All-in-one tweak list. One screen, every feature, grouped by what it
+     * touches — no hunting through tabs.
+     */
+    private void buildTweaks() {
+        content.addView(header());
+        content.addView(statusChip());
+        content.addView(setupCard());
+
+        content.addView(groupCard("INSTAGRAM LOOK", "◈", new String[]{
+                "floating_nav", "glass_header", "zen_scroll"}, new String[][]{
+                {"Floating dock", "Detached pill dock with glow ring and save core", "◈"},
+                {"Glass header", "Frosted top bar that follows the theme", "▤"},
+                {"Zen scroll", "Dock slips away while you scroll down", "≈"}}));
+
+        content.addView(groupCard("MEDIA KEEPER", "▣", new String[]{
+                "reels_downloader", "stories_downloader", "feed_downloader",
+                "show_keeper_button", "long_press_save"}, new String[][]{
+                {"Reel keeper", "Save the reel on screen in one tap", "▶"},
+                {"Story keeper", "Save stories and highlights", "◔"},
+                {"Feed keeper", "Save photos, carousels and videos", "▦"},
+                {"Save button", "Show the download icon beside like / share", "⤓"},
+                {"Long-press to save", "Hold any media view to pull it down", "✊"}}));
+
+        content.addView(groupCard("FEEL", "≈", new String[]{
+                "haptic", "debug_hud"}, new String[][]{
+                {"Haptic ticks", "Subtle buzz on every tap and save", "≈"},
+                {"Diagnostics HUD", "Live overlay: palette, armed hooks, last URL", "⌁"}}));
+
+        content.addView(sectionLabel("QUICK ACTIONS"));
+        content.addView(actionRow("Open Instagram", "Launch the host app", "↗", v -> launchInstagram()));
+        content.addView(actionRow("Save current screen", "Pull whatever media is on screen", "⤓", v -> quickSave()));
+        content.addView(actionRow("Theme engine", "5 palettes + accent lab", "◐", v -> show(TAB_THEME)));
+        content.addView(actionRow("Media vault", "Count, clean and open saved media", "▤", v -> show(TAB_MEDIA)));
+        content.addView(creditCard());
+        content.addView(footer());
+    }
+
+    /** Group of toggles inside one card, so the list reads as one page. */
+    private View groupCard(String title, String glyph, String[] keys, String[][] rows) {
+        LinearLayout card = new LinearLayout(this);
+        card.setOrientation(LinearLayout.VERTICAL);
+        card.setPadding(dp(14), dp(14), dp(14), dp(8));
+        card.setBackground(rounded(Themes.alpha(theme.surface, 225), 22, 1, theme.line));
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, -2);
+        lp.setMargins(0, dp(10), 0, 0);
+        card.setLayoutParams(lp);
+
+        LinearLayout head = new LinearLayout(this);
+        head.setOrientation(LinearLayout.HORIZONTAL);
+        head.setGravity(Gravity.CENTER_VERTICAL);
+        head.setPadding(dp(4), 0, dp(4), dp(6));
+        TextView badge = new TextView(this);
+        badge.setText(glyph);
+        badge.setTextSize(13);
+        badge.setTextColor(theme.accent);
+        head.addView(badge);
+        TextView label = new TextView(this);
+        label.setText(title);
+        label.setTextSize(10);
+        label.setLetterSpacing(0.2f);
+        label.setTextColor(theme.muted);
+        label.setPadding(dp(8), 0, 0, 0);
+        head.addView(label);
+        card.addView(head);
+
+        for (int i = 0; i < keys.length; i++) {
+            LinearLayout row = (LinearLayout) toggleRow(keys[i], rows[i][0], rows[i][1], rows[i][2]);
+            row.setBackground(rounded(Themes.alpha(theme.surfaceAlt, 150), 16, 0, 0));
+            LinearLayout.LayoutParams rowLp = new LinearLayout.LayoutParams(-1, -2);
+            rowLp.setMargins(0, dp(4), 0, 0);
+            row.setLayoutParams(rowLp);
+            card.addView(row);
+        }
+        return card;
+    }
+
+    private void quickSave() {
+        Toast.makeText(this, "Open Instagram and long-press the media to save it",
+                Toast.LENGTH_LONG).show();
+        launchInstagram();
     }
 
     private void buildTheme() {
@@ -275,6 +419,8 @@ public class MainActivity extends Activity {
     private void buildSystem() {
         content.addView(pageTitle("SYSTEM", "Module wiring, versions and support."));
 
+        content.addView(creditCard());
+
         content.addView(sectionLabel("MODULE"));
         content.addView(infoRow("Package", getPackageName()));
         content.addView(infoRow("Version", Brand.VERSION + " · " + Brand.VERSION_CODE));
@@ -294,8 +440,19 @@ public class MainActivity extends Activity {
         content.addView(toggleRow(Prefs.HAPTIC, "Haptic ticks", "Subtle buzz on every tap", "≈"));
         content.addView(toggleRow(Prefs.DEBUG_HUD, "Diagnostics HUD",
                 "Overlay in Instagram: palette, armed hooks, last media URL", "⌁"));
+        content.addView(toggleRow(Prefs.KEEPER_BUTTON, "Save button",
+                "Adds the save icon beside like / share on reels, stories and posts", "⤓"));
         content.addView(actionRow("Setup guide", "Three steps to attach the module", "?", v -> showSetup()));
         content.addView(actionRow("Export settings", "Copy a JSON snapshot to clipboard", "⇪", v -> exportSettings()));
+        content.addView(actionRow("Last crash report", "Copy the most recent error log", "⚠", v -> showCrashLog()));
+        content.addView(actionRow("Repair settings", "Rebuild preferences if the app misbehaves", "✚", v -> {
+            SafePrefs.repair(this);
+            theme = Themes.current(this);
+            styleSystemBars();
+            buildShell();
+            show(TAB_SYSTEM);
+            Toast.makeText(this, "Settings repaired", Toast.LENGTH_SHORT).show();
+        }));
         content.addView(actionRow("Wipe module data", "Reset every toggle and theme", "✕", v -> confirmWipe()));
         content.addView(actionRow("Release notes", "What changed in this build", "◈", v -> showReleaseNotes()));
         if (!TextUtils.isEmpty(Brand.GITHUB) || !TextUtils.isEmpty(Brand.TELEGRAM)) {
@@ -311,6 +468,64 @@ public class MainActivity extends Activity {
     }
 
     // ------------------------------------------------------------ pieces
+    private View creditCard() {
+        LinearLayout card = new LinearLayout(this);
+        card.setOrientation(LinearLayout.VERTICAL);
+        card.setPadding(dp(18), dp(18), dp(18), dp(16));
+        GradientDrawable bg = new GradientDrawable(GradientDrawable.Orientation.TL_BR,
+                new int[]{Themes.alpha(theme.accent, 60), Themes.alpha(theme.secondary, 26)});
+        bg.setCornerRadius(dp(22));
+        bg.setStroke(dp(1), Themes.alpha(theme.accent, 90));
+        card.setBackground(bg);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, -2);
+        lp.setMargins(0, dp(8), 0, 0);
+        card.setLayoutParams(lp);
+
+        TextView made = new TextView(this);
+        made.setText("APP MADE BY");
+        made.setTextSize(9.5f);
+        made.setLetterSpacing(0.24f);
+        made.setTextColor(Themes.alpha(theme.text, 170));
+        card.addView(made);
+
+        TextView handle = new TextView(this);
+        handle.setText(TextUtils.isEmpty(Brand.CREDIT_HANDLE) ? "@DRKMUQEETT" : Brand.CREDIT_HANDLE);
+        handle.setTextSize(26);
+        handle.setTypeface(Typeface.create("sans-serif-black", Typeface.BOLD));
+        handle.setTextColor(theme.text);
+        card.addView(handle);
+
+        TextView dev = new TextView(this);
+        dev.setText(Brand.CREDIT_DEV);
+        dev.setTextSize(11.5f);
+        dev.setTextColor(Themes.alpha(theme.text, 200));
+        dev.setPadding(0, dp(2), 0, 0);
+        card.addView(dev);
+
+        TextView tg = new TextView(this);
+        tg.setText("DIRECT CONTACT · TELEGRAM ↗");
+        tg.setTextSize(10.5f);
+        tg.setLetterSpacing(0.12f);
+        tg.setGravity(Gravity.CENTER);
+        tg.setTypeface(Typeface.DEFAULT_BOLD);
+        tg.setTextColor(theme.bg);
+        tg.setPadding(0, dp(12), 0, dp(12));
+        tg.setBackground(rounded(theme.text, 14, 0, 0));
+        LinearLayout.LayoutParams tl = new LinearLayout.LayoutParams(-1, -2);
+        tl.setMargins(0, dp(14), 0, 0);
+        tg.setLayoutParams(tl);
+        tg.setOnClickListener(v -> {
+            try {
+                startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(
+                        TextUtils.isEmpty(Brand.TELEGRAM) ? "https://t.me/DRKMUQEETT" : Brand.TELEGRAM)));
+            } catch (Throwable t) {
+                Toast.makeText(this, "Telegram link unavailable", Toast.LENGTH_SHORT).show();
+            }
+        });
+        card.addView(tg);
+        return card;
+    }
+
     private View header() {
         LinearLayout wrap = new LinearLayout(this);
         wrap.setOrientation(LinearLayout.HORIZONTAL);
@@ -348,6 +563,122 @@ public class MainActivity extends Activity {
         version.setBackground(rounded(Themes.alpha(theme.accent, 24), 100, 0, 0));
         wrap.addView(version);
         return wrap;
+    }
+
+    /** Mode-aware attach checklist with a one-tap verification. */
+    private View setupCard() {
+        int mode = SafePrefs.installMode(this);
+        boolean verified = SafePrefs.bool(this, "attach_verified", false);
+        boolean igInstalled = isInstalled(IG);
+        boolean lsposed = isInstalled("org.lsposed.manager")
+                || isInstalled("de.robv.android.xposed.installer")
+                || isInstalled("org.lsposed.lspatch");
+
+        LinearLayout card = new LinearLayout(this);
+        card.setOrientation(LinearLayout.VERTICAL);
+        card.setPadding(dp(16), dp(15), dp(16), dp(15));
+        card.setBackground(rounded(Themes.alpha(theme.surface, 235), 20, 1, theme.line));
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, -2);
+        lp.setMargins(0, dp(5), 0, 0);
+        card.setLayoutParams(lp);
+
+        TextView head = new TextView(this);
+        head.setText((mode == SafePrefs.MODE_NON_ROOT ? "NON-ROOT · LSPATCH" : "ROOT · LSPOSED")
+                + "   " + (verified ? "· LINKED ✓" : "· SETUP PENDING"));
+        head.setTextSize(10);
+        head.setLetterSpacing(0.14f);
+        head.setTypeface(Typeface.DEFAULT_BOLD);
+        head.setTextColor(verified ? theme.secondary : theme.accent);
+        card.addView(head);
+
+        String[] steps = mode == SafePrefs.MODE_NON_ROOT
+                ? new String[]{
+                    "1 · Install LSPatch from its GitHub releases.",
+                    "2 · LSPatch → Manage → select the Instagram APK.",
+                    "3 · Local mode → add this module → Start patching.",
+                    "4 · Install the patched Instagram, then open it."}
+                : new String[]{
+                    "1 · LSPosed installed and active (Magisk / KernelSU / APatch).",
+                    "2 · Modules → enable " + Brand.NAME + ".",
+                    "3 · Scope → tick Instagram only.",
+                    "4 · Force-stop Instagram, then reopen it."};
+
+        for (String step : steps) {
+            TextView line = new TextView(this);
+            line.setText(step);
+            line.setTextSize(12);
+            line.setTextColor(theme.muted);
+            line.setLineSpacing(dp(2), 1f);
+            line.setPadding(0, dp(7), 0, 0);
+            card.addView(line);
+        }
+
+        LinearLayout actions = new LinearLayout(this);
+        actions.setOrientation(LinearLayout.HORIZONTAL);
+        actions.setPadding(0, dp(14), 0, 0);
+
+        TextView verify = new TextView(this);
+        verify.setText("VERIFY LINK");
+        verify.setTextSize(10.5f);
+        verify.setLetterSpacing(0.12f);
+        verify.setGravity(Gravity.CENTER);
+        verify.setTypeface(Typeface.DEFAULT_BOLD);
+        verify.setPadding(0, dp(11), 0, dp(11));
+        verify.setTextColor(theme.bg);
+        verify.setBackground(rounded(theme.accent, 13, 0, 0));
+        verify.setOnClickListener(v -> {
+            String verdict = verifyAttachment(igInstalled, lsposed);
+            Toast.makeText(this, verdict, Toast.LENGTH_LONG).show();
+            show(TAB_HOME);
+        });
+        actions.addView(verify, new LinearLayout.LayoutParams(0, -2, 1f));
+
+        TextView switchMode = new TextView(this);
+        switchMode.setText("SWITCH MODE");
+        switchMode.setTextSize(10.5f);
+        switchMode.setLetterSpacing(0.12f);
+        switchMode.setGravity(Gravity.CENTER);
+        switchMode.setPadding(0, dp(11), 0, dp(11));
+        switchMode.setTextColor(theme.text);
+        switchMode.setBackground(rounded(Themes.alpha(theme.line, 120), 13, 1, theme.line));
+        LinearLayout.LayoutParams smLp = new LinearLayout.LayoutParams(0, -2, 1f);
+        smLp.setMargins(dp(10), 0, 0, 0);
+        switchMode.setLayoutParams(smLp);
+        switchMode.setOnClickListener(v -> {
+            SafePrefs.set(this, SafePrefs.ONBOARDED, false);
+            startActivity(new Intent(this, OnboardingActivity.class));
+            finish();
+        });
+        actions.addView(switchMode);
+        card.addView(actions);
+
+        TextView state = new TextView(this);
+        state.setText("Instagram " + (igInstalled ? "installed" : "not found")
+                + " · " + (mode == SafePrefs.MODE_NON_ROOT ? "LSPatch" : "LSPosed")
+                + (lsposed ? " installed" : " not detected"));
+        state.setTextSize(10.5f);
+        state.setTextColor(theme.muted);
+        state.setPadding(0, dp(10), 0, 0);
+        card.addView(state);
+        return card;
+    }
+
+    private String verifyAttachment(boolean igInstalled, boolean manager) {
+        if (!igInstalled) return "Instagram is not installed on this device";
+        boolean modeRoot = SafePrefs.installMode(this) == SafePrefs.MODE_ROOT;
+        if (modeRoot && !manager) {
+            return "LSPosed manager not detected — install it, enable the module, scope Instagram";
+        }
+        if (hookBridgePresent()) {
+            SafePrefs.set(this, "attach_verified", true);
+            return "Hook bridge present ✓ — force-stop Instagram once so it loads the module";
+        }
+        // The console process itself is never hooked; this is expected. Give the
+        // user the only reliable on-device signal we have.
+        SafePrefs.set(this, "attach_verified", false);
+        return modeRoot
+                ? "Linked in LSPosed? Then open Instagram — if the dock shows, you are done."
+                : "Patched Instagram installed? Open it — if the dock shows, you are done.";
     }
 
     private View statusChip() {
@@ -835,6 +1166,40 @@ public class MainActivity extends Activity {
         dialog.show();
     }
 
+    private void showCrashLog() {
+        String log = CrashLog.read(this);
+        if (log.isEmpty()) {
+            Toast.makeText(this, "No crash recorded — good sign", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        ClipboardManager cm = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+        cm.setPrimaryClip(ClipData.newPlainText("nyx-crash", log));
+        onShowDialog("CRASH REPORT · COPIED", log);
+    }
+
+    private void onShowDialog(String title, String body) {
+        Dialog dialog = new Dialog(this, R.style.Nyx_Dialog);
+        ScrollView scroll = new ScrollView(this);
+        LinearLayout wrap = new LinearLayout(this);
+        wrap.setOrientation(LinearLayout.VERTICAL);
+        wrap.setPadding(dp(22), dp(22), dp(22), dp(20));
+        TextView head = new TextView(this);
+        head.setText(title);
+        head.setTextSize(13);
+        head.setLetterSpacing(0.1f);
+        head.setTextColor(theme.accent);
+        wrap.addView(head);
+        TextView text = new TextView(this);
+        text.setText(body);
+        text.setTextSize(11);
+        text.setTextColor(theme.muted);
+        text.setPadding(0, dp(10), 0, 0);
+        wrap.addView(text);
+        scroll.addView(wrap);
+        dialog.setContentView(scroll);
+        dialog.show();
+    }
+
     private void confirmCleaner() {
         AlertDialog.Builder b = new AlertDialog.Builder(this);
         b.setTitle("Purge vault?");
@@ -861,8 +1226,11 @@ public class MainActivity extends Activity {
         b.setTitle("Wipe module data?");
         b.setMessage("Every toggle, theme and the folder name return to build defaults.");
         b.setPositiveButton("Wipe", (d, w) -> {
+            int mode = SafePrefs.installMode(this);
             prefs.edit().clear().commit();
             Prefs.seedIfEmpty(this);
+            SafePrefs.set(this, SafePrefs.INSTALL_MODE, mode);
+            SafePrefs.set(this, SafePrefs.ONBOARDED, true);
             theme = Themes.current(this);
             styleSystemBars();
             buildShell();

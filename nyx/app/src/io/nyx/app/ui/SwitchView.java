@@ -34,6 +34,9 @@ final class AuroraView extends View {
     protected void onDraw(Canvas canvas) {
         int w = getWidth();
         int h = getHeight();
+        // A zero-sized view makes RadialGradient throw IllegalArgumentException —
+        // this is the classic "crash on first frame" and it must never happen.
+        if (w <= 0 || h <= 0) return;
         canvas.drawColor(palette.bg);
 
         paint.reset();
@@ -117,6 +120,7 @@ final class SwitchView extends TextView {
 
         float inset = h * 0.14f;
         float kr = r - inset;
+        if (kr <= 0f) return; // collapsed layout: nothing sensible to draw
         float cx = inset + kr + (w - (inset + kr) * 2f) * p;
         knob.setColor(p > 0.5f ? palette.bg : palette.muted);
         knob.setShadowLayer(kr * 0.7f, 0f, kr * 0.15f, Themes.alpha(Color.BLACK, 120));

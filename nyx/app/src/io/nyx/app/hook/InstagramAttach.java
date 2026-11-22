@@ -14,42 +14,35 @@ import de.robv.android.xposed.XC_MethodHook;
 import de.robv.android.xposed.XposedHelpers;
 
 /**
- * Instagram attach layer.
+ * Instagram attach layer — deliberately conservative.
  *
- * Hooks framework seams Instagram cannot obfuscate:
- *   • Activity#onCreate / #onResume  → dock, sheen, long-press, HUD
- *   • View#onAttachedToWindow        → media keeper buttons in action rows
- *   • View#onScrollChanged           → Zen auto-hide
+ * Crash-safety rules learned the hard way:
+ *  • never hook methods called thousands of times per second
+ *    (a global View#onAttachedToWindow hook makes Instagram crawl and ANR),
+ *  • never walk the whole view tree on the UI thread,
+ *  • do all host work on a single throttled message, not per view.
  *
- * All hooks are guarded; a failure is logged and the feature degrades instead
- * of taking the host down. Media-only buttons are removed again if the user
- * switches them off, so toggles stay honest.
+ * So we hook only Activity lifecycle (a handful of calls per screen), do one
+ * depth-limited scan after the screen settles, and wrap every entry point.
  */
 final class InstagramAttach {
 
     private static final String PACKAGE = "com.instagram.android";
 
+    /** Only these host screens get decorated. */
     private static final String[] TABBAR_KEYWORDS = {
-            "tabbar", "bottomnav", "tabhost", "mainnavigation", "bottombar", "tablayout"
-    };
-    private static final String[] REELS_KEYWORDS = {
-            "clipsvieweraction", "clipstable", "reelsaction", "clipsinteraction", "reelsviewer",
-            "clipsviewer"
-    };
-    private static final String[] STORY_KEYWORDS = {
-            "reelviewer", "storyviewer", "reelheader", "storyheader", "stories"
+            "tabbar", "bottomnav", "tabhost", "mainnavigation", "bottombar"
     };
     private static final String[] FEED_KEYWORDS = {
-            "mediaactionsview", "rowfeedmediaaction", "mediafeedback", "feedactions", "carousel"
+            "mediaactionsview", "rowfeedmediaaction", "mediafeedback", "feedactions"
     };
-    private static final String[] SCROLL_KEYWORDS = {
-            "recyclerview", "clipsviewer", "feed", "scrollview"
-    };
+    private static final String[] REELS_KEYWORDS = {"clipsvieweraction", "clipsviewer"};
+    private static final String[] STORY_KEYWORDS = {"reelviewer", "storyviewer", "reelheader"};
 
-    private static final Map<View, Boolean> TOUCHED = new WeakHashMap<>();
     private static final Map<String, FloatingDock> DOCKS = new WeakHashMap<>();
     private static final Handler MAIN = new Handler(Looper.getMainLooper());
     private static boolean started = false;
+    private static long lastDecorate = 0L;
 
     private final ClassLoader loader;
 
@@ -61,9 +54,7 @@ final class InstagramAttach {
         if (started) return;
         started = true;
         hookActivity();
-        hookViewAttach();
-        hookScroll();
-        HookBridge.log("attach layer armed for " + PACKAGE);
+        HookBridge.log("attach layer armed (activity-scoped)");
     }
 
     // ------------------------------------------------------- activity layer
@@ -73,9 +64,8 @@ final class InstagramAttach {
                     @Override
                     protected void afterHookedMethod(MethodHookParam param) {
                         Activity activity = (Activity) param.thisObject;
-                        if (activity == null) return;
-                        if (!activity.getClass().getName().startsWith(PACKAGE)) return;
-                        MAIN.postDelayed(() -> decorate(activity), 340);
+                        if (!isHost(activity)) return;
+                        MAIN.postDelayed(() -> decorate(activity), 900);
                     }
                 }));
 
@@ -84,9 +74,8 @@ final class InstagramAttach {
                     @Override
                     protected void afterHookedMethod(MethodHookParam param) {
                         Activity activity = (Activity) param.thisObject;
-                        if (activity == null) return;
-                        if (!activity.getClass().getName().startsWith(PACKAGE)) return;
-                        MAIN.postDelayed(() -> decorate(activity), 260);
+                        if (!isHost(activity)) return;
+                        MAIN.postDelayed(() -> decorate(activity), 700);
                     }
                 }));
 
@@ -95,33 +84,51 @@ final class InstagramAttach {
                     @Override
                     protected void afterHookedMethod(MethodHookParam param) {
                         Activity activity = (Activity) param.thisObject;
-                        if (activity == null) return;
-                        if (!activity.getClass().getName().startsWith(PACKAGE)) return;
-                        FloatingDock dock = DOCKS.remove(activity.getClass().getName());
+                        if (!isHost(activity)) return;
+                        FloatingDock dock = DOCKS.remove(key(activity));
                         if (dock != null) dock.destroy();
                     }
                 }));
     }
 
+    private boolean isHost(Activity activity) {
+        try {
+            return activity != null && activity.getClass().getName().startsWith(PACKAGE);
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+
+    private String key(Activity activity) {
+        return activity.getClass().getName();
+    }
+
     private void decorate(Activity activity) {
-        HookBridge.safeRun("decorate(" + activity.getClass().getSimpleName() + ")", () -> {
+        if (!HookBridge.alive()) return;
+        long now = System.currentTimeMillis();
+        if (now - lastDecorate < 450) return; // debounce rapid resume/create storms
+        lastDecorate = now;
+        HookBridge.safeRun("decorate", () -> {
             if (activity.isFinishing()) return;
             View decor = activity.getWindow() == null ? null : activity.getWindow().getDecorView();
             if (!(decor instanceof ViewGroup)) return;
             ViewGroup root = (ViewGroup) decor;
             ThemesMirror.Palette theme = ThemesMirror.resolve(activity);
 
-            FloatingDock dock = DOCKS.get(activity.getClass().getName());
-            boolean wantDock = PrefsReader.get("floating_nav", true);
+            String hostScreen = screenOf(root);
+
+            FloatingDock dock = DOCKS.get(key(activity));
+            boolean wantDock = PrefsReader.get("floating_nav", true) && hostScreen != null;
             if (wantDock) {
                 if (dock == null) {
                     dock = new FloatingDock(activity, theme);
-                    DOCKS.put(activity.getClass().getName(), dock);
+                    DOCKS.put(key(activity), dock);
                 }
                 dock.attach(root);
+                dock.bindScrollRoot(findScrollRoot(root));
             } else if (dock != null) {
                 dock.destroy();
-                DOCKS.remove(activity.getClass().getName());
+                DOCKS.remove(key(activity));
             }
 
             if (PrefsReader.get("glass_header", true)) {
@@ -131,8 +138,12 @@ final class InstagramAttach {
                 if (sheen != null) root.removeView(sheen);
             }
 
-            if (PrefsReader.get("long_press_save", true)) {
+            if (hostScreen != null && PrefsReader.get("long_press_save", true)) {
                 LongPressSave.bind(activity, root);
+            }
+
+            if (hostScreen != null && PrefsReader.get("show_keeper_button", true)) {
+                injectKeeper(activity, root, hostScreen, theme);
             }
 
             if (PrefsReader.get("debug_hud", false)) {
@@ -141,84 +152,80 @@ final class InstagramAttach {
         });
     }
 
-    // ----------------------------------------------------------- view layer
-    private void hookViewAttach() {
-        HookBridge.safeRun("hook View#onAttachedToWindow", () -> XposedHelpers.findAndHookMethod(
-                View.class, "onAttachedToWindow", new XC_MethodHook() {
-                    @Override
-                    protected void afterHookedMethod(MethodHookParam param) {
-                        if (!HookBridge.alive()) return;
-                        View view = (View) param.thisObject;
-                        if (!(view instanceof ViewGroup)) return;
-                        String className = view.getClass().getName().toLowerCase();
-                        boolean feed = matches(className, FEED_KEYWORDS);
-                        boolean reels = matches(className, REELS_KEYWORDS);
-                        boolean story = matches(className, STORY_KEYWORDS);
-                        boolean tabbar = matches(className, TABBAR_KEYWORDS);
-                        if (!feed && !reels && !story && !tabbar) return;
-                        ViewGroup group = (ViewGroup) view;
-                        if (TOUCHED.containsKey(group)) return;
-                        TOUCHED.put(group, Boolean.TRUE);
-                        MAIN.postDelayed(() -> injectKeeper(group, feed, reels, story), 400);
-                    }
-                }));
+    /** Which of the screens we know is on top. Null means "leave it alone". */
+    private String screenOf(View root) {
+        String tabs = findClassName(root, TABBAR_KEYWORDS, 0);
+        if (tabs != null) return "tabs";
+        if (findClassName(root, REELS_KEYWORDS, 0) != null) return "reels";
+        if (findClassName(root, STORY_KEYWORDS, 0) != null) return "story";
+        if (findClassName(root, FEED_KEYWORDS, 0) != null) return "feed";
+        return null;
     }
 
-    private void injectKeeper(ViewGroup group, boolean feed, boolean reels, boolean story) {
-        HookBridge.safeRun("inject keeper", () -> {
-            if (group.getChildCount() == 0) return;
-            android.content.Context ctx = group.getContext();
-            if (!(ctx instanceof Activity)) return;
-            Activity activity = (Activity) ctx;
+    /** Depth- and budget-limited search — cheap enough for the UI thread once. */
+    private String findClassName(View view, String[] keywords, int depth) {
+        if (view == null || depth > 14) return null;
+        String name;
+        try {
+            name = view.getClass().getName().toLowerCase();
+        } catch (Throwable t) {
+            return null;
+        }
+        for (String keyword : keywords) if (name.contains(keyword)) return name;
+        if (view instanceof ViewGroup) {
+            ViewGroup group = (ViewGroup) view;
+            int count = Math.min(group.getChildCount(), 24);
+            for (int i = 0; i < count; i++) {
+                String found = findClassName(group.getChildAt(i), keywords, depth + 1);
+                if (found != null) return found;
+            }
+        }
+        return null;
+    }
 
+    private View findScrollRoot(View root) {
+        try {
+            String name = findClassName(root, new String[]{"recyclerview", "clipsviewer"}, 0);
+            if (name == null) return null;
+            return findFirst(root, name);
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
+    private View findFirst(View view, String className) {
+        if (view == null) return null;
+        if (view.getClass().getName().equalsIgnoreCase(className)
+                || view.getClass().getName().toLowerCase().contains(className)) return view;
+        if (view instanceof ViewGroup) {
+            ViewGroup group = (ViewGroup) view;
+            for (int i = 0; i < group.getChildCount(); i++) {
+                View found = findFirst(group.getChildAt(i), className);
+                if (found != null) return found;
+            }
+        }
+        return null;
+    }
+
+    private void injectKeeper(Activity activity, ViewGroup root, String screen, ThemesMirror.Palette theme) {
+        HookBridge.safeRun("inject keeper", () -> {
             String kind;
             String prefKey;
-            if (reels) {
+            if ("reels".equals(screen)) {
                 kind = "Reel";
                 prefKey = "reels_downloader";
-            } else if (story) {
+            } else if ("story".equals(screen)) {
                 kind = "Story";
                 prefKey = "stories_downloader";
-            } else if (feed) {
+            } else if ("feed".equals(screen)) {
                 kind = "Post";
                 prefKey = "feed_downloader";
             } else {
                 return;
             }
-            View existing = group.findViewWithTag(Ids.TAG_KEEPER);
-            boolean want = PrefsReader.get(prefKey, true);
-            if (!want) {
-                if (existing != null) group.removeView(existing);
-                return;
-            }
-            if (existing != null) return;
-            ThemesMirror.Palette theme = ThemesMirror.resolve(activity);
-            new MediaKeeperButton(activity, theme,
-                    PrefsReader.get("download_folder", "NYX")).inject(group, kind);
+            if (!PrefsReader.get(prefKey, true)) return;
+            LongPressSave.installKeeper(activity, root, kind, theme,
+                    PrefsReader.get("download_folder", "NYX"));
         });
-    }
-
-    // --------------------------------------------------------- scroll layer
-    private void hookScroll() {
-        HookBridge.safeRun("hook View#onScrollChanged", () -> XposedHelpers.findAndHookMethod(
-                View.class, "onScrollChanged", int.class, int.class, int.class, int.class,
-                new XC_MethodHook() {
-                    @Override
-                    protected void afterHookedMethod(MethodHookParam param) {
-                        if (!HookBridge.alive()) return;
-                        if (!PrefsReader.get("zen_scroll", false)) return;
-                        View view = (View) param.thisObject;
-                        if (view == null) return;
-                        String name = view.getClass().getName().toLowerCase();
-                        if (!matches(name, SCROLL_KEYWORDS)) return;
-                        int y = (Integer) param.args[1];
-                        for (FloatingDock dock : DOCKS.values()) dock.onScroll(y);
-                    }
-                }));
-    }
-
-    private static boolean matches(String className, String[] keywords) {
-        for (String keyword : keywords) if (className.contains(keyword)) return true;
-        return false;
     }
 }

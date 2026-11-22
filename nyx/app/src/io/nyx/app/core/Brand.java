@@ -11,6 +11,8 @@ public final class Brand {
     public static final String SIGNATURE = "__SIGNATURE__";
     public static final String TELEGRAM = "__TELEGRAM__";
     public static final String GITHUB = "__GITHUB__";
+    public static final String CREDIT_DEV = "__CREDIT_DEV__";
+    public static final String CREDIT_HANDLE = "__CREDIT_HANDLE__";
     public static final int ACCENT = 0x__ACCENT_HEX__;
     public static final int SECONDARY = 0x__SECONDARY_HEX__;
 
